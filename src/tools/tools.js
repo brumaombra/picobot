@@ -2,7 +2,6 @@ import { readFileTool, writeFileTool, listDirTool } from './toolbox/filesystem.j
 import { shellTool } from './toolbox/shell.js';
 import { webFetchTool } from './toolbox/web.js';
 import { cronTool } from './toolbox/cron.js';
-import { messageTool } from './toolbox/message.js';
 import { subagentTool } from './toolbox/subagent.js';
 import { gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool } from './toolbox/gmail.js';
 import { calendarListEventsTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool } from './toolbox/calendar.js';
@@ -10,7 +9,7 @@ import { driveListFilesTool, driveReadFileTool, driveCreateFileTool, driveUpdate
 
 // Tool categories for organized access
 const toolCategories = {
-    general: [readFileTool, writeFileTool, listDirTool, shellTool, webFetchTool, cronTool, messageTool, subagentTool],
+    general: [readFileTool, writeFileTool, listDirTool, shellTool, webFetchTool, cronTool, subagentTool],
     gmail: [gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool],
     calendar: [calendarListEventsTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool],
     drive: [driveListFilesTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool]

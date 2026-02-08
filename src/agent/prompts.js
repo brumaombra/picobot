@@ -22,12 +22,6 @@ export const buildSystemPrompt = () => {
         prompts.push(soulPrompt);
     }
 
-    // Load USER.md
-    const userPrompt = getPromptContent('USER.md');
-    if (userPrompt) {
-        prompts.push(userPrompt);
-    }
-
     // Return the combined prompt
     return prompts.join('\n\n');
 };

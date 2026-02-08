@@ -42,7 +42,7 @@ For complex or specific tasks, spawn specialized subagents to handle them effici
 
 ### Agent Type
 
-- **General**: Versatile agent for most tasks - file operations, web browsing, shell commands, messaging. Default choice for non-specialized work.
+- **General**: Versatile agent for most tasks - file operations, web browsing, shell commands. Default choice for non-specialized work.
 - **Email**: Gmail specialist - search, read, send, label, and organize emails. For communication and inbox management.
 - **Calendar**: Google Calendar specialist - create, read, update, delete events. For scheduling and appointment management.
 - **Drive**: Google Drive specialist - file operations, sharing, and organization. For cloud storage and document collaboration.

@@ -17,7 +17,6 @@ const CONFIG_ITEMS = [
     { path: LOGS_DIR, type: 'directory', name: 'Logs directory' },
     { path: join(PROMPTS_DIR, 'AGENTS.md'), type: 'file', name: 'AGENTS.md', source: join(__dirname, 'examples/AGENTS.md') },
     { path: join(PROMPTS_DIR, 'SOUL.md'), type: 'file', name: 'SOUL.md', source: join(__dirname, 'examples/SOUL.md') },
-    { path: join(PROMPTS_DIR, 'USER.md'), type: 'file', name: 'USER.md', source: join(__dirname, 'examples/USER.md') },
     { path: join(PROMPTS_DIR, 'SUBAGENT_GENERAL.md'), type: 'file', name: 'SUBAGENT_GENERAL.md', source: join(__dirname, 'examples/SUBAGENT_GENERAL.md') },
     { path: join(PROMPTS_DIR, 'SUBAGENT_EMAIL.md'), type: 'file', name: 'SUBAGENT_EMAIL.md', source: join(__dirname, 'examples/SUBAGENT_EMAIL.md') },
     { path: join(PROMPTS_DIR, 'SUBAGENT_CALENDAR.md'), type: 'file', name: 'SUBAGENT_CALENDAR.md', source: join(__dirname, 'examples/SUBAGENT_CALENDAR.md') },

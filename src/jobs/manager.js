@@ -1,5 +1,4 @@
 import cron from 'node-cron';
-import { randomBytes } from 'crypto';
 import { logger } from '../utils/logger.js';
 import { loadJobsFromFiles, saveJobToFile, deleteJobFile } from './persistent.js';
 import { sendOutbound, pushInbound } from '../bus/message-bus.js';
@@ -122,7 +121,7 @@ export const createJob = ({ name, schedule, action, chatId, platform, message })
         }
 
         // Generate unique ID
-        const jobId = randomBytes(8).toString('hex');
+        const jobId = generateUniqueId('job');
 
         // Create job object
         const job = {

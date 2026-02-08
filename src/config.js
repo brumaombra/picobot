@@ -65,7 +65,7 @@ export const SUBAGENT_MODEL_TIERS = {
 export const AGENT_TYPES = {
     general: {
         tools: ['general'],
-        description: 'Core tools (filesystem, shell, web, messaging) - use for most tasks',
+        description: 'Core tools (filesystem, shell, web) - use for most tasks',
         promptFilename: 'SUBAGENT_GENERAL.md'
     },
     email: {
