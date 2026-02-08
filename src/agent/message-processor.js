@@ -41,11 +41,19 @@ export class MessageProcessor {
             // Get tool definitions for the LLM
             const toolDefs = getToolsDefinitions(this.tools);
 
-            // Run the conversation loop
-            const result = await this.conversation.run(message.sessionKey, toolDefs, context);
+            // Run the conversation loop with callback for intermediate messages
+            const result = await this.conversation.run(message.sessionKey, toolDefs, context, content => {
+                // Send intermediate messages immediately as they arrive
+                sendOutbound({
+                    channel: message.channel,
+                    chatId: message.chatId,
+                    content
+                });
+            });
 
-            // Send response if available
+            // Check if we have a final response to send back
             if (result.response) {
+                // Send final response back to user
                 sendOutbound({
                     channel: message.channel,
                     chatId: message.chatId,

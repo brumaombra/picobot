@@ -30,6 +30,16 @@
                 "start"
             ],
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Nuke",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/cli/cli.js",
+            "args": [
+                "nuke"
+            ],
+            "console": "integratedTerminal"
         }
     ]
 }

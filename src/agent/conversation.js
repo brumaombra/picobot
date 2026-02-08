@@ -19,7 +19,7 @@ export class ConversationManager {
     }
 
     // Run a conversation loop with the LLM
-    async run(sessionKey, tools, context) {
+    async run(sessionKey, tools, context, onIntermediateMessage) {
         let iteration = 0;
         let finalResponse = null;
 
@@ -35,27 +35,21 @@ export class ConversationManager {
             // Call the LLM
             const result = await this.llm.chat(messages, tools, this.model);
 
-            // Handle response with content
-            if (result.content) {
-                // Add assistant message to history
-                addMessageToSession(sessionKey, {
-                    role: 'assistant',
-                    content: result.content,
-                    tool_calls: result.tool_calls.length > 0 ? result.tool_calls : undefined
-                });
+            // Add assistant message to history
+            addMessageToSession(sessionKey, {
+                role: 'assistant',
+                content: result.content || '',
+                tool_calls: result.tool_calls.length > 0 ? result.tool_calls : undefined
+            });
 
-                // If no tool calls, we're done
-                if (result.tool_calls.length === 0) {
-                    finalResponse = result.content;
-                    break;
+            // Handle different response types
+            if (result.content && result.tool_calls.length === 0) { // Content only - final response
+                finalResponse = result.content;
+                break;
+            } else if (result.content && result.tool_calls.length > 0) { // Content with tool calls - send intermediate message
+                if (onIntermediateMessage) {
+                    onIntermediateMessage(result.content);
                 }
-            } else if (result.tool_calls.length > 0) {
-                // Add assistant message with tool calls only
-                addMessageToSession(sessionKey, {
-                    role: 'assistant',
-                    content: '',
-                    tool_calls: result.tool_calls
-                });
             }
 
             // Execute tool calls if present

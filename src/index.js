@@ -3,6 +3,7 @@ import { Agent } from './agent/agent.js';
 import { initTelegram, startTelegram, stopTelegram } from './channel/telegram.js';
 import { initLogger, logger } from './utils/logger.js';
 import { initSessionManager } from './session/manager.js';
+import { initializeJobManager } from './jobs/manager.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google-client.js';
 
@@ -27,6 +28,9 @@ export const startBot = async () => {
 
     // Initialize session manager (load sessions from disk)
     initSessionManager();
+
+    // Initialize job manager (load and schedule cron jobs from disk)
+    initializeJobManager();
 
     // Get config
     const config = getConfig();
