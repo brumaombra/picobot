@@ -5,6 +5,7 @@ import { SUBAGENT_MODEL_TIERS, AGENT_TYPES } from '../../config.js';
 import { getAgentTypeParameterPrompt, getModelTierParameterPrompt } from '../../agent/prompts.js';
 import { getToolsDefinitions } from '../tools.js';
 import { getOrCreateSession, addMessageToSession } from '../../session/manager.js';
+import { getPromptContent } from '../../agent/prompts.js';
 
 // Subagent tool
 export const subagentTool = {
@@ -67,10 +68,14 @@ export const subagentTool = {
             // Initialize subagent session with specialized system prompt
             const session = getOrCreateSession(subagentId);
             if (session.messages.length === 0) {
-                const agentTypePrompt = AGENT_TYPES[agent_type].systemPrompt || AGENT_TYPES.general.systemPrompt;
+                // Get system prompt content based on agent type
+                const promptFilename = AGENT_TYPES[agent_type]?.promptFilename || AGENT_TYPES.general.promptFilename;
+                const systemPrompt = getPromptContent(promptFilename);
+
+                // Add system prompt to subagent session
                 addMessageToSession(subagentId, {
                     role: 'system',
-                    content: agentTypePrompt
+                    content: systemPrompt
                 });
             }
 

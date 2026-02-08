@@ -15,10 +15,6 @@ export const SESSIONS_DIR = join(CONFIG_DIR, 'sessions');
 export const LOGS_DIR = join(CONFIG_DIR, 'logs');
 export const DEFAULT_WORKSPACE_PATH = '~/.picobot/workspace';
 
-/**************** Prompt files *****************/
-export const AGENTS_PATH = join(PROMPTS_DIR, 'AGENTS.md');
-export const SOUL_PATH = join(PROMPTS_DIR, 'SOUL.md');
-
 /**************** Agent *****************/
 export const MAX_AGENT_ITERATIONS = 15;
 export const QUEUE_POLL_TIMEOUT_MS = 1000;
@@ -69,46 +65,22 @@ export const AGENT_TYPES = {
     general: {
         tools: ['general'],
         description: 'Core tools (filesystem, shell, web, messaging) - use for most tasks',
-        systemPrompt: `You are a specialized subagent tasked with executing a specific request from the main agent.
-
-Your role:
-- Execute the assigned task autonomously using available tools
-- Be thorough and accurate in your work
-- Return clear, complete results to the main agent
-- You cannot communicate directly with the user - only return results to the parent agent`
+        promptFilename: 'SUBAGENT_GENERAL.md'
     },
     email: {
         tools: ['general', 'gmail'],
         description: 'Gmail specialist - search/read/send/label emails',
-        systemPrompt: `You are a specialized Gmail subagent tasked with handling email operations.
-
-Your role:
-- Execute email-related tasks (search, read, send, label, organize)
-- Be thorough and accurate with email operations
-- Return clear, complete results to the main agent
-- You cannot communicate directly with the user - only return results to the parent agent`
+        promptFilename: 'SUBAGENT_EMAIL.md'
     },
     calendar: {
         tools: ['general', 'calendar'],
         description: 'Google Calendar specialist - list/create/update/delete events',
-        systemPrompt: `You are a specialized Google Calendar subagent tasked with handling calendar operations.
-
-Your role:
-- Execute calendar-related tasks (list, create, update, delete events)
-- Be thorough and accurate with scheduling operations
-- Return clear, complete results to the main agent
-- You cannot communicate directly with the user - only return results to the parent agent`
+        promptFilename: 'SUBAGENT_CALENDAR.md'
     },
     drive: {
         tools: ['general', 'drive'],
         description: 'Google Drive specialist - manage files and sharing',
-        systemPrompt: `You are a specialized Google Drive subagent tasked with handling file operations.
-
-Your role:
-- Execute Drive-related tasks (list, read, create, update, delete, share files)
-- Be thorough and accurate with file operations
-- Return clear, complete results to the main agent
-- You cannot communicate directly with the user - only return results to the parent agent`
+        promptFilename: 'SUBAGENT_DRIVE.md'
     }
 };
 

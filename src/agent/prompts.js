@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
+import { join } from 'path';
 import { logger } from '../utils/logger.js';
-import { PROMPTS_DIR, AGENTS_PATH, SOUL_PATH } from '../config.js';
+import { PROMPTS_DIR } from '../config.js';
 import { getFormattedAgentTypesList, getFormattedModelTiersList } from '../utils/utils.js';
 
 // Build the system prompt
@@ -8,7 +9,7 @@ export const buildSystemPrompt = () => {
     const prompts = [];
 
     // Load AGENTS.md
-    const agentsPrompt = getAgentsPrompt();
+    const agentsPrompt = getPromptContent('AGENTS.md');
     if (!agentsPrompt) {
         throw new Error(`AGENTS.md is required in prompts directory: ${PROMPTS_DIR}`);
     } else {
@@ -16,47 +17,37 @@ export const buildSystemPrompt = () => {
     }
 
     // Load SOUL.md
-    const soulPrompt = getSoulPrompt();
+    const soulPrompt = getPromptContent('SOUL.md');
     if (soulPrompt) {
         prompts.push(soulPrompt);
+    }
+
+    // Load USER.md
+    const userPrompt = getPromptContent('USER.md');
+    if (userPrompt) {
+        prompts.push(userPrompt);
     }
 
     // Return the combined prompt
     return prompts.join('\n\n');
 };
 
-// Get the AGENTS.md prompt content
-export const getAgentsPrompt = () => {
-    // Check if AGENTS.md exists
-    if (!existsSync(AGENTS_PATH)) {
-        logger.debug('AGENTS.md not found, skipping');
+// Get prompt content from prompts directory by filename
+export const getPromptContent = filename => {
+    const filePath = join(PROMPTS_DIR, filename);
+
+    // Check if file exists
+    if (!existsSync(filePath)) {
+        logger.debug(`${filename} not found in prompts directory, skipping`);
         return '';
     }
 
     try {
-        const agentsContent = readFileSync(AGENTS_PATH, 'utf-8');
-        logger.debug('Loaded AGENTS.md');
-        return agentsContent;
+        const content = readFileSync(filePath, 'utf-8');
+        logger.debug(`Loaded ${filename}`);
+        return content;
     } catch (error) {
-        logger.warn(`Failed to load AGENTS.md: ${error}`);
-        return '';
-    }
-};
-
-// Get the SOUL.md prompt content
-export const getSoulPrompt = () => {
-    // Check if SOUL.md exists
-    if (!existsSync(SOUL_PATH)) {
-        logger.debug('SOUL.md not found, skipping');
-        return '';
-    }
-
-    try {
-        const soulContent = readFileSync(SOUL_PATH, 'utf-8');
-        logger.debug('Loaded SOUL.md');
-        return soulContent;
-    } catch (error) {
-        logger.warn(`Failed to load SOUL.md: ${error}`);
+        logger.warn(`Failed to load ${filename}: ${error}`);
         return '';
     }
 };

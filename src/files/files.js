@@ -1,161 +1,63 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPTS_DIR, SESSIONS_DIR, LOGS_DIR, AGENTS_PATH, SOUL_PATH } from '../config.js';
+import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPTS_DIR, SESSIONS_DIR, LOGS_DIR } from '../config.js';
 import { success, warning, error, newline } from '../utils/print.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Check if the config files and directories exist
+// Configuration files and directories to check and create
+const CONFIG_ITEMS = [
+    { path: CONFIG_DIR, type: 'directory', name: 'Config directory' },
+    { path: WORKSPACE_DIR, type: 'directory', name: 'Workspace directory' },
+    { path: PROMPTS_DIR, type: 'directory', name: 'Prompts directory' },
+    { path: SESSIONS_DIR, type: 'directory', name: 'Sessions directory' },
+    { path: LOGS_DIR, type: 'directory', name: 'Logs directory' },
+    { path: join(PROMPTS_DIR, 'AGENTS.md'), type: 'file', name: 'AGENTS.md', source: join(__dirname, 'examples/AGENTS.md') },
+    { path: join(PROMPTS_DIR, 'SOUL.md'), type: 'file', name: 'SOUL.md', source: join(__dirname, 'examples/SOUL.md') },
+    { path: join(PROMPTS_DIR, 'USER.md'), type: 'file', name: 'USER.md', source: join(__dirname, 'examples/USER.md') },
+    { path: join(PROMPTS_DIR, 'SUBAGENT_GENERAL.md'), type: 'file', name: 'SUBAGENT_GENERAL.md', source: join(__dirname, 'examples/SUBAGENT_GENERAL.md') },
+    { path: join(PROMPTS_DIR, 'SUBAGENT_EMAIL.md'), type: 'file', name: 'SUBAGENT_EMAIL.md', source: join(__dirname, 'examples/SUBAGENT_EMAIL.md') },
+    { path: join(PROMPTS_DIR, 'SUBAGENT_CALENDAR.md'), type: 'file', name: 'SUBAGENT_CALENDAR.md', source: join(__dirname, 'examples/SUBAGENT_CALENDAR.md') },
+    { path: join(PROMPTS_DIR, 'SUBAGENT_DRIVE.md'), type: 'file', name: 'SUBAGENT_DRIVE.md', source: join(__dirname, 'examples/SUBAGENT_DRIVE.md') },
+    { path: CONFIG_PATH, type: 'file', name: 'Config file', source: join(__dirname, 'examples/config.json') }
+];
+
+// Check if all required config files and directories exist
 export const checkIfConfigFilesExist = () => {
-    // Check existence
-    const configDirExists = existsSync(CONFIG_DIR);
-    const workspaceDirExists = existsSync(WORKSPACE_DIR);
-    const promptDirExists = existsSync(PROMPTS_DIR);
-    const sessionsDirExists = existsSync(SESSIONS_DIR);
-    const logsDirExists = existsSync(LOGS_DIR);
-    const agentsExists = existsSync(AGENTS_PATH);
-    const soulExists = existsSync(SOUL_PATH);
-    const configExists = existsSync(CONFIG_PATH);
+    // Check each config item and log results
+    const missing = CONFIG_ITEMS.filter(item => {
+        const exists = existsSync(item.path);
+        exists ? success(`${item.name} exists (${item.path})`) : error(`${item.name} does not exist (${item.path})`);
+        return !exists;
+    });
 
-    // Check if the config directory exists
-    if (configDirExists) {
-        success(`Config directory exists (${CONFIG_DIR})`);
-    } else {
-        error(`Config directory does not exist (${CONFIG_DIR})`);
-    }
-
-    // Check if the workspace directory exists
-    if (workspaceDirExists) {
-        success(`Workspace directory exists (${WORKSPACE_DIR})`);
-    } else {
-        error(`Workspace directory does not exist (${WORKSPACE_DIR})`);
-    }
-
-    // Check if the prompts directory exists
-    if (promptDirExists) {
-        success(`Prompts directory exists (${PROMPTS_DIR})`);
-    } else {
-        error(`Prompts directory does not exist (${PROMPTS_DIR})`);
-    }
-
-    // Check if the sessions directory exists
-    if (sessionsDirExists) {
-        success(`Sessions directory exists (${SESSIONS_DIR})`);
-    } else {
-        error(`Sessions directory does not exist (${SESSIONS_DIR})`);
-    }
-
-    // Check if the logs directory exists
-    if (logsDirExists) {
-        success(`Logs directory exists (${LOGS_DIR})`);
-    } else {
-        error(`Logs directory does not exist (${LOGS_DIR})`);
-    }
-
-    // Check if AGENTS.md exists
-    if (agentsExists) {
-        success(`AGENTS.md exists (${AGENTS_PATH})`);
-    } else {
-        error(`AGENTS.md does not exist (${AGENTS_PATH})`);
-    }
-
-    // Check if SOUL.md exists
-    if (soulExists) {
-        success(`SOUL.md exists (${SOUL_PATH})`);
-    } else {
-        error(`SOUL.md does not exist (${SOUL_PATH})`);
-    }
-
-    // Check if config file exists
-    if (configExists) {
-        success(`Config file exists (${CONFIG_PATH})`);
-    } else {
-        error(`Config file does not exist (${CONFIG_PATH})`);
-    }
-
-    // If any are missing, tell the user to run onboard
-    const allExist = configDirExists && workspaceDirExists && promptDirExists && sessionsDirExists && logsDirExists && agentsExists && soulExists && configExists;
-    if (!allExist) {
+    // If any are missing, log a warning
+    if (missing.length > 0) {
         newline();
         warning('One or more configuration files or directories are missing. Please run `picobot onboard` to set up Picobot.');
-    };
+    }
 
-    // Add a blank line for readability
+    // Return true if all exist, false if any are missing
     newline();
-
-    // Return the result
-    return allExist;
+    return missing.length === 0;
 };
 
-// Create necessary configuration files and directories
+// Create missing config files and directories with default content
 export const createConfigFiles = () => {
-    // Create config directory
-    if (!existsSync(CONFIG_DIR)) {
-        mkdirSync(CONFIG_DIR, { recursive: true });
-        success(`Created config directory (${CONFIG_DIR})`);
-    } else {
-        success(`Config directory already exists (${CONFIG_DIR})`);
-    }
+    CONFIG_ITEMS.forEach(item => {
+        // Check if item already exists
+        const exists = existsSync(item.path);
 
-    // Create workspace directory
-    if (!existsSync(WORKSPACE_DIR)) {
-        mkdirSync(WORKSPACE_DIR, { recursive: true });
-        success(`Created workspace directory (${WORKSPACE_DIR})`);
-    } else {
-        success(`Workspace directory already exists (${WORKSPACE_DIR})`);
-    }
+        // Create directories or files
+        if (item.type === 'directory') {
+            if (!exists) mkdirSync(item.path, { recursive: true });
+        } else if (item.source && !exists) {
+            writeFileSync(item.path, readFileSync(item.source, 'utf-8'));
+        }
 
-    // Create prompts directory
-    if (!existsSync(PROMPTS_DIR)) {
-        mkdirSync(PROMPTS_DIR, { recursive: true });
-        success(`Created prompts directory (${PROMPTS_DIR})`);
-    } else {
-        success(`Prompts directory already exists (${PROMPTS_DIR})`);
-    }
-
-    // Create sessions directory
-    if (!existsSync(SESSIONS_DIR)) {
-        mkdirSync(SESSIONS_DIR, { recursive: true });
-        success(`Created sessions directory (${SESSIONS_DIR})`);
-    } else {
-        success(`Sessions directory already exists (${SESSIONS_DIR})`);
-    }
-
-    // Create logs directory
-    if (!existsSync(LOGS_DIR)) {
-        mkdirSync(LOGS_DIR, { recursive: true });
-        success(`Created logs directory (${LOGS_DIR})`);
-    } else {
-        success(`Logs directory already exists (${LOGS_DIR})`);
-    }
-
-    // Create AGENTS.md if it doesn't exist
-    if (!existsSync(AGENTS_PATH)) {
-        const agentsContent = readFileSync(join(__dirname, 'examples/AGENTS.md'), 'utf-8');
-        writeFileSync(AGENTS_PATH, agentsContent);
-        success(`Created AGENTS.md (${AGENTS_PATH})`);
-    } else {
-        success(`AGENTS.md already exists (${AGENTS_PATH})`);
-    }
-
-    // Create SOUL.md if it doesn't exist
-    if (!existsSync(SOUL_PATH)) {
-        const soulContent = readFileSync(join(__dirname, 'examples/SOUL.md'), 'utf-8');
-        writeFileSync(SOUL_PATH, soulContent);
-        success(`Created SOUL.md (${SOUL_PATH})`);
-    } else {
-        success(`SOUL.md already exists (${SOUL_PATH})`);
-    }
-
-    // Create config file if it doesn't exist
-    if (!existsSync(CONFIG_PATH)) {
-        const configContent = readFileSync(join(__dirname, 'examples/config.json'), 'utf-8');
-        const config = JSON.parse(configContent);
-        writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
-        success(`Created config file (${CONFIG_PATH})`);
-    } else {
-        success(`Config file already exists (${CONFIG_PATH})`);
-    }
+        // Log results
+        success(exists ? `${item.name} already exists (${item.path})` : `Created ${item.name} (${item.path})`);
+    });
 };
