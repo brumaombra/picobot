@@ -1,6 +1,6 @@
 import { getOrCreateSession, addMessageToSession } from '../session/manager.js';
 import { getToolsDefinitions } from '../tools/tools.js';
-import { buildSystemPrompt } from './context.js';
+import { buildSystemPrompt } from './prompts.js';
 import { logger } from '../utils/logger.js';
 import { sendOutbound } from '../bus/message-bus.js';
 
