@@ -236,22 +236,28 @@ export const gmailSendTool = {
             // Get Gmail client
             const gmail = await getGmailClient();
 
-            // Build email message in MIME format (always plain text)
-            const utf8Subject = `=?utf-8?B?${Buffer.from(subject).toString('base64')}?=`;
-            const messageParts = [
-                `To: ${to}`,
-                cc ? `Cc: ${cc}` : '',
-                bcc ? `Bcc: ${bcc}` : '',
-                `Subject: ${utf8Subject}`,
-                `MIME-Version: 1.0`,
-                `Content-Type: text/plain; charset=utf-8`,
-                '',
-                body
-            ];
+            // Normalize body line endings (important for RFC compliance)
+            const safeBody = (body || '').replace(/\r?\n/g, '\r\n');
 
-            // Join message parts and encode in base64url format
-            const message = messageParts.filter(p => p).join('\r\n');
-            const encodedMessage = Buffer.from(message)
+            // Build headers
+            const headers = [
+                `From: me`,
+                `To: ${to}`,
+                cc ? `Cc: ${cc}` : null,
+                bcc ? `Bcc: ${bcc}` : null,
+                `Subject: ${subject}`,
+                `MIME-Version: 1.0`,
+                `Content-Type: text/plain; charset=UTF-8`
+            ].filter(Boolean);
+
+            // Build full raw message (CRITICAL: blank line between headers and body)
+            const rawMessage =
+                headers.join('\r\n') +
+                '\r\n\r\n' +
+                safeBody;
+
+            // Encode to base64url (Gmail API requirement)
+            const encodedMessage = Buffer.from(rawMessage, 'utf-8')
                 .toString('base64')
                 .replace(/\+/g, '-')
                 .replace(/\//g, '_')

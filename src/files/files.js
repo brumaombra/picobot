@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPT_DIR, SESSIONS_DIR, LOGS_DIR, AGENTS_PATH, SOUL_PATH } from '../config.js';
+import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPTS_DIR, SESSIONS_DIR, LOGS_DIR, AGENTS_PATH, SOUL_PATH } from '../config.js';
 import { success, warning, error, newline } from '../utils/print.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -12,7 +12,7 @@ export const checkIfConfigFilesExist = () => {
     // Check existence
     const configDirExists = existsSync(CONFIG_DIR);
     const workspaceDirExists = existsSync(WORKSPACE_DIR);
-    const promptDirExists = existsSync(PROMPT_DIR);
+    const promptDirExists = existsSync(PROMPTS_DIR);
     const sessionsDirExists = existsSync(SESSIONS_DIR);
     const logsDirExists = existsSync(LOGS_DIR);
     const agentsExists = existsSync(AGENTS_PATH);
@@ -33,11 +33,11 @@ export const checkIfConfigFilesExist = () => {
         error(`Workspace directory does not exist (${WORKSPACE_DIR})`);
     }
 
-    // Check if the prompt directory exists
+    // Check if the prompts directory exists
     if (promptDirExists) {
-        success(`Prompt directory exists (${PROMPT_DIR})`);
+        success(`Prompts directory exists (${PROMPTS_DIR})`);
     } else {
-        error(`Prompt directory does not exist (${PROMPT_DIR})`);
+        error(`Prompts directory does not exist (${PROMPTS_DIR})`);
     }
 
     // Check if the sessions directory exists
@@ -107,12 +107,12 @@ export const createConfigFiles = () => {
         success(`Workspace directory already exists (${WORKSPACE_DIR})`);
     }
 
-    // Create prompt directory
-    if (!existsSync(PROMPT_DIR)) {
-        mkdirSync(PROMPT_DIR, { recursive: true });
-        success(`Created prompt directory (${PROMPT_DIR})`);
+    // Create prompts directory
+    if (!existsSync(PROMPTS_DIR)) {
+        mkdirSync(PROMPTS_DIR, { recursive: true });
+        success(`Created prompts directory (${PROMPTS_DIR})`);
     } else {
-        success(`Prompt directory already exists (${PROMPT_DIR})`);
+        success(`Prompts directory already exists (${PROMPTS_DIR})`);
     }
 
     // Create sessions directory

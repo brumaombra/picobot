@@ -41,7 +41,10 @@ export const startBot = async () => {
         llm,
         model: config.agent?.model,
         workspacePath: config.workspace,
-        config: config.agent
+        config: config.agent,
+        tools: {
+            categories: ['general'] // Main agent only uses general toolset
+        }
     });
 
     // Initialize Telegram channel

@@ -1,14 +1,16 @@
-import { Agent } from '../../agent/agent.js';
+import { ConversationManager } from '../../agent/conversation.js';
 import { generateUniqueId } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { SUBAGENT_MODEL_TIERS, AGENT_TYPES } from '../../config.js';
 import { getAgentTypeParameterPrompt, getModelTierParameterPrompt } from '../../agent/prompts.js';
+import { getToolsDefinitions } from '../tools.js';
+import { getOrCreateSession, addMessageToSession } from '../../session/manager.js';
 
 // Subagent tool
 export const subagentTool = {
     // Tool definition
     name: 'subagent',
-    description: 'Spawn specialized AI agent to handle task in parallel while you continue. Choose agent type based on task domain. Subagent reports results to user when done. Returns immediately.',
+    description: 'Delegate task to specialized AI subagent and wait for its completion. Subagent executes task autonomously with its own tools and returns results to you (not to user). Choose agent type based on task domain.',
     parameters: {
         type: 'object',
         properties: {
@@ -55,31 +57,77 @@ export const subagentTool = {
         const subagentId = generateUniqueId('subagent');
         logger.info(`Spawning ${agent_type} subagent [${subagentId}]: ${label} (model: ${selectedModel}, categories: ${toolCategories.join(', ')})`);
 
-        // Create a new agent instance with the selected model tier and specialized tools
-        const subagent = new Agent({
-            llm: context.llm,
-            model: selectedModel,
-            workspacePath: context.workingDir,
-            config: context.config,
-            tools: {
-                categories: toolCategories, // Pass specific tool categories based on agent type
-                denied: ['subagent'] // Deny the subagent tool to prevent recursive spawning
+        try {
+            // Create conversation manager for subagent (The conversation manager handles the main agent loop for the subagent)
+            const conversation = new ConversationManager({
+                llm: context.llm,
+                model: selectedModel
+            });
+
+            // Initialize subagent session with specialized system prompt
+            const session = getOrCreateSession(subagentId);
+            if (session.messages.length === 0) {
+                const agentTypePrompt = AGENT_TYPES[agent_type].systemPrompt || AGENT_TYPES.general.systemPrompt;
+                addMessageToSession(subagentId, {
+                    role: 'system',
+                    content: agentTypePrompt
+                });
             }
-        });
 
-        // Fire and forget the subagent - it will run independently and report back when done
-        subagent.messageProcessor.process({
-            channel: context.channel,
-            chatId: context.chatId,
-            senderId: subagentId,
-            sessionKey: subagentId,
-            content: task
-        });
+            // Add user task to subagent session
+            addMessageToSession(subagentId, {
+                role: 'user',
+                content: task
+            });
 
-        // Return success response immediately
-        return {
-            success: true,
-            output: `${agent_type.charAt(0).toUpperCase() + agent_type.slice(1)} subagent spawned: "${label}". It will run in the background and report back when done.`
-        };
+            // Get tool definitions for subagent
+            const toolDefinitions = getToolsDefinitions({
+                categories: toolCategories,
+                denied: ['subagent', 'message'] // Prevent recursive spawning and direct user messaging
+            });
+
+            // Build execution context for subagent
+            const subagentContext = {
+                workingDir: context.workingDir,
+                channel: context.channel,
+                chatId: context.chatId,
+                llm: context.llm,
+                config: context.config
+            };
+
+            // Run subagent conversation and await its completion
+            const result = await conversation.run(subagentId, toolDefinitions, subagentContext);
+
+            // Log completion
+            logger.info(`Subagent [${subagentId}] completed: ${label}`);
+
+            // Return subagent's final response to parent agent
+            if (result.response) {
+                return {
+                    success: true,
+                    output: result.response
+                };
+            } else if (result.reachedMaxIterations) {
+                return {
+                    success: false,
+                    output: '',
+                    error: 'Subagent reached maximum iterations without completing task'
+                };
+            } else {
+                return {
+                    success: false,
+                    output: '',
+                    error: 'Subagent completed without producing a response'
+                };
+            }
+        } catch (error) {
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            logger.error(`Subagent [${subagentId}] error: ${errorMessage}`);
+            return {
+                success: false,
+                output: '',
+                error: `Subagent failed: ${errorMessage}`
+            };
+        }
     }
 };

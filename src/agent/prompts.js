@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'fs';
 import { logger } from '../utils/logger.js';
-import { PROMPT_DIR, AGENTS_PATH, SOUL_PATH } from '../config.js';
+import { PROMPTS_DIR, AGENTS_PATH, SOUL_PATH } from '../config.js';
 import { getFormattedAgentTypesList, getFormattedModelTiersList } from '../utils/utils.js';
 
 // Build the system prompt
@@ -10,7 +10,7 @@ export const buildSystemPrompt = () => {
     // Load AGENTS.md
     const agentsPrompt = getAgentsPrompt();
     if (!agentsPrompt) {
-        throw new Error(`AGENTS.md is required in prompt directory: ${PROMPT_DIR}`);
+        throw new Error(`AGENTS.md is required in prompts directory: ${PROMPTS_DIR}`);
     } else {
         prompts.push(agentsPrompt);
     }
