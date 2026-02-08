@@ -7,10 +7,7 @@
         "apiKey": ""
     },
     "agent": {
-        "model": "",
-        "loadAgentProfile": true,
-        "loadUserProfile": true
+        "model": ""
     },
-    "workspace": "~/.picobot/workspace",
-    "logLevel": "info"
+    "workspace": "~/.picobot/workspace"
 }

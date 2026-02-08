@@ -1,5 +1,4 @@
 import winston from 'winston';
-import { getConfigValue } from '../config/config.js';
 import { DEFAULT_LOG_LEVEL, LOG_TIMESTAMP_FORMAT, LOG_FILENAME, LOG_MAX_SIZE, ERROR_LOG_FILENAME, ERROR_LOG_MAX_SIZE } from '../config.js';
 
 // Destructure format components
@@ -16,8 +15,8 @@ let loggerInstance = null;
 
 // Initialize the logger with specified level
 export const initLogger = () => {
-    // Get log level from config
-    const level = getConfigValue('logLevel') || DEFAULT_LOG_LEVEL;
+    // Use default log level
+    const level = DEFAULT_LOG_LEVEL;
 
     // Create the logger instance
     loggerInstance = winston.createLogger({

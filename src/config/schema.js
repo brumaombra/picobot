@@ -1,5 +1,5 @@
 import { z } from 'zod';
-import { OPENROUTER_MODELS, DEFAULT_WORKSPACE_PATH, DEFAULT_LOG_LEVEL, LOG_LEVELS } from '../config.js';
+import { OPENROUTER_MODELS, DEFAULT_WORKSPACE_PATH } from '../config.js';
 
 // Telegram configuration
 export const TelegramConfigSchema = z.object({
@@ -14,9 +14,7 @@ export const OpenRouterConfigSchema = z.object({
 
 // Agent configuration
 export const AgentConfigSchema = z.object({
-    model: z.enum(OPENROUTER_MODELS).default(OPENROUTER_MODELS[0]),
-    loadAgentProfile: z.boolean().default(true),
-    loadUserProfile: z.boolean().default(true)
+    model: z.enum(OPENROUTER_MODELS).default(OPENROUTER_MODELS[0])
 });
 
 // Root configuration
@@ -24,6 +22,5 @@ export const ConfigSchema = z.object({
     telegram: TelegramConfigSchema,
     openRouter: OpenRouterConfigSchema,
     agent: AgentConfigSchema.default({}),
-    workspace: z.string().default(DEFAULT_WORKSPACE_PATH),
-    logLevel: z.enum(LOG_LEVELS).default(DEFAULT_LOG_LEVEL)
+    workspace: z.string().default(DEFAULT_WORKSPACE_PATH)
 });

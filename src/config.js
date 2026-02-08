@@ -18,7 +18,6 @@ export const DEFAULT_WORKSPACE_PATH = '~/.picobot/workspace';
 /**************** Prompt files *****************/
 export const AGENTS_PATH = join(PROMPT_DIR, 'AGENTS.md');
 export const SOUL_PATH = join(PROMPT_DIR, 'SOUL.md');
-export const USER_PATH = join(PROMPT_DIR, 'USER.md');
 
 /**************** Agent *****************/
 export const MAX_AGENT_ITERATIONS = 15;

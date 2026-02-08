@@ -84,10 +84,7 @@ export class MessageProcessor {
         // Add system prompt if this is a new session
         if (session.messages.length === 0) {
             // Create the system prompt
-            const systemPrompt = buildSystemPrompt({
-                loadAgentProfile: this.config?.loadAgentProfile,
-                loadUserProfile: this.config?.loadUserProfile
-            });
+            const systemPrompt = buildSystemPrompt();
 
             // Add system prompt to session
             addMessageToSession(sessionKey, {

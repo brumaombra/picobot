@@ -93,18 +93,6 @@ export const registerOnboardCommand = ({ program }) => {
 					success('No allowed users set (bot will be open to all users)');
 				}
 
-				/************** Prompt for agent profile loading **************/
-
-				const loadAgentProfileInput = await question('\nLoad SOUL.md personality profile? (Y/n): ');
-				config.agent.loadAgentProfile = !loadAgentProfileInput.trim().toLowerCase().startsWith('n');
-				success(`Load agent profile: ${config.agent.loadAgentProfile}`);
-
-				/************** Prompt for user profile loading **************/
-
-				const loadUserProfileInput = await question('\nLoad USER.md user profile? (Y/n): ');
-				config.agent.loadUserProfile = !loadUserProfileInput.trim().toLowerCase().startsWith('n');
-				success(`Load user profile: ${config.agent.loadUserProfile}`);
-
 				/******************************** Prompt section - End ********************************/
 
 				// Save the updated config

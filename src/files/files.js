@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPT_DIR, SESSIONS_DIR, LOGS_DIR, AGENTS_PATH, SOUL_PATH, USER_PATH } from '../config.js';
+import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPT_DIR, SESSIONS_DIR, LOGS_DIR, AGENTS_PATH, SOUL_PATH } from '../config.js';
 import { success, warning, error, newline } from '../utils/print.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -17,7 +17,6 @@ export const checkIfConfigFilesExist = () => {
     const logsDirExists = existsSync(LOGS_DIR);
     const agentsExists = existsSync(AGENTS_PATH);
     const soulExists = existsSync(SOUL_PATH);
-    const userExists = existsSync(USER_PATH);
     const configExists = existsSync(CONFIG_PATH);
 
     // Check if the config directory exists
@@ -69,13 +68,6 @@ export const checkIfConfigFilesExist = () => {
         error(`SOUL.md does not exist (${SOUL_PATH})`);
     }
 
-    // Check if USER.md exists
-    if (userExists) {
-        success(`USER.md exists (${USER_PATH})`);
-    } else {
-        error(`USER.md does not exist (${USER_PATH})`);
-    }
-
     // Check if config file exists
     if (configExists) {
         success(`Config file exists (${CONFIG_PATH})`);
@@ -84,7 +76,7 @@ export const checkIfConfigFilesExist = () => {
     }
 
     // If any are missing, tell the user to run onboard
-    const allExist = configDirExists && workspaceDirExists && promptDirExists && sessionsDirExists && logsDirExists && agentsExists && soulExists && userExists && configExists;
+    const allExist = configDirExists && workspaceDirExists && promptDirExists && sessionsDirExists && logsDirExists && agentsExists && soulExists && configExists;
     if (!allExist) {
         newline();
         warning('One or more configuration files or directories are missing. Please run `picobot onboard` to set up Picobot.');
@@ -155,15 +147,6 @@ export const createConfigFiles = () => {
         success(`Created SOUL.md (${SOUL_PATH})`);
     } else {
         success(`SOUL.md already exists (${SOUL_PATH})`);
-    }
-
-    // Create USER.md if it doesn't exist
-    if (!existsSync(USER_PATH)) {
-        const userContent = readFileSync(join(__dirname, 'examples/USER.md'), 'utf-8');
-        writeFileSync(USER_PATH, userContent);
-        success(`Created USER.md (${USER_PATH})`);
-    } else {
-        success(`USER.md already exists (${USER_PATH})`);
     }
 
     // Create config file if it doesn't exist
