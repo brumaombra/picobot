@@ -1,0 +1,40 @@
+{
+    "name": "picobot",
+    "version": "1.0.0",
+    "description": "Ultra-lightweight AI agent with Telegram and OpenRouter integration",
+    "type": "module",
+    "main": "src/index.js",
+    "bin": {
+        "picobot": "./src/cli/cli.js"
+    },
+    "scripts": {
+        "start": "node src/index.js",
+        "cli": "node src/cli/cli.js",
+        "dev": "node --watch src/index.js"
+    },
+    "keywords": [
+        "ai",
+        "agent",
+        "telegram",
+        "bot",
+        "openrouter",
+        "chatbot",
+        "assistant"
+    ],
+    "author": "",
+    "license": "MIT",
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "dependencies": {
+        "@google-cloud/local-auth": "3.0.1",
+        "chalk": "5.6.2",
+        "commander": "14.0.3",
+        "eventemitter3": "5.0.4",
+        "googleapis": "171.4.0",
+        "openai": "6.18.0",
+        "telegraf": "4.16.3",
+        "winston": "3.19.0",
+        "zod": "4.3.6"
+    }
+}

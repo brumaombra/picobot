@@ -1,0 +1,16 @@
+{
+    "telegram": {
+        "token": "",
+        "allowedUsers": []
+    },
+    "openRouter": {
+        "apiKey": ""
+    },
+    "agent": {
+        "model": "",
+        "loadAgentProfile": true,
+        "loadUserProfile": true
+    },
+    "workspace": "~/.picobot/workspace",
+    "logLevel": "info"
+}

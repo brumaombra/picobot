@@ -1,0 +1,35 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Onboard",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/cli/cli.js",
+            "args": [
+                "onboard"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Status",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/cli/cli.js",
+            "args": [
+                "status"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
+            "name": "Start",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/cli/cli.js",
+            "args": [
+                "start"
+            ],
+            "console": "integratedTerminal"
+        }
+    ]
+}
