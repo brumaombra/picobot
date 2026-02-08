@@ -7,66 +7,42 @@ import { gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool } from '
 import { calendarListEventsTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool } from './toolbox/calendar.js';
 import { driveListFilesTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool } from './toolbox/drive.js';
 
-// Tool registry
-const tools = new Map([
-    // General tools
-    [readFileTool.name, readFileTool],
-    [writeFileTool.name, writeFileTool],
-    [listDirTool.name, listDirTool],
-    [shellTool.name, shellTool],
-    [webFetchTool.name, webFetchTool],
-    [messageTool.name, messageTool],
-    [subagentTool.name, subagentTool],
+// Tool categories for organized access
+const toolCategories = {
+    general: [readFileTool, writeFileTool, listDirTool, shellTool, webFetchTool, messageTool, subagentTool],
+    gmail: [gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool],
+    calendar: [calendarListEventsTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool],
+    drive: [driveListFilesTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool]
+};
 
-    // Gmail tools
-    [gmailSearchTool.name, gmailSearchTool],
-    [gmailReadTool.name, gmailReadTool],
-    [gmailSendTool.name, gmailSendTool],
-    [gmailLabelsTool.name, gmailLabelsTool],
-
-    // Calendar tools
-    [calendarListEventsTool.name, calendarListEventsTool],
-    [calendarCreateEventTool.name, calendarCreateEventTool],
-    [calendarUpdateEventTool.name, calendarUpdateEventTool],
-    [calendarDeleteEventTool.name, calendarDeleteEventTool],
-
-    // Drive tools
-    [driveListFilesTool.name, driveListFilesTool],
-    [driveReadFileTool.name, driveReadFileTool],
-    [driveCreateFileTool.name, driveCreateFileTool],
-    [driveUpdateFileTool.name, driveUpdateFileTool],
-    [driveDeleteFileTool.name, driveDeleteFileTool],
-    [driveShareFileTool.name, driveShareFileTool]
-]);
+// Flat list of all tools
+const allTools = Object.values(toolCategories).flat();
 
 // Get a tool by name
 export const getTool = name => {
-    return tools.get(name);
+    return allTools.find(tool => tool.name === name);
 };
 
-// Check if a tool exists
-export const hasTool = name => {
-    return tools.has(name);
-};
-
-// Get tool definitions for the LLM, optionally filtered by allowed/denied tool names
+// Get tool definitions for the LLM, optionally filtered by allowed/denied tool names or categories
 export const getToolsDefinitions = filter => {
-    let toolsToUse = Array.from(tools.values());
+    let toolsToUse;
 
-    // Apply filter if provided
-    if (filter) {
-        // If allowed list is specified, only include those tools
-        if (filter.allowed && Array.isArray(filter.allowed)) {
-            toolsToUse = filter.allowed.map(name => tools.get(name)).filter(Boolean);
-        }
-
-        // If denied list is specified, exclude those tools
-        if (filter.denied && Array.isArray(filter.denied)) {
-            toolsToUse = toolsToUse.filter(tool => !filter.denied.includes(tool.name));
-        }
+    // Determine base tool set (allowed > categories > all)
+    if (filter?.allowed?.length) {
+        toolsToUse = filter.allowed.map(name => getTool(name)).filter(Boolean);
+    } else if (filter?.categories?.length) {
+        toolsToUse = filter.categories.flatMap(cat => toolCategories[cat] || []);
+    } else {
+        toolsToUse = allTools;
     }
 
-    // Convert to LLM tool definition format
+    // Remove denied tools
+    if (filter?.denied?.length) {
+        const deniedSet = new Set(filter.denied);
+        toolsToUse = toolsToUse.filter(tool => !deniedSet.has(tool.name));
+    }
+
+    // Return tool definitions in the format expected by the LLM
     return toolsToUse.map(tool => ({
         type: 'function',
         function: {

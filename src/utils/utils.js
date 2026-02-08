@@ -1,6 +1,6 @@
 import { isAbsolute, relative, resolve, join } from 'path';
 import { homedir } from 'os';
-import { SHELL_BLOCKED_COMMANDS, SUBAGENT_MODEL_TIERS } from '../config.js';
+import { SHELL_BLOCKED_COMMANDS } from '../config.js';
 
 // Expand ~ in paths and resolve relative paths
 export const expandPath = path => {
@@ -173,11 +173,6 @@ export const checkShellCommand = ({ command, workDir }) => {
 // Generate a unique ID
 export const generateUniqueId = (prefix = 'msg') => {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
-};
-
-// Get available model tiers
-export const getModelTiers = () => {
-    return Object.keys(SUBAGENT_MODEL_TIERS);
 };
 
 // Split message into chunks

@@ -55,6 +55,14 @@ export const SUBAGENT_MODEL_TIERS = {
     performance: 'anthropic/claude-opus-4.5'
 };
 
+/**************** Agent Types *****************/
+export const AGENT_TYPES = {
+    general: ['general'], // Only core tools
+    email: ['general', 'gmail'], // Email specialist
+    calendar: ['general', 'calendar'], // Calendar specialist
+    drive: ['general', 'drive'] // Drive specialist
+};
+
 /**************** Telegram *****************/
 export const TELEGRAM_TYPING_INTERVAL_MS = 4000;
 export const TELEGRAM_MAX_MESSAGE_LENGTH = 4000;
