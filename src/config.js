@@ -50,17 +50,38 @@ export const OPENROUTER_MODELS = [
 
 /**************** Subagent Models *****************/
 export const SUBAGENT_MODEL_TIERS = {
-    standard: 'x-ai/grok-4.1-fast',
-    medium: 'anthropic/claude-sonnet-4.5',
-    performance: 'anthropic/claude-opus-4.5'
+    standard: {
+        model: 'x-ai/grok-4.1-fast',
+        description: 'Fast, cost-effective responses for simple tasks and quick answers'
+    },
+    medium: {
+        model: 'anthropic/claude-sonnet-4.5',
+        description: 'Balanced performance for most complex tasks requiring good reasoning'
+    },
+    performance: {
+        model: 'anthropic/claude-opus-4.5',
+        description: 'Highest quality responses for critical tasks needing maximum accuracy'
+    }
 };
 
 /**************** Agent Types *****************/
 export const AGENT_TYPES = {
-    general: ['general'], // Only core tools
-    email: ['general', 'gmail'], // Email specialist
-    calendar: ['general', 'calendar'], // Calendar specialist
-    drive: ['general', 'drive'] // Drive specialist
+    general: {
+        tools: ['general'],
+        description: 'Core tools (filesystem, shell, web, messaging) - use for most tasks'
+    },
+    email: {
+        tools: ['general', 'gmail'],
+        description: 'Gmail specialist - search/read/send/label emails'
+    },
+    calendar: {
+        tools: ['general', 'calendar'],
+        description: 'Google Calendar specialist - list/create/update/delete events'
+    },
+    drive: {
+        tools: ['general', 'drive'],
+        description: 'Google Drive specialist - manage files and sharing'
+    }
 };
 
 /**************** Telegram *****************/

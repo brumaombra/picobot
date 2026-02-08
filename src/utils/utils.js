@@ -1,6 +1,6 @@
 import { isAbsolute, relative, resolve, join } from 'path';
 import { homedir } from 'os';
-import { SHELL_BLOCKED_COMMANDS } from '../config.js';
+import { SHELL_BLOCKED_COMMANDS, AGENT_TYPES, SUBAGENT_MODEL_TIERS } from '../config.js';
 
 // Expand ~ in paths and resolve relative paths
 export const expandPath = path => {
@@ -222,4 +222,18 @@ export const splitMessageIntoChunks = (text, maxLength) => {
 
     // Return the array of chunks
     return chunks;
+};
+
+// Get formatted list of available agent types
+export const getFormattedAgentTypesList = () => {
+    return Object.entries(AGENT_TYPES)
+        .map(([type, config]) => `• **${type}**: ${config.description}`)
+        .join('\n');
+};
+
+// Get formatted list of available model tiers
+export const getFormattedModelTiersList = () => {
+    return Object.entries(SUBAGENT_MODEL_TIERS)
+        .map(([tier, config]) => `• **${tier}**: ${config.description}`)
+        .join('\n');
 };

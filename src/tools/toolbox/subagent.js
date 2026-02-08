@@ -2,6 +2,7 @@ import { Agent } from '../../agent/agent.js';
 import { generateUniqueId } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { SUBAGENT_MODEL_TIERS, AGENT_TYPES } from '../../config.js';
+import { getAgentTypeParameterPrompt, getModelTierParameterPrompt } from '../../agent/prompts.js';
 
 // Subagent tool
 export const subagentTool = {
@@ -22,12 +23,12 @@ export const subagentTool = {
             agent_type: {
                 type: 'string',
                 enum: Object.keys(AGENT_TYPES),
-                description: 'Specialization of the agent: "general" (core tools only), "email" (Gmail specialist), "calendar" (Google Calendar specialist), "drive" (Google Drive specialist). Choose based on task requirements.'
+                description: getAgentTypeParameterPrompt()
             },
             model_tier: {
                 type: 'string',
                 enum: Object.keys(SUBAGENT_MODEL_TIERS),
-                description: 'Model tier to use based on task complexity and desired performance.'
+                description: getModelTierParameterPrompt()
             }
         },
         required: ['task', 'label']
@@ -47,8 +48,8 @@ export const subagentTool = {
         }
 
         // Get model and tool categories from config
-        const selectedModel = SUBAGENT_MODEL_TIERS[model_tier];
-        const toolCategories = AGENT_TYPES[agent_type] || AGENT_TYPES.general;
+        const selectedModel = SUBAGENT_MODEL_TIERS[model_tier]?.model || SUBAGENT_MODEL_TIERS.standard.model;
+        const toolCategories = AGENT_TYPES[agent_type]?.tools || AGENT_TYPES.general.tools;
 
         // Generate a unique ID for the subagent session
         const subagentId = generateUniqueId('subagent');

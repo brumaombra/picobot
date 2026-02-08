@@ -1,6 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { logger } from '../utils/logger.js';
 import { PROMPT_DIR, AGENTS_PATH, SOUL_PATH } from '../config.js';
+import { getFormattedAgentTypesList, getFormattedModelTiersList } from '../utils/utils.js';
 
 // Build the system prompt
 export const buildSystemPrompt = () => {
@@ -58,4 +59,22 @@ export const getSoulPrompt = () => {
         logger.warn(`Failed to load SOUL.md: ${error}`);
         return '';
     }
+};
+
+// Get the agent type tool parameter guidance prompt
+export const getAgentTypeParameterPrompt = () => {
+    return `
+Choose agent type based on task domain:
+${getFormattedAgentTypesList()}
+
+Choose specialized agents when tasks are clearly scoped to that domain.`;
+};
+
+// Get the model tier tool parameter guidance prompt
+export const getModelTierParameterPrompt = () => {
+    return `
+Choose model tier based on task complexity and speed requirements:
+${getFormattedModelTiersList()}
+
+Use higher tiers for tasks requiring deep analysis, creativity, or precision.`;
 };
