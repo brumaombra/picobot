@@ -1,12 +1,12 @@
-import { readFileTool, writeFileTool, listDirTool } from './toolbox/filesystem.js';
-import { shellTool } from './toolbox/shell.js';
-import { webFetchTool } from './toolbox/web.js';
-import { cronTool } from './toolbox/cron.js';
-import { subagentTool } from './toolbox/subagent.js';
-import { routeToCategoryTool } from './toolbox/route.js';
-import { gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool } from './toolbox/gmail.js';
-import { calendarListEventsTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool } from './toolbox/calendar.js';
-import { driveListFilesTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool } from './toolbox/drive.js';
+import { readFileTool, writeFileTool, listDirTool } from './toolbox/general/filesystem.js';
+import { shellTool } from './toolbox/general/shell.js';
+import { webFetchTool } from './toolbox/general/web.js';
+import { cronTool } from './toolbox/general/cron.js';
+import { subagentTool } from './toolbox/general/subagent.js';
+import { routeToCategoryTool } from './toolbox/general/route.js';
+import { gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool } from './toolbox/gmail/gmail.js';
+import { calendarListEventsTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool } from './toolbox/calendar/calendar.js';
+import { driveListFilesTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool } from './toolbox/drive/drive.js';
 
 // Tool categories for organized access
 export const toolCategories = {
