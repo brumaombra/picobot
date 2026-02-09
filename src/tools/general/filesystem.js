@@ -31,7 +31,6 @@ export const readFileTool = {
             if (!existsSync(fullPath)) {
                 return {
                     success: false,
-                    output: '',
                     error: `File not found: ${path}`
                 };
             }
@@ -49,7 +48,6 @@ export const readFileTool = {
             const message = error instanceof Error ? error.message : String(error);
             return {
                 success: false,
-                output: '',
                 error: `Failed to read file: ${message}`
             };
         }
@@ -87,7 +85,6 @@ export const writeFileTool = {
         if (!checkPathForWrite({ fullPath, workDir })) {
             return {
                 success: false,
-                output: '',
                 error: `Access denied: You can only write to the workspace directory`
             };
         }
@@ -109,7 +106,6 @@ export const writeFileTool = {
             const message = error instanceof Error ? error.message : String(error);
             return {
                 success: false,
-                output: '',
                 error: `Failed to write file: ${message}`
             };
         }
@@ -143,7 +139,6 @@ export const listDirTool = {
             if (!existsSync(fullPath)) {
                 return {
                     success: false,
-                    output: '',
                     error: `Directory not found: ${path}`
                 };
             }
@@ -178,7 +173,6 @@ export const listDirTool = {
             const message = error instanceof Error ? error.message : String(error);
             return {
                 success: false,
-                output: '',
                 error: `Failed to list directory: ${message}`
             };
         }

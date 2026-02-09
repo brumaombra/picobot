@@ -28,7 +28,6 @@ export const webFetchTool = {
         } catch {
             return {
                 success: false,
-                output: '',
                 error: 'Invalid URL format'
             };
         }
@@ -50,7 +49,6 @@ export const webFetchTool = {
             if (!response.ok) {
                 return {
                     success: false,
-                    output: '',
                     error: `HTTP error: ${response.status} ${response.statusText}`
                 };
             }
@@ -86,7 +84,6 @@ export const webFetchTool = {
             const message = error instanceof Error ? error.message : String(error);
             return {
                 success: false,
-                output: '',
                 error: `Failed to fetch URL: ${message}`
             };
         }

@@ -73,16 +73,15 @@ export const driveListFilesTool = {
                 webViewLink: file.webViewLink
             }));
 
-            // Return files as JSON string
+            // Return the files
             return {
                 success: true,
-                output: JSON.stringify(files, null, 2)
+                output: files
             };
         } catch (error) {
             logger.error(`Drive list error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Drive list failed: ${error.message}`
             };
         }
@@ -156,7 +155,6 @@ export const driveReadFileTool = {
             logger.error(`Drive read error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Drive read failed: ${error.message}`
             };
         }
@@ -238,7 +236,6 @@ export const driveCreateFileTool = {
             logger.error(`Drive create error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Drive create failed: ${error.message}`
             };
         }
@@ -320,7 +317,6 @@ export const driveUpdateFileTool = {
             logger.error(`Drive update error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Drive update failed: ${error.message}`
             };
         }
@@ -368,7 +364,6 @@ export const driveDeleteFileTool = {
             logger.error(`Drive delete error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Drive delete failed: ${error.message}`
             };
         }
@@ -447,7 +442,6 @@ export const driveShareFileTool = {
             logger.error(`Drive share error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Drive share failed: ${error.message}`
             };
         }

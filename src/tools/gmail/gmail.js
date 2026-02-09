@@ -81,16 +81,15 @@ export const gmailSearchTool = {
                 };
             });
 
-            // Return success with formatted results
+            // Return the list of messages
             return {
                 success: true,
-                output: JSON.stringify(formatted, null, 2)
+                output: formatted
             };
         } catch (error) {
             logger.error(`Gmail search error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Gmail search failed: ${error.message}`
             };
         }
@@ -177,16 +176,15 @@ export const gmailReadTool = {
                 output = response.data;
             }
 
-            // Return success with formatted results
+            // Return the message details
             return {
                 success: true,
-                output: JSON.stringify(output, null, 2)
+                output: output
             };
         } catch (error) {
             logger.error(`Gmail read error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Gmail read failed: ${error.message}`
             };
         }
@@ -280,7 +278,6 @@ export const gmailSendTool = {
             logger.error(`Gmail send error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Gmail send failed: ${error.message}`
             };
         }
@@ -318,16 +315,15 @@ export const gmailLabelsTool = {
                 type: label.type
             }));
 
-            // Return success with formatted results
+            // Return the list of labels
             return {
                 success: true,
-                output: JSON.stringify(labels, null, 2)
+                output: labels
             };
         } catch (error) {
             logger.error(`Gmail labels error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Gmail labels list failed: ${error.message}`
             };
         }

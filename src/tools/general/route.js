@@ -2,7 +2,7 @@ import { toolCategories } from '../tools.js';
 import { logger } from '../../utils/logger.js';
 
 // The list of categories that can be routed to (all except 'general')
-const routableCategories = ['gmail', 'calendar', 'drive'];
+const routableCategories = ['gmail', 'calendar', 'drive', 'cron'];
 
 // Route to category tool (Returns tools for a specific category)
 export const routeToCategoryTool = {
@@ -30,13 +30,12 @@ export const routeToCategoryTool = {
         if (!categoryConfig) {
             return {
                 success: false,
-                output: '',
                 error: `Unknown category: ${category}. Available: ${routableCategories.join(', ')}`
             };
         }
 
         // Log routing
-        logger.info(`Routing to category: ${category} (${categoryConfig.name})`);
+        logger.info(`Routing to category: ${categoryConfig.name} (${category})`);
 
         try {
             // Get tool definitions for the category
@@ -54,7 +53,6 @@ export const routeToCategoryTool = {
             logger.error(`Route to category error: ${errorMessage}`);
             return {
                 success: false,
-                output: '',
                 error: `Failed to load category tools: ${errorMessage}`
             };
         }

@@ -31,7 +31,12 @@ export class ToolExecutor {
             const result = await tool.execute(args, context);
 
             // Create tool message with result
-            const content = result.success ? result.output : `Error: ${result.error || 'Unknown error'}`;
+            let content = '';
+            if (result.success) {
+                content = result.output || 'Tool executed successfully with no output.';
+            } else {
+                content = `Error: ${result.error || 'Unknown error'}`;
+            }
 
             // Log tool result
             logger.debug(`Tool ${toolCall.function.name} executed`);

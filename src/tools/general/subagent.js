@@ -39,7 +39,6 @@ export const subagentTool = {
         if (!context?.llm) {
             return {
                 success: false,
-                output: '',
                 error: 'No LLM provider available in context'
             };
         }
@@ -106,13 +105,11 @@ export const subagentTool = {
             } else if (result.reachedMaxIterations) {
                 return {
                     success: false,
-                    output: '',
                     error: 'Subagent reached maximum iterations without completing task'
                 };
             } else {
                 return {
                     success: false,
-                    output: '',
                     error: 'Subagent completed without producing a response'
                 };
             }
@@ -121,7 +118,6 @@ export const subagentTool = {
             logger.error(`Subagent [${subagentId}] error: ${errorMessage}`);
             return {
                 success: false,
-                output: '',
                 error: `Subagent failed: ${errorMessage}`
             };
         }

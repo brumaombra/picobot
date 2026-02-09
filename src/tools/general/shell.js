@@ -36,7 +36,6 @@ export const shellTool = {
         if (!safetyCheck.safe) {
             return {
                 success: false,
-                output: '',
                 error: safetyCheck.reason
             };
         }

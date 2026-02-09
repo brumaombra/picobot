@@ -70,16 +70,15 @@ export const calendarListEventsTool = {
                 htmlLink: event.htmlLink
             }));
 
-            // Return events as JSON string
+            // Return events
             return {
                 success: true,
-                output: JSON.stringify(events, null, 2)
+                output: events
             };
         } catch (error) {
             logger.error(`Calendar list error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Calendar list failed: ${error.message}`
             };
         }
@@ -177,7 +176,6 @@ export const calendarCreateEventTool = {
             logger.error(`Calendar create error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Calendar create failed: ${error.message}`
             };
         }
@@ -276,7 +274,6 @@ export const calendarUpdateEventTool = {
             logger.error(`Calendar update error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Calendar update failed: ${error.message}`
             };
         }
@@ -330,7 +327,6 @@ export const calendarDeleteEventTool = {
             logger.error(`Calendar delete error: ${error.message}`);
             return {
                 success: false,
-                output: '',
                 error: `Calendar delete failed: ${error.message}`
             };
         }
