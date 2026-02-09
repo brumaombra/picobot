@@ -41,32 +41,12 @@ export const routeToCategoryTool = {
         try {
             // Get tool definitions for the category
             const categoryTools = categoryConfig.tools;
-
-            // Build detailed tool information
-            const toolsInfo = categoryTools.map(tool => ({
-                name: tool.name,
-                description: tool.description,
-                parameters: tool.parameters
-            }));
-
-            // Format output for the agent
-            const output = {
-                category: category,
-                categoryName: categoryConfig.name,
-                description: categoryConfig.description,
-                toolCount: toolsInfo.length,
-                tools: toolsInfo.map(tool => ({
-                    name: tool.name,
-                    description: tool.description,
-                    requiredParams: tool.parameters?.required || [],
-                    optionalParams: Object.keys(tool.parameters?.properties || {}).filter(p => !(tool.parameters?.required || []).includes(p))
-                }))
-            };
+            const toolNames = categoryTools.map(tool => tool.name).join(', ');
 
             // Return success with tool definitions to add to available tools
             return {
                 success: true,
-                output: JSON.stringify(output, null, 2),
+                output: `Loaded ${categoryTools.length} ${categoryConfig.name} tools: ${toolNames}`,
                 addTools: { categories: [category] } // Signal to add these tools to available tools for the current conversation
             };
         } catch (error) {

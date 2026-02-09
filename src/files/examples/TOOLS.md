@@ -17,10 +17,8 @@ This section defines the tools available to the assistant, organized by category
 
 1. Call `route_to_category` with the appropriate category codename.
 2. The tool returns the list of available tools for that category.
-3. Those tools become available for the **next iteration only** - use them immediately.
-4. After one iteration, the tools revert back to the general category only.
-
-**Important**: Plan your tool usage before routing. Once you route to a category, call all needed tools from that category in the same turn. If you need to use the category tools again later, you must call `route_to_category` again.
+3. Those tools remain available for the rest of the current conversation.
+4. When the conversation ends, the tools revert back to the general category only.
 
 ## Tools List
 

@@ -34,12 +34,11 @@ export class ConversationManager {
             // Get current messages
             const messages = getSessionMessages(sessionKey);
 
-            // Build tools for this iteration (base tools + any temporary categories)
+            // Build tools for this iteration (base tools + any active categories)
             let currentTools = tools;
             if (nextIterationCategories.length > 0) {
                 currentTools = getToolsDefinitions({ categories: ['general', ...nextIterationCategories] });
                 logger.debug(`Using expanded tools with categories: ${nextIterationCategories.join(', ')}`);
-                nextIterationCategories = []; // Reset after use - tools only available for one iteration
             }
 
             // Call the LLM with current tools
