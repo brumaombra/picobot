@@ -2,6 +2,7 @@ import { getSessionMessages, addMessageToSession } from '../session/manager.js';
 import { logger } from '../utils/logger.js';
 import { MAX_AGENT_ITERATIONS } from '../config.js';
 import { ToolExecutor } from './tool-executor.js';
+import { getToolsDefinitions } from '../tools/tools.js';
 
 // Conversation manager class
 export class ConversationManager {
@@ -22,6 +23,7 @@ export class ConversationManager {
     async run(sessionKey, tools, context, onIntermediateMessage) {
         let iteration = 0;
         let finalResponse = null;
+        let nextIterationCategories = []; // Categories to add for next iteration only
 
         // Main conversation loop
         while (iteration < MAX_AGENT_ITERATIONS) {
@@ -32,8 +34,16 @@ export class ConversationManager {
             // Get current messages
             const messages = getSessionMessages(sessionKey);
 
-            // Call the LLM
-            const result = await this.llm.chat(messages, tools, this.model);
+            // Build tools for this iteration (base tools + any temporary categories)
+            let currentTools = tools;
+            if (nextIterationCategories.length > 0) {
+                currentTools = getToolsDefinitions({ categories: ['general', ...nextIterationCategories] });
+                logger.debug(`Using expanded tools with categories: ${nextIterationCategories.join(', ')}`);
+                nextIterationCategories = []; // Reset after use - tools only available for one iteration
+            }
+
+            // Call the LLM with current tools
+            const result = await this.llm.chat(messages, currentTools, this.model);
 
             // Add assistant message to history
             addMessageToSession(sessionKey, {
@@ -54,8 +64,29 @@ export class ConversationManager {
 
             // Execute tool calls if present
             if (result.tool_calls.length > 0) {
+                // Execute all tool calls in parallel
                 const toolResults = await this.toolExecutor.executeBatch(result.tool_calls, context);
-                toolResults.forEach(message => addMessageToSession(sessionKey, message)); // Add tool results to session
+
+                // Process each tool result
+                for (const message of toolResults) {
+                    // Add tool result to session
+                    addMessageToSession(sessionKey, {
+                        role: message.role,
+                        content: message.content,
+                        tool_call_id: message.tool_call_id
+                    });
+
+                    // Expand tools if addTools is present (from route_to_category)
+                    if (message.addTools?.categories) {
+                        // Queue categories for next iteration only
+                        for (const category of message.addTools.categories) {
+                            if (!nextIterationCategories.includes(category)) {
+                                nextIterationCategories.push(category);
+                                logger.debug(`Queuing tools from category for next iteration: ${category}`);
+                            }
+                        }
+                    }
+                }
             }
 
             // Check if we should stop

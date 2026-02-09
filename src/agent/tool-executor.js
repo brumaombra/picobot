@@ -36,12 +36,20 @@ export class ToolExecutor {
             // Log tool result
             logger.debug(`Tool ${toolCall.function.name} executed`);
 
-            // Return tool message
-            return {
+            // Return tool message with optional addTools for expanding tool availability
+            const response = {
                 role: 'tool',
                 content,
                 tool_call_id: toolCall.id
             };
+
+            // Include addTools if present (for route_to_category tool)
+            if (result.addTools) {
+                response.addTools = result.addTools;
+            }
+
+            // Return the tool execution result
+            return response;
         } catch (error) {
             // Log execution error
             const message = error instanceof Error ? error.message : String(error);
@@ -58,12 +66,9 @@ export class ToolExecutor {
 
     // Execute multiple tool calls
     async executeBatch(toolCalls, context) {
-        // Execute all tools sequentially
-        const results = [];
-        for (const call of toolCalls) {
-            const result = await this.execute(call, context);
-            results.push(result);
-        }
+        // Execute all tools in parallel
+        const promises = toolCalls.map(call => this.execute(call, context));
+        const results = await Promise.all(promises);
 
         // Return all results
         return results;

@@ -17,15 +17,10 @@ This section defines the tools available to the assistant, organized by category
 
 1. Call `route_to_category` with the appropriate category codename.
 2. The tool returns the list of available tools for that category.
-3. Those tools become available for subsequent calls in the conversation.
+3. Those tools become available for the **next iteration only** - use them immediately.
+4. After one iteration, the tools revert back to the general category only.
 
-### Best Practices
-
-- **File Operations**: Use `read_file` and `write_file` for direct file manipulation. Use `shell` for complex operations like batch processing.
-- **Web Fetching**: Content is automatically cleaned (HTML stripped, JSON formatted). Large responses are truncated.
-- **Shell Commands**: Dangerous commands are blocked. Prefer file tools when applicable.
-- **Cron Jobs**: Jobs persist across restarts. Use descriptive names for easy management.
-- **Category Routing**: Route to specialized categories only when needed for the current task.
+**Important**: Plan your tool usage before routing. Once you route to a category, call all needed tools from that category in the same turn. If you need to use the category tools again later, you must call `route_to_category` again.
 
 ## Tools List
 
