@@ -1,8 +1,8 @@
-import { readFileTool, writeFileTool, listDirTool } from './general/filesystem.js';
 import { shellTool } from './general/shell.js';
 import { webFetchTool } from './general/web.js';
 import { subagentTool } from './general/subagent.js';
 import { routeToCategoryTool } from './general/route.js';
+import { readFileTool, writeFileTool, listDirTool } from './filesystem/filesystem.js';
 import { cronCreateTool, cronListTool, cronGetTool, cronUpdateTool, cronDeleteTool } from './cron/cron.js';
 import { gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool } from './gmail/gmail.js';
 import { calendarListEventsTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool } from './calendar/calendar.js';
@@ -13,7 +13,12 @@ export const toolCategories = {
     general: {
         name: 'General',
         description: 'General-purpose tools for common operations and utilities',
-        tools: [readFileTool, writeFileTool, listDirTool, shellTool, webFetchTool, subagentTool, routeToCategoryTool]
+        tools: [shellTool, webFetchTool, subagentTool, routeToCategoryTool]
+    },
+    filesystem: {
+        name: 'Filesystem',
+        description: 'File and directory operations',
+        tools: [readFileTool, writeFileTool, listDirTool]
     },
     cron: {
         name: 'Cron',

@@ -13,12 +13,15 @@ This section defines the tools available to the assistant, organized by category
 
 ### Tool Routing
 
-**General** category tools are always available and do not require routing. To access specialized tools, use the `route_to_category` tool first:
+**General** tools are always available by default.
 
-1. Call `route_to_category` with the appropriate category codename.
-2. The tool returns the list of available tools for that category.
+To access specialized tools, use the `route_to_category` tool:
+
+1. Call `route_to_category` with a category name.
+2. The specified category tools are added to your available tools.
 3. Those tools remain available for the rest of the current conversation.
-4. When the conversation ends, the tools revert back to the general category only.
+4. You can route to multiple categories in the same conversation.
+5. General tools always remain available regardless of routing.
 
 ## Tools List
 

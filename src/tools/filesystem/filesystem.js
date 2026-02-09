@@ -152,22 +152,45 @@ export const listDirTool = {
                 const entryPath = join(fullPath, entry);
 
                 try {
+                    // Get the stats for the entry to determine if it's a file or directory
                     const stats = await stat(entryPath);
-                    const type = stats.isDirectory() ? '[DIR]' : '[FILE]';
-                    const size = stats.isFile() ? ` (${stats.size} bytes)` : '';
-                    details.push(`${type} ${entry}${size}`);
+
+                    // Create a detail object for the entry
+                    const item = {
+                        name: entry,
+                        type: stats.isDirectory() ? 'directory' : 'file'
+                    };
+
+                    // If it's a file, include the size
+                    if (stats.isFile()) {
+                        item.size = stats.size;
+                    }
+
+                    // Add the entry details to the list
+                    details.push(item);
                 } catch {
-                    details.push(`[???] ${entry}`);
+                    details.push({
+                        name: entry,
+                        type: 'unknown'
+                    });
                 }
             }
 
             // Log directory listing
             logger.debug(`Listed directory: ${path} (${entries.length} entries)`);
 
-            // Return directory listing
+            // Return empty array message if no entries
+            if (details.length === 0) {
+                return {
+                    success: true,
+                    output: 'No entries found.'
+                };
+            }
+
+            // Return directory listing as structured data
             return {
                 success: true,
-                output: details.join('\n') || '(empty directory)'
+                output: details
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);

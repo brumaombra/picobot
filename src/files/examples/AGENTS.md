@@ -38,6 +38,8 @@ For complex or multi-step tasks, you can spawn subagents to handle parts of the 
 - Subagents start with general tools and can use `route_to_category` to access specialized tools.
 - Always inform the user when delegating to subagents and summarize their results clearly.
 
+**Important**: Use subagents only if the task is complex and consists of multiple independent actions that can be executed in parallel.
+
 ### Model Tier
 
 - **Standard (default)** - Use for ~80% of all tasks: data retrieval, simple analysis, basic questions, straightforward operations, file searches, simple formatting, routine operations.
