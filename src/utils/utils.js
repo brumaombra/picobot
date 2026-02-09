@@ -223,3 +223,23 @@ export const splitMessageIntoChunks = (text, maxLength) => {
     // Return the array of chunks
     return chunks;
 };
+
+// Parse JSON with error handling
+export const parseJson = jsonString => {
+    try {
+        return JSON.parse(jsonString);
+    } catch (error) {
+        console.warn('JSON parse error:', error.message);
+        return {};
+    }
+};
+
+// Stringify object to JSON with error handling
+export const stringifyJson = value => {
+    try {
+        return JSON.stringify(value);
+    } catch (error) {
+        console.warn('JSON stringify error:', error.message);
+        return '{}';
+    }
+};

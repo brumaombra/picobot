@@ -60,7 +60,7 @@ export const webFetchTool = {
             // Handle JSON and text/html content types
             if (contentType.includes('application/json')) {
                 const json = await response.json();
-                content = JSON.stringify(json, null, 2);
+                content = JSON.stringify(json);
             } else {
                 content = await response.text();
 

@@ -1,5 +1,6 @@
 import { getTool } from '../tools/tools.js';
 import { logger } from '../utils/logger.js';
+import { parseJson, stringifyJson } from '../utils/utils.js';
 
 // Tool executor class
 export class ToolExecutor {
@@ -24,16 +25,21 @@ export class ToolExecutor {
 
         try {
             // Parse arguments
-            const args = this.parseArguments(toolCall.function.arguments);
+            const args = parseJson(toolCall.function.arguments);
 
             // Execute the tool
             logger.debug(`Executing tool: ${toolCall.function.name}`);
             const result = await tool.execute(args, context);
 
             // Create tool message with result
-            let content = '';
+            let content;
             if (result.success) {
-                content = result.output || 'Tool executed successfully with no output.';
+                // If output is a string, send it directly, if it's structured data, stringify it
+                if (typeof result.output === 'string') {
+                    content = result.output;
+                } else {
+                    content = stringifyJson(result.output);
+                }
             } else {
                 content = `Error: ${result.error || 'Unknown error'}`;
             }
@@ -77,14 +83,5 @@ export class ToolExecutor {
 
         // Return all results
         return results;
-    }
-
-    // Parse tool arguments from JSON string
-    parseArguments(argsString) {
-        try {
-            return JSON.parse(argsString);
-        } catch {
-            return {};
-        }
     }
 }
