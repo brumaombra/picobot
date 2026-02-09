@@ -79,7 +79,7 @@ export const subagentTool = {
             // Get tool definitions for subagent
             const toolDefinitions = getToolsDefinitions({
                 categories: ['general'],
-                denied: ['subagent'] // Prevent recursive spawning
+                exclude: ['subagent'] // Prevent recursive spawning
             });
 
             // Build execution context for subagent

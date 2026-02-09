@@ -17,7 +17,7 @@ export class MessageProcessor {
         this.conversation = conversation;
         this.workspacePath = workspacePath;
         this.config = config;
-        this.tools = tools; // Tool filter config: { allowed: [...], denied: [...] }
+        this.tools = tools; // Tool filter config: { include: [...], exclude: [...] }
     }
 
     // Process a single inbound message

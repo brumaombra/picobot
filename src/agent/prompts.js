@@ -47,7 +47,9 @@ export const buildSubagentSystemPrompt = () => {
     // Load TOOLS.md and replace {toolsList} placeholder
     let toolsPrompt = getPromptContent('TOOLS.md');
     if (toolsPrompt) {
-        const toolsList = generateToolsList();
+        const toolsList = generateToolsList({
+            exclude: ['subagent'] // Exclude subagent tool from subagent prompt
+        });
         toolsPrompt = toolsPrompt.replace('{toolsList}', toolsList);
         prompts.push(toolsPrompt);
     }

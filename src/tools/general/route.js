@@ -1,5 +1,8 @@
-import { toolCategories, getRoutableCategories } from '../tools.js';
+import { toolCategories } from '../tools.js';
 import { logger } from '../../utils/logger.js';
+
+// The list of categories that can be routed to (all except 'general')
+const routableCategories = ['gmail', 'calendar', 'drive'];
 
 // Route to category tool (Returns tools for a specific category)
 export const routeToCategoryTool = {
@@ -11,8 +14,8 @@ export const routeToCategoryTool = {
         properties: {
             category: {
                 type: 'string',
-                enum: getRoutableCategories(),
-                description: `The category of tools to load. Available categories: ${getRoutableCategories().join(', ')}`
+                enum: routableCategories,
+                description: `The category of tools to load. Available categories: ${routableCategories.join(', ')}`
             }
         },
         required: ['category']
@@ -28,7 +31,7 @@ export const routeToCategoryTool = {
             return {
                 success: false,
                 output: '',
-                error: `Unknown category: ${category}. Available: ${getRoutableCategories().join(', ')}`
+                error: `Unknown category: ${category}. Available: ${routableCategories.join(', ')}`
             };
         }
 
