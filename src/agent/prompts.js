@@ -1,8 +1,8 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { logger } from '../utils/logger.js';
-import { PROMPTS_DIR } from '../config.js';
-import { getFormattedAgentTypesList, getFormattedModelTiersList } from '../utils/utils.js';
+import { PROMPTS_DIR, SUBAGENT_MODEL_TIERS } from '../config.js';
+import { generateToolsList } from '../tools/tools.js';
 
 // Build the system prompt
 export const buildSystemPrompt = () => {
@@ -20,6 +20,36 @@ export const buildSystemPrompt = () => {
     const soulPrompt = getPromptContent('SOUL.md');
     if (soulPrompt) {
         prompts.push(soulPrompt);
+    }
+
+    // Load TOOLS.md and replace {toolsList} placeholder
+    let toolsPrompt = getPromptContent('TOOLS.md');
+    if (toolsPrompt) {
+        const toolsList = generateToolsList(); // Generate and insert tools list
+        toolsPrompt = toolsPrompt.replace('{toolsList}', toolsList);
+        prompts.push(toolsPrompt);
+    }
+
+    // Return the combined prompt
+    return prompts.join('\n\n');
+};
+
+// Build the subagent system prompt
+export const buildSubagentSystemPrompt = () => {
+    const prompts = [];
+
+    // Load SUBAGENT.md
+    const subagentPrompt = getPromptContent('SUBAGENT.md');
+    if (subagentPrompt) {
+        prompts.push(subagentPrompt);
+    }
+
+    // Load TOOLS.md and replace {toolsList} placeholder
+    let toolsPrompt = getPromptContent('TOOLS.md');
+    if (toolsPrompt) {
+        const toolsList = generateToolsList();
+        toolsPrompt = toolsPrompt.replace('{toolsList}', toolsList);
+        prompts.push(toolsPrompt);
     }
 
     // Return the combined prompt
@@ -46,20 +76,10 @@ export const getPromptContent = filename => {
     }
 };
 
-// Get the agent type tool parameter guidance prompt
-export const getAgentTypeParameterPrompt = () => {
-    return `
-Choose agent type based on task domain:
-${getFormattedAgentTypesList()}
-
-Choose specialized agents when tasks are clearly scoped to that domain.`;
-};
-
 // Get the model tier tool parameter guidance prompt
 export const getModelTierParameterPrompt = () => {
-    return `
-Choose model tier based on task complexity and speed requirements:
-${getFormattedModelTiersList()}
-
-Use higher tiers for tasks requiring deep analysis, creativity, or precision.`;
+    const tiers = Object.entries(SUBAGENT_MODEL_TIERS)
+        .map(([tier, config]) => `• ${tier}: ${config.description}`)
+        .join('\n');
+    return `Choose model tier based on task complexity:\n${tiers}\n\nDefault to "standard" unless the task clearly requires more capability.`;
 };

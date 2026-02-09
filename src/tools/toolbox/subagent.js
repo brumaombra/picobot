@@ -1,17 +1,16 @@
 import { ConversationManager } from '../../agent/conversation.js';
 import { generateUniqueId } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
-import { SUBAGENT_MODEL_TIERS, AGENT_TYPES } from '../../config.js';
-import { getAgentTypeParameterPrompt, getModelTierParameterPrompt } from '../../agent/prompts.js';
+import { SUBAGENT_MODEL_TIERS } from '../../config.js';
+import { getModelTierParameterPrompt, buildSubagentSystemPrompt } from '../../agent/prompts.js';
 import { getToolsDefinitions } from '../tools.js';
 import { getOrCreateSession, addMessageToSession } from '../../session/manager.js';
-import { getPromptContent } from '../../agent/prompts.js';
 
 // Subagent tool
 export const subagentTool = {
     // Tool definition
     name: 'subagent',
-    description: 'Delegate task to specialized AI subagent and wait for its completion. Subagent executes task autonomously with its own tools and returns results to you (not to user). Choose agent type based on task domain.',
+    description: 'Delegate task to AI subagent and wait for its completion. Subagent executes task autonomously with general tools and returns results to you (not to user). Use for parallel execution or complex multi-step tasks.',
     parameters: {
         type: 'object',
         properties: {
@@ -22,11 +21,6 @@ export const subagentTool = {
             label: {
                 type: 'string',
                 description: 'Brief label for subagent (2-5 words, e.g., "API Documentation Fetch"). Used for logging and identification.'
-            },
-            agent_type: {
-                type: 'string',
-                enum: Object.keys(AGENT_TYPES),
-                description: getAgentTypeParameterPrompt()
             },
             model_tier: {
                 type: 'string',
@@ -39,7 +33,7 @@ export const subagentTool = {
 
     // Main execution function
     execute: async (args, context) => {
-        const { task, label, agent_type = 'general', model_tier = 'standard' } = args;
+        const { task, label, model_tier = 'standard' } = args;
 
         // Validate context
         if (!context?.llm) {
@@ -50,27 +44,24 @@ export const subagentTool = {
             };
         }
 
-        // Get model and tool categories from config
+        // Get model from config
         const selectedModel = SUBAGENT_MODEL_TIERS[model_tier]?.model || SUBAGENT_MODEL_TIERS.standard.model;
-        const toolCategories = AGENT_TYPES[agent_type]?.tools || AGENT_TYPES.general.tools;
 
         // Generate a unique ID for the subagent session
         const subagentId = generateUniqueId('subagent');
-        logger.info(`Spawning ${agent_type} subagent [${subagentId}]: ${label} (model: ${selectedModel}, categories: ${toolCategories.join(', ')})`);
+        logger.info(`Spawning subagent [${subagentId}]: ${label} (model: ${selectedModel})`);
 
         try {
-            // Create conversation manager for subagent (The conversation manager handles the main agent loop for the subagent)
+            // Create conversation manager for subagent
             const conversation = new ConversationManager({
                 llm: context.llm,
                 model: selectedModel
             });
 
-            // Initialize subagent session with specialized system prompt
+            // Initialize subagent session with system prompt
             const session = getOrCreateSession(subagentId);
             if (session.messages.length === 0) {
-                // Get system prompt content based on agent type
-                const promptFilename = AGENT_TYPES[agent_type]?.promptFilename || AGENT_TYPES.general.promptFilename;
-                const systemPrompt = getPromptContent(promptFilename);
+                const systemPrompt = buildSubagentSystemPrompt();
 
                 // Add system prompt to subagent session
                 addMessageToSession(subagentId, {
@@ -87,8 +78,8 @@ export const subagentTool = {
 
             // Get tool definitions for subagent
             const toolDefinitions = getToolsDefinitions({
-                categories: toolCategories,
-                denied: ['subagent', 'message'] // Prevent recursive spawning and direct user messaging
+                categories: ['general'],
+                denied: ['subagent'] // Prevent recursive spawning
             });
 
             // Build execution context for subagent

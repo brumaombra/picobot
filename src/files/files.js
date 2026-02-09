@@ -17,10 +17,8 @@ const CONFIG_ITEMS = [
     { path: LOGS_DIR, type: 'directory', name: 'Logs directory' },
     { path: join(PROMPTS_DIR, 'AGENTS.md'), type: 'file', name: 'AGENTS.md', source: join(__dirname, 'examples/AGENTS.md') },
     { path: join(PROMPTS_DIR, 'SOUL.md'), type: 'file', name: 'SOUL.md', source: join(__dirname, 'examples/SOUL.md') },
-    { path: join(PROMPTS_DIR, 'SUBAGENT_GENERAL.md'), type: 'file', name: 'SUBAGENT_GENERAL.md', source: join(__dirname, 'examples/SUBAGENT_GENERAL.md') },
-    { path: join(PROMPTS_DIR, 'SUBAGENT_EMAIL.md'), type: 'file', name: 'SUBAGENT_EMAIL.md', source: join(__dirname, 'examples/SUBAGENT_EMAIL.md') },
-    { path: join(PROMPTS_DIR, 'SUBAGENT_CALENDAR.md'), type: 'file', name: 'SUBAGENT_CALENDAR.md', source: join(__dirname, 'examples/SUBAGENT_CALENDAR.md') },
-    { path: join(PROMPTS_DIR, 'SUBAGENT_DRIVE.md'), type: 'file', name: 'SUBAGENT_DRIVE.md', source: join(__dirname, 'examples/SUBAGENT_DRIVE.md') },
+    { path: join(PROMPTS_DIR, 'TOOLS.md'), type: 'file', name: 'TOOLS.md', source: join(__dirname, 'examples/TOOLS.md') },
+    { path: join(PROMPTS_DIR, 'SUBAGENT.md'), type: 'file', name: 'SUBAGENT.md', source: join(__dirname, 'examples/SUBAGENT.md') },
     { path: CONFIG_PATH, type: 'file', name: 'Config file', source: join(__dirname, 'examples/config.json') }
 ];
 

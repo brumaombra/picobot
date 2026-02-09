@@ -61,30 +61,6 @@ export const SUBAGENT_MODEL_TIERS = {
     }
 };
 
-/**************** Agent Types *****************/
-export const AGENT_TYPES = {
-    general: {
-        tools: ['general'],
-        description: 'Core tools (filesystem, shell, web) - use for most tasks',
-        promptFilename: 'SUBAGENT_GENERAL.md'
-    },
-    email: {
-        tools: ['general', 'gmail'],
-        description: 'Gmail specialist - search/read/send/label emails',
-        promptFilename: 'SUBAGENT_EMAIL.md'
-    },
-    calendar: {
-        tools: ['general', 'calendar'],
-        description: 'Google Calendar specialist - list/create/update/delete events',
-        promptFilename: 'SUBAGENT_CALENDAR.md'
-    },
-    drive: {
-        tools: ['general', 'drive'],
-        description: 'Google Drive specialist - manage files and sharing',
-        promptFilename: 'SUBAGENT_DRIVE.md'
-    }
-};
-
 /**************** Telegram *****************/
 export const TELEGRAM_TYPING_INTERVAL_MS = 4000;
 export const TELEGRAM_MAX_MESSAGE_LENGTH = 4000;
