@@ -10,17 +10,17 @@ import { getOrCreateSession, addMessageToSession } from '../../session/manager.j
 export const subagentTool = {
     // Tool definition
     name: 'subagent',
-    description: 'Delegate task to AI subagent and wait for its completion. Subagent executes task autonomously with general tools and returns results to you (not to user). Use for parallel execution or complex multi-step tasks.',
+    description: 'Delegate task to AI subagent for autonomous execution. The subagent returns results to the parent agent.',
     parameters: {
         type: 'object',
         properties: {
             task: {
                 type: 'string',
-                description: 'Complete, detailed task description. Be specific with all context, requirements, and constraints. Subagent has no access to your conversation history.'
+                description: 'Detailed task description with all context and requirements.'
             },
             label: {
                 type: 'string',
-                description: 'Brief label for subagent (2-5 words, e.g., "API Documentation Fetch"). Used for logging and identification.'
+                description: 'Brief label for identification (2-5 words).'
             },
             model_tier: {
                 type: 'string',

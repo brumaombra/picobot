@@ -8,7 +8,7 @@ const routableCategories = ['gmail', 'calendar', 'drive', 'cron'];
 export const routeToCategoryTool = {
     // Tool definition
     name: 'route_to_category',
-    description: 'Load specialized tools for a specific domain category. Returns tool definitions that become available for use. Use this to access specific tools when needed for the current task.',
+    description: 'Load specialized tools for a specific domain category.',
     parameters: {
         type: 'object',
         properties: {

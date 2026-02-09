@@ -8,13 +8,13 @@ import { logger } from '../../utils/logger.js';
 export const readFileTool = {
     // Tool definition
     name: 'read_file',
-    description: 'Read complete contents of a file and return as string. Use for source code, configs, logs, or any text file. Binary files may be garbled.',
+    description: 'Read file contents as string.',
     parameters: {
         type: 'object',
         properties: {
             path: {
                 type: 'string',
-                description: 'Relative path from workspace root (e.g., "src/config.js") or absolute path. Use forward slashes.'
+                description: 'File path (relative or absolute).'
             }
         },
         required: ['path']
@@ -58,17 +58,17 @@ export const readFileTool = {
 export const writeFileTool = {
     // Tool definition
     name: 'write_file',
-    description: `Write or overwrite a file with new content. WARNING: Completely replaces existing file contents. Parent directories created automatically. Only works within workspace directory. Use for creating files, saving code, or updating configs.`,
+    description: 'Write or overwrite file content.',
     parameters: {
         type: 'object',
         properties: {
             path: {
                 type: 'string',
-                description: 'Relative path from workspace root (e.g., "output/result.txt"). Must be within workspace. Use forward slashes.'
+                description: 'File path (relative to workspace).'
             },
             content: {
                 type: 'string',
-                description: 'Complete content to write. Replaces entire file. Ensure proper formatting and newlines.'
+                description: 'Content to write.'
             }
         },
         required: ['path', 'content']
@@ -116,13 +116,13 @@ export const writeFileTool = {
 export const listDirTool = {
     // Tool definition
     name: 'list_dir',
-    description: 'List all files and subdirectories in a directory. Returns names only with trailing slash for directories. Use to explore project structure or find files. Does not recurse.',
+    description: 'List files and directories in a directory.',
     parameters: {
         type: 'object',
         properties: {
             path: {
                 type: 'string',
-                description: 'Path to directory, relative (e.g., "src/tools") or absolute. Use "." for workspace root. Forward slashes.'
+                description: 'Directory path (relative or absolute).'
             }
         },
         required: ['path']

@@ -5,17 +5,17 @@ import { getGmailClient } from '../../utils/google-client.js';
 export const gmailSearchTool = {
     // Tool definition
     name: 'gmail_search',
-    description: 'Search Gmail messages with query. Supports Gmail search operators (from:, to:, subject:, after:, before:, has:attachment, is:unread, etc.). Returns list of matching emails with id, subject, from, date, snippet.',
+    description: 'Search Gmail messages.',
     parameters: {
         type: 'object',
         properties: {
             query: {
                 type: 'string',
-                description: 'Gmail search query (e.g., "from:john subject:invoice after:2024/01/01", "is:unread has:attachment"). Use Gmail search operators.'
+                description: 'Search query.'
             },
             maxResults: {
                 type: 'number',
-                description: 'Maximum number of results to return (default: 10, max: 50).'
+                description: 'Max results (default: 10).'
             }
         },
         required: ['query']
@@ -100,17 +100,18 @@ export const gmailSearchTool = {
 export const gmailReadTool = {
     // Tool definition
     name: 'gmail_read',
-    description: 'Read full content of a specific Gmail message by ID. Returns email headers (from, to, subject, date), body content (plain text or HTML), and attachments list.',
+    description: 'Read Gmail message content.',
     parameters: {
         type: 'object',
         properties: {
             messageId: {
                 type: 'string',
-                description: 'Gmail message ID (obtained from gmail_search results).'
+                description: 'Message ID.'
             },
             format: {
                 type: 'string',
-                description: 'Response format: "full" (complete message), "metadata" (headers only), or "minimal" (ID and labels). Default: "full".'
+                enum: ['full', 'metadata', 'minimal'],
+                description: 'Response format.'
             }
         },
         required: ['messageId']
@@ -195,29 +196,29 @@ export const gmailReadTool = {
 export const gmailSendTool = {
     // Tool definition
     name: 'gmail_send',
-    description: 'Send email via Gmail as plain text. Supports CC/BCC recipients. Returns sent message ID on success.',
+    description: 'Send email via Gmail.',
     parameters: {
         type: 'object',
         properties: {
             to: {
                 type: 'string',
-                description: 'Recipient email address or comma-separated list (e.g., "john@example.com, jane@example.com").'
+                description: 'Recipient email(s).'
             },
             subject: {
                 type: 'string',
-                description: 'Email subject line.'
+                description: 'Email subject.'
             },
             body: {
                 type: 'string',
-                description: 'Email body content in plain text.'
+                description: 'Email body.'
             },
             cc: {
                 type: 'string',
-                description: 'CC recipients (comma-separated email addresses). Optional.'
+                description: 'CC recipients.'
             },
             bcc: {
                 type: 'string',
-                description: 'BCC recipients (comma-separated email addresses). Optional.'
+                description: 'BCC recipients.'
             }
         },
         required: ['to', 'subject', 'body']
@@ -288,7 +289,7 @@ export const gmailSendTool = {
 export const gmailLabelsTool = {
     // Tool definition
     name: 'gmail_list_labels',
-    description: 'List all Gmail labels/folders (Inbox, Sent, Drafts, custom labels). Returns label IDs and names.',
+    description: 'List Gmail labels.',
     parameters: {
         type: 'object',
         properties: {}

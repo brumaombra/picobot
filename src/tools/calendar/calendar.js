@@ -5,25 +5,25 @@ import { getCalendarClient } from '../../utils/google-client.js';
 export const calendarListEventsTool = {
     // Tool definition
     name: 'calendar_list_events',
-    description: 'List Google Calendar events within a date range. Returns events with id, summary, start/end times, location, attendees, and description.',
+    description: 'List Google Calendar events in date range.',
     parameters: {
         type: 'object',
         properties: {
             startDate: {
                 type: 'string',
-                description: 'Start date in ISO 8601 format (e.g., "2024-01-01" or "2024-01-01T09:00:00Z"). Use timezone if needed.'
+                description: 'Start date (ISO 8601 format).'
             },
             endDate: {
                 type: 'string',
-                description: 'End date in ISO 8601 format (e.g., "2024-01-31" or "2024-01-31T18:00:00Z"). Use timezone if needed.'
+                description: 'End date (ISO 8601 format).'
             },
             maxResults: {
                 type: 'number',
-                description: 'Maximum number of events to return (default: 10, max: 100).'
+                description: 'Max events (default: 10).'
             },
             calendarId: {
                 type: 'string',
-                description: 'Calendar ID (default: "primary" for user\'s main calendar). Use for shared calendars.'
+                description: 'Calendar ID (default: primary).'
             }
         },
         required: ['startDate', 'endDate']
@@ -89,37 +89,37 @@ export const calendarListEventsTool = {
 export const calendarCreateEventTool = {
     // Tool definition
     name: 'calendar_create_event',
-    description: 'Create new Google Calendar event. Supports all-day and timed events, location, attendees, reminders, and recurrence rules.',
+    description: 'Create Google Calendar event with title, time, location, attendees.',
     parameters: {
         type: 'object',
         properties: {
             summary: {
                 type: 'string',
-                description: 'Event title/summary (e.g., "Team Meeting").'
+                description: 'Event title.'
             },
             startDateTime: {
                 type: 'string',
-                description: 'Event start in ISO 8601 format (e.g., "2024-01-15T10:00:00"). Use date only for all-day (e.g., "2024-01-15").'
+                description: 'Start time (ISO 8601).'
             },
             endDateTime: {
                 type: 'string',
-                description: 'Event end in ISO 8601 format (e.g., "2024-01-15T11:00:00"). Use date only for all-day (e.g., "2024-01-15").'
+                description: 'End time (ISO 8601).'
             },
             description: {
                 type: 'string',
-                description: 'Event description/notes. Optional.'
+                description: 'Event description.'
             },
             location: {
                 type: 'string',
-                description: 'Event location (e.g., "Conference Room A", "https://meet.google.com/xyz"). Optional.'
+                description: 'Event location.'
             },
             attendees: {
                 type: 'string',
-                description: 'Comma-separated email addresses of attendees (e.g., "john@example.com, jane@example.com"). Optional.'
+                description: 'Attendee emails (comma-separated).'
             },
             calendarId: {
                 type: 'string',
-                description: 'Calendar ID (default: "primary"). Optional.'
+                description: 'Calendar ID (default: primary).'
             }
         },
         required: ['summary', 'startDateTime', 'endDateTime']
@@ -186,37 +186,37 @@ export const calendarCreateEventTool = {
 export const calendarUpdateEventTool = {
     // Tool definition
     name: 'calendar_update_event',
-    description: 'Update existing Google Calendar event. Can modify title, time, location, attendees, or description.',
+    description: 'Update Google Calendar event details.',
     parameters: {
         type: 'object',
         properties: {
             eventId: {
                 type: 'string',
-                description: 'Event ID to update (obtained from calendar_list_events).'
+                description: 'Event ID to update.'
             },
             summary: {
                 type: 'string',
-                description: 'New event title. Optional.'
+                description: 'New title.'
             },
             startDateTime: {
                 type: 'string',
-                description: 'New start time in ISO 8601 format. Optional.'
+                description: 'New start time.'
             },
             endDateTime: {
                 type: 'string',
-                description: 'New end time in ISO 8601 format. Optional.'
+                description: 'New end time.'
             },
             description: {
                 type: 'string',
-                description: 'New event description. Optional.'
+                description: 'New description.'
             },
             location: {
                 type: 'string',
-                description: 'New event location. Optional.'
+                description: 'New location.'
             },
             calendarId: {
                 type: 'string',
-                description: 'Calendar ID (default: "primary"). Optional.'
+                description: 'Calendar ID (default: primary).'
             }
         },
         required: ['eventId']
@@ -284,17 +284,17 @@ export const calendarUpdateEventTool = {
 export const calendarDeleteEventTool = {
     // Tool definition
     name: 'calendar_delete_event',
-    description: 'Delete Google Calendar event by ID. Permanently removes the event from the calendar.',
+    description: 'Delete Google Calendar event.',
     parameters: {
         type: 'object',
         properties: {
             eventId: {
                 type: 'string',
-                description: 'Event ID to delete (obtained from calendar_list_events).'
+                description: 'Event ID to delete.'
             },
             calendarId: {
                 type: 'string',
-                description: 'Calendar ID (default: "primary"). Optional.'
+                description: 'Calendar ID (default: primary).'
             }
         },
         required: ['eventId']

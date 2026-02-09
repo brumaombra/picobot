@@ -5,25 +5,25 @@ import { getDriveClient } from '../../utils/google-client.js';
 export const driveListFilesTool = {
     // Tool definition
     name: 'drive_list_files',
-    description: 'List files and folders in Google Drive. Supports search queries, filtering by type, parent folder, starred status. Returns file ID, name, type, size, modified date, and permissions.',
+    description: 'List Google Drive files.',
     parameters: {
         type: 'object',
         properties: {
             query: {
                 type: 'string',
-                description: 'Search query (e.g., "name contains \'report\'", "mimeType=\'application/pdf\'", "\'parentFolderId\' in parents"). Use Drive API query syntax. Optional.'
+                description: 'Search query.'
             },
             folderId: {
                 type: 'string',
-                description: 'List files in specific folder (use folder ID). Default: root folder. Optional.'
+                description: 'Folder ID.'
             },
             maxResults: {
                 type: 'number',
-                description: 'Maximum number of results (default: 10, max: 100). Optional.'
+                description: 'Max results.'
             },
             orderBy: {
                 type: 'string',
-                description: 'Sort order (e.g., "name", "modifiedTime desc", "createdTime"). Default: "name". Optional.'
+                description: 'Sort order.'
             }
         }
     },
@@ -92,17 +92,17 @@ export const driveListFilesTool = {
 export const driveReadFileTool = {
     // Tool definition
     name: 'drive_read_file',
-    description: 'Read/download content of a Google Drive file by ID. Returns file content as text for text-based files (docs, txt, csv, etc.). For Google Docs/Sheets/Slides, exports to requested format.',
+    description: 'Read Google Drive file content.',
     parameters: {
         type: 'object',
         properties: {
             fileId: {
                 type: 'string',
-                description: 'File ID to read (obtained from drive_list_files).'
+                description: 'File ID.'
             },
             mimeType: {
                 type: 'string',
-                description: 'Export MIME type for Google Workspace files (e.g., "text/plain" for Docs, "text/csv" for Sheets). Optional.'
+                description: 'Export MIME type.'
             }
         },
         required: ['fileId']
@@ -165,25 +165,25 @@ export const driveReadFileTool = {
 export const driveCreateFileTool = {
     // Tool definition
     name: 'drive_create_file',
-    description: 'Create or upload file to Google Drive. Can create text files, Google Docs, folders, or upload content. Returns created file ID.',
+    description: 'Create Google Drive file.',
     parameters: {
         type: 'object',
         properties: {
             name: {
                 type: 'string',
-                description: 'File or folder name (e.g., "report.txt", "My Folder").'
+                description: 'File name.'
             },
             content: {
                 type: 'string',
-                description: 'File content (text). Required for file creation, omit for folders.'
+                description: 'File content.'
             },
             mimeType: {
                 type: 'string',
-                description: 'MIME type (e.g., "text/plain", "application/vnd.google-apps.document" for Google Doc, "application/vnd.google-apps.folder" for folder). Default: "text/plain".'
+                description: 'MIME type.'
             },
             parentFolderId: {
                 type: 'string',
-                description: 'Parent folder ID. Default: root folder. Optional.'
+                description: 'Parent folder ID.'
             }
         },
         required: ['name']
@@ -246,29 +246,29 @@ export const driveCreateFileTool = {
 export const driveUpdateFileTool = {
     // Tool definition
     name: 'drive_update_file',
-    description: 'Update existing Google Drive file content or metadata. Can change file name, content, or move to different folder.',
+    description: 'Update Google Drive file.',
     parameters: {
         type: 'object',
         properties: {
             fileId: {
                 type: 'string',
-                description: 'File ID to update (obtained from drive_list_files).'
+                description: 'File ID.'
             },
             name: {
                 type: 'string',
-                description: 'New file name. Optional.'
+                description: 'New name.'
             },
             content: {
                 type: 'string',
-                description: 'New file content (text). Optional.'
+                description: 'New content.'
             },
             addParentFolderId: {
                 type: 'string',
-                description: 'Folder ID to move file into. Optional.'
+                description: 'Add to folder.'
             },
             removeParentFolderId: {
                 type: 'string',
-                description: 'Folder ID to remove file from. Optional.'
+                description: 'Remove from folder.'
             }
         },
         required: ['fileId']
@@ -327,13 +327,13 @@ export const driveUpdateFileTool = {
 export const driveDeleteFileTool = {
     // Tool definition
     name: 'drive_delete_file',
-    description: 'Delete file or folder from Google Drive by ID. Moves to trash (can be restored). Use permanently delete option with caution.',
+    description: 'Delete Google Drive file.',
     parameters: {
         type: 'object',
         properties: {
             fileId: {
                 type: 'string',
-                description: 'File or folder ID to delete (obtained from drive_list_files).'
+                description: 'File ID.'
             }
         },
         required: ['fileId']
@@ -374,25 +374,27 @@ export const driveDeleteFileTool = {
 export const driveShareFileTool = {
     // Tool definition
     name: 'drive_share_file',
-    description: 'Share Google Drive file with users or make public. Can set permissions (viewer, commenter, editor) for specific emails or create public link.',
+    description: 'Share Google Drive file.',
     parameters: {
         type: 'object',
         properties: {
             fileId: {
                 type: 'string',
-                description: 'File ID to share (obtained from drive_list_files).'
+                description: 'File ID.'
             },
             email: {
                 type: 'string',
-                description: 'Email address to share with. Omit for public link.'
+                description: 'Email address.'
             },
             role: {
                 type: 'string',
-                description: 'Permission role: "reader" (view only), "commenter" (can comment), "writer" (can edit). Default: "reader".'
+                enum: ['reader', 'commenter', 'writer'],
+                description: 'Permission role.'
             },
             type: {
                 type: 'string',
-                description: 'Permission type: "user" (specific email), "anyone" (public link). Default: "user" if email provided, "anyone" otherwise.'
+                enum: ['user', 'anyone'],
+                description: 'Permission type.'
             }
         },
         required: ['fileId']

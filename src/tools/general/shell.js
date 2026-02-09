@@ -10,17 +10,17 @@ const execAsync = promisify(exec);
 export const shellTool = {
     // Tool definition
     name: 'shell',
-    description: 'Execute shell command and return stdout/stderr. Use for: installing packages, running tests, builds, git operations, or system commands. 30s timeout, output truncated if large. Dangerous commands blocked. Prefer read_file/write_file when applicable.',
+    description: 'Execute shell command.',
     parameters: {
         type: 'object',
         properties: {
             command: {
                 type: 'string',
-                description: 'Shell command to execute (e.g., "npm install", "git status"). Properly escape arguments with spaces or special chars.'
+                description: 'Shell command to execute.'
             },
             cwd: {
                 type: 'string',
-                description: 'Working directory for command. Relative from workspace root or absolute. Defaults to workspace root.'
+                description: 'Working directory (optional).'
             }
         },
         required: ['command']

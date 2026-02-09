@@ -6,13 +6,13 @@ import { WEB_MAX_CONTENT_LENGTH, WEB_FETCH_TIMEOUT_MS, WEB_USER_AGENT, WEB_ACCEP
 export const webFetchTool = {
     // Tool definition
     name: 'web_fetch',
-    description: 'Fetch content from URL and return as text. HTML auto-stripped to readable text, JSON formatted. Use for documentation, API data, or text resources. 10s timeout, large responses truncated. No JavaScript execution.',
+    description: 'Fetch content from URL.',
     parameters: {
         type: 'object',
         properties: {
             url: {
                 type: 'string',
-                description: 'Complete URL with protocol (e.g., "https://api.example.com/data"). Must be valid HTTP/HTTPS.'
+                description: 'URL to fetch.'
             }
         },
         required: ['url']
