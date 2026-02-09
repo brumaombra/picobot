@@ -243,3 +243,17 @@ export const stringifyJson = value => {
         return '{}';
     }
 };
+
+// Decode HTML entities and normalize line endings in text
+export const decodeHtmlEntities = text => {
+    return text
+        .replace(/&#10;/g, '\n')
+        .replace(/&#13;/g, '\r')
+        .replace(/&lt;/g, '<')
+        .replace(/&gt;/g, '>')
+        .replace(/&amp;/g, '&')
+        .replace(/&quot;/g, '"')
+        .replace(/&#39;/g, "'")
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\r?\n/g, '\r\n');
+};

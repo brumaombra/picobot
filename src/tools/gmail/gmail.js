@@ -1,5 +1,6 @@
 import { logger } from '../../utils/logger.js';
 import { getGmailClient } from '../../utils/google-client.js';
+import { decodeHtmlEntities } from '../../utils/utils.js';
 
 // Gmail search tool
 export const gmailSearchTool = {
@@ -196,7 +197,7 @@ export const gmailReadTool = {
 export const gmailSendTool = {
     // Tool definition
     name: 'gmail_send',
-    description: 'Send email via Gmail.',
+    description: 'Send plain text email via Gmail.',
     parameters: {
         type: 'object',
         properties: {
@@ -210,7 +211,7 @@ export const gmailSendTool = {
             },
             body: {
                 type: 'string',
-                description: 'Email body.'
+                description: 'Email body (plain text only).'
             },
             cc: {
                 type: 'string',
@@ -235,8 +236,8 @@ export const gmailSendTool = {
             // Get Gmail client
             const gmail = await getGmailClient();
 
-            // Normalize body line endings (important for RFC compliance)
-            const safeBody = (body || '').replace(/\r?\n/g, '\r\n');
+            // Decode HTML entities and normalize body line endings (important for RFC compliance)
+            const safeBody = decodeHtmlEntities(body || '');
 
             // Build headers
             const headers = [

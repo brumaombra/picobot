@@ -79,7 +79,7 @@ export const WEB_USER_AGENT = 'Mozilla/5.0 (compatible; Picobot/1.0)';
 export const WEB_ACCEPT_HEADER = 'text/html,application/json,text/plain';
 
 /**************** Logging *****************/
-export const DEFAULT_LOG_LEVEL = 'info';
+export const DEFAULT_LOG_LEVEL = 'debug';
 export const LOG_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH:mm:ss';
 export const LOG_FILENAME = join(LOGS_DIR, 'picobot.log');
 export const LOG_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
