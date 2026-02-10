@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, readdir, stat, access, unlink, rmdir, rename, copyFile } from 'fs/promises';
+import { readFile, writeFile, mkdir, readdir, stat, access, unlink, rm, rename, copyFile } from 'fs/promises';
 import { dirname, join, resolve, isAbsolute, normalize } from 'path';
 import { checkPathForWrite } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
@@ -290,7 +290,7 @@ export const deleteTool = {
                 };
             } else if (stats.isDirectory()) {
                 // Delete directory
-                await rmdir(fullPath, { recursive });
+                await rm(fullPath, { recursive });
                 logger.debug(`Deleted directory: ${path} (recursive: ${recursive})`);
 
                 // Return success message
