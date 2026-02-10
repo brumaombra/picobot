@@ -8,9 +8,10 @@
         "picobot": "./src/cli/cli.js"
     },
     "scripts": {
-        "start": "node src/index.js",
-        "cli": "node src/cli/cli.js",
-        "dev": "node --watch src/index.js"
+        "start": "node src/cli/cli.js start",
+        "onboard": "node src/cli/cli.js onboard",
+        "status": "node src/cli/cli.js status",
+        "nuke": "node src/cli/cli.js nuke"
     },
     "keywords": [
         "ai",
