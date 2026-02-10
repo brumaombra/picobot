@@ -15,6 +15,10 @@ This section defines the tools available to the assistant, organized by category
 
 Tools run one after another in the order you call them, allowing you to chain operations that depend on each other in a single batch call. For example, create a file, then immediately read or modify it with subsequent tool calls in the same response.
 
+### Tool Usage Tips
+
+- To get the current date and time, always use the `system_datetime` tool instead of relying on your training data or assumptions.
+
 ### Tool Routing
 
 **General** tools are always available by default.

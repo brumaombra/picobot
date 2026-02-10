@@ -198,3 +198,45 @@ export const systemInfoAllTool = {
         }
     }
 };
+
+// Date and time tool
+export const systemDateTimeTool = {
+    // Tool definition
+    name: 'system_datetime',
+    description: 'Get the current date and time in various formats.',
+    parameters: {
+        type: 'object',
+        properties: {}
+    },
+
+    // Main execution function
+    execute: async () => {
+        try {
+            // Get current date and time
+            const now = new Date();
+
+            // Create the result object with various formats
+            const result = {
+                timestamp: now.getTime(),
+                iso: now.toISOString(),
+                utc: now.toUTCString(),
+                local: now.toLocaleString(),
+                date: now.toLocaleDateString(),
+                time: now.toLocaleTimeString(),
+                timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timezoneOffset: now.getTimezoneOffset()
+            };
+
+            // Return the date/time information
+            return {
+                success: true,
+                output: result
+            };
+        } catch (error) {
+            return {
+                success: false,
+                error: `Date/time retrieval failed: ${error.message}`
+            };
+        }
+    }
+};

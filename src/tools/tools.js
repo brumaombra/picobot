@@ -1,6 +1,6 @@
 import { shellTool } from './general/shell.js';
 import { subagentTool } from './general/subagent.js';
-import { systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool } from './system/system.js';
+import { systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool, systemDateTimeTool } from './system/system.js';
 import { routeToCategoryTool } from './general/route.js';
 import { webFetchTool } from './web/fetch.js';
 import { webSearchTool } from './web/search.js';
@@ -20,7 +20,7 @@ export const toolCategories = {
     system: {
         name: 'System',
         description: 'System information and monitoring tools',
-        tools: [systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool]
+        tools: [systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool, systemDateTimeTool]
     },
     web: {
         name: 'Web',
