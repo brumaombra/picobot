@@ -17,7 +17,7 @@ Tools run one after another in the order you call them, allowing you to chain op
 
 ### Tool Usage Tips
 
-- To get the current date and time, always use the `system_datetime` tool instead of relying on your training data or assumptions.
+- To get the current date and time, always use the `get_datetime` tool instead of relying on your training data or assumptions.
 
 ### Tool Routing
 
