@@ -37,11 +37,3 @@ For complex or multi-step tasks, you can spawn subagents to handle parts of the 
 - Always inform the user when delegating to subagents and summarize their results clearly.
 
 **Important**: Use subagents only if the task is complex and consists of multiple independent actions that can be executed in parallel.
-
-### Model Tier
-
-- **Standard (default)** - Use for ~80% of all tasks: data retrieval, simple analysis, basic questions, straightforward operations, file searches, simple formatting, routine operations.
-- **Medium** - Use only for moderately challenging tasks: complex code analysis, multi-step reasoning requiring deep context, generating substantial code, advanced data processing.
-- **Performance** - Use sparingly for highly demanding tasks: complex architectural decisions, deep technical analysis, creative problem-solving requiring maximum capability, critical code generation with high stakes.
-
-**Important**: Always default to "standard" unless the task clearly requires more capability. Cost and speed matter.

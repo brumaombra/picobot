@@ -45,22 +45,6 @@ export const OPENROUTER_MODELS = [
     'deepseek/deepseek-v3.2'
 ];
 
-/**************** Subagent Models *****************/
-export const SUBAGENT_MODEL_TIERS = {
-    standard: {
-        model: 'x-ai/grok-4.1-fast',
-        description: 'Fast, cost-effective responses for simple tasks and quick answers'
-    },
-    medium: {
-        model: 'anthropic/claude-sonnet-4.5',
-        description: 'Balanced performance for most complex tasks requiring good reasoning'
-    },
-    performance: {
-        model: 'anthropic/claude-opus-4.5',
-        description: 'Highest quality responses for critical tasks needing maximum accuracy'
-    }
-};
-
 /**************** Telegram *****************/
 export const TELEGRAM_TYPING_INTERVAL_MS = 4000;
 export const TELEGRAM_MAX_MESSAGE_LENGTH = 4000;

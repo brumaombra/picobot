@@ -6,6 +6,7 @@ import { getConfigValue } from '../config/config.js';
 import { registerStartCommand } from './commands/start.js';
 import { registerModelsCommand } from './commands/models.js';
 import { registerModelCommand } from './commands/model.js';
+import { registerNewCommand } from './commands/new.js';
 import { registerTextHandler } from './commands/text.js';
 import { stopTyping } from './helpers/typing.js';
 import { authMiddleware } from './helpers/auth.js';
@@ -25,6 +26,7 @@ const setupHandlers = () => {
     registerStartCommand(bot);
     registerModelsCommand(bot);
     registerModelCommand(bot);
+    registerNewCommand(bot);
     registerTextHandler(bot);
 };
 
@@ -88,7 +90,8 @@ const registerCommands = async () => {
         await bot.telegram.setMyCommands([
             { command: 'start', description: 'Start conversation with the bot' },
             { command: 'models', description: 'List available AI models' },
-            { command: 'model', description: 'Switch to a specific model' }
+            { command: 'model', description: 'Switch to a specific model' },
+            { command: 'new', description: 'Start a new conversation (clear history)' }
         ]);
 
         // Log success

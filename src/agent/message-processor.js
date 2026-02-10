@@ -80,6 +80,7 @@ export class MessageProcessor {
             channel: message.channel,
             chatId: message.chatId,
             llm: this.conversation.llm,
+            model: this.conversation.model,
             config: this.config
         };
     }

@@ -1,7 +1,7 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { logger } from '../utils/logger.js';
-import { PROMPTS_DIR, SUBAGENT_MODEL_TIERS } from '../config.js';
+import { PROMPTS_DIR } from '../config.js';
 import { generateToolsList } from '../tools/tools.js';
 
 // Build the system prompt
@@ -76,12 +76,4 @@ export const getPromptContent = filename => {
         logger.warn(`Failed to load ${filename}: ${error}`);
         return '';
     }
-};
-
-// Get the model tier tool parameter guidance prompt
-export const getModelTierParameterPrompt = () => {
-    const tiers = Object.entries(SUBAGENT_MODEL_TIERS)
-        .map(([tier, config]) => `• ${tier}: ${config.description}`)
-        .join('\n');
-    return `Choose model tier based on task complexity:\n${tiers}\n\nDefault to "standard" unless the task clearly requires more capability.`;
 };

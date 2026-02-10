@@ -1,8 +1,7 @@
 import { ConversationManager } from '../../agent/conversation.js';
 import { generateUniqueId } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
-import { SUBAGENT_MODEL_TIERS } from '../../config.js';
-import { getModelTierParameterPrompt, buildSubagentSystemPrompt } from '../../agent/prompts.js';
+import { buildSubagentSystemPrompt } from '../../agent/prompts.js';
 import { getToolsDefinitions } from '../tools.js';
 import { getOrCreateSession, addMessageToSession } from '../../session/manager.js';
 
@@ -10,7 +9,7 @@ import { getOrCreateSession, addMessageToSession } from '../../session/manager.j
 export const subagentTool = {
     // Tool definition
     name: 'subagent',
-    description: 'Delegate task to AI subagent for autonomous execution. The subagent returns results to the parent agent.',
+    description: 'Delegate task to AI subagent for autonomous execution.',
     parameters: {
         type: 'object',
         properties: {
@@ -21,11 +20,6 @@ export const subagentTool = {
             label: {
                 type: 'string',
                 description: 'Brief label for identification (2-5 words).'
-            },
-            model_tier: {
-                type: 'string',
-                enum: Object.keys(SUBAGENT_MODEL_TIERS),
-                description: getModelTierParameterPrompt()
             }
         },
         required: ['task', 'label']
@@ -33,18 +27,18 @@ export const subagentTool = {
 
     // Main execution function
     execute: async (args, context) => {
-        const { task, label, model_tier = 'standard' } = args;
+        const { task, label } = args;
 
         // Validate context
-        if (!context?.llm) {
+        if (!context?.llm || !context?.model) {
             return {
                 success: false,
-                error: 'No LLM provider available in context'
+                error: 'No LLM provider or model available in context'
             };
         }
 
-        // Get model from config
-        const selectedModel = SUBAGENT_MODEL_TIERS[model_tier]?.model || SUBAGENT_MODEL_TIERS.standard.model;
+        // Use the same model as the parent agent
+        const selectedModel = context.model;
 
         // Generate a unique ID for the subagent session
         const subagentId = generateUniqueId('subagent');
@@ -87,6 +81,7 @@ export const subagentTool = {
                 channel: context.channel,
                 chatId: context.chatId,
                 llm: context.llm,
+                model: selectedModel,
                 config: context.config
             };
 
