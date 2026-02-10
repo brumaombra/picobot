@@ -2,7 +2,7 @@ import { toolCategories } from '../tools.js';
 import { logger } from '../../utils/logger.js';
 
 // The list of categories that can be routed to (all except 'general')
-const routableCategories = ['filesystem', 'cron', 'gmail', 'calendar', 'drive'];
+const routableCategories = ['web', 'filesystem', 'cron', 'gmail', 'calendar', 'drive'];
 
 // Route to category tool (Returns tools for a specific category)
 export const routeToCategoryTool = {

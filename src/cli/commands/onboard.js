@@ -93,6 +93,16 @@ export const registerOnboardCommand = ({ program }) => {
 					success('No allowed users set (bot will be open to all users)');
 				}
 
+				/************** Prompt for Brave Search API key (optional) **************/
+
+				const braveApiKey = await question('\nEnter your Brave Search API key (optional, press Enter to skip): ');
+				if (braveApiKey.trim()) {
+					config.brave = { apiKey: braveApiKey.trim() };
+					success('Brave Search API key saved');
+				} else {
+					info('Brave Search API key skipped (web search tools will be unavailable)');
+				}
+
 				/******************************** Prompt section - End ********************************/
 
 				// Save the updated config

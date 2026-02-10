@@ -33,6 +33,10 @@ export const registerStatusCommand = ({ program }) => {
                 openRouter: {
                     ...config.openRouter,
                     apiKey: config.openRouter?.apiKey ? '***' : '(not set)'
+                },
+                brave: {
+                    ...config.brave,
+                    apiKey: config.brave?.apiKey ? '***' : '(not set)'
                 }
             };
 

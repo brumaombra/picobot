@@ -78,6 +78,9 @@ export const WEB_FETCH_TIMEOUT_MS = 30000; // 30 seconds
 export const WEB_USER_AGENT = 'Mozilla/5.0 (compatible; Picobot/1.0)';
 export const WEB_ACCEPT_HEADER = 'text/html,application/json,text/plain';
 
+/**************** Brave Search API *****************/
+export const BRAVE_SEARCH_TIMEOUT_MS = 10000; // 10 seconds
+
 /**************** Logging *****************/
 export const DEFAULT_LOG_LEVEL = 'debug';
 export const LOG_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH:mm:ss';

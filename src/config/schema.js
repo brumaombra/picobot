@@ -12,6 +12,11 @@ export const OpenRouterConfigSchema = z.object({
     apiKey: z.string().min(1, 'OpenRouter API key is required')
 });
 
+// Brave Search API configuration (optional)
+export const BraveConfigSchema = z.object({
+    apiKey: z.string().min(1, 'Brave Search API key is required')
+});
+
 // Agent configuration
 export const AgentConfigSchema = z.object({
     model: z.enum(OPENROUTER_MODELS).default(OPENROUTER_MODELS[0])
@@ -21,6 +26,7 @@ export const AgentConfigSchema = z.object({
 export const ConfigSchema = z.object({
     telegram: TelegramConfigSchema,
     openRouter: OpenRouterConfigSchema,
+    brave: BraveConfigSchema.optional(),
     agent: AgentConfigSchema.default({}),
     workspace: z.string().default(DEFAULT_WORKSPACE_PATH)
 });

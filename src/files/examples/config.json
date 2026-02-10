@@ -6,6 +6,9 @@
     "openRouter": {
         "apiKey": ""
     },
+    "brave": {
+        "apiKey": ""
+    },
     "agent": {
         "model": ""
     },
