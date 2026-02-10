@@ -77,9 +77,12 @@ export class ToolExecutor {
 
     // Execute multiple tool calls
     async executeBatch(toolCalls, context) {
-        // Execute all tools in parallel
-        const promises = toolCalls.map(call => this.execute(call, context));
-        const results = await Promise.all(promises);
+        // Execute all tools sequentially
+        const results = [];
+        for (const call of toolCalls) {
+            const result = await this.execute(call, context);
+            results.push(result);
+        }
 
         // Return all results
         return results;

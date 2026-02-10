@@ -11,6 +11,10 @@ This section defines the tools available to the assistant, organized by category
 - Handle tool errors gracefully and retry with corrected parameters when possible.
 - Prefer specific tools over generic ones when available.
 
+### Tool Execution Order
+
+Tools run one after another in the order you call them, allowing you to chain operations that depend on each other in a single batch call. For example, create a file, then immediately read or modify it with subsequent tool calls in the same response.
+
 ### Tool Routing
 
 **General** tools are always available by default.

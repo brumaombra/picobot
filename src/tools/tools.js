@@ -1,5 +1,6 @@
 import { shellTool } from './general/shell.js';
 import { subagentTool } from './general/subagent.js';
+import { systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool } from './system/system.js';
 import { routeToCategoryTool } from './general/route.js';
 import { webFetchTool } from './web/fetch.js';
 import { webSearchTool } from './web/search.js';
@@ -15,6 +16,11 @@ export const toolCategories = {
         name: 'General',
         description: 'General-purpose tools for common operations and utilities',
         tools: [shellTool, subagentTool, routeToCategoryTool]
+    },
+    system: {
+        name: 'System',
+        description: 'System information and monitoring tools',
+        tools: [systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool]
     },
     web: {
         name: 'Web',

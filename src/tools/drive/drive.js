@@ -214,7 +214,7 @@ export const driveCreateFileTool = {
                 response = await drive.files.create({
                     requestBody: fileMetadata,
                     media: {
-                        mimeType: 'text/plain',
+                        mimeType,
                         body: content
                     },
                     fields: 'id, name, webViewLink'
@@ -262,6 +262,10 @@ export const driveUpdateFileTool = {
                 type: 'string',
                 description: 'New content.'
             },
+            mimeType: {
+                type: 'string',
+                description: 'MIME type for content.'
+            },
             addParentFolderId: {
                 type: 'string',
                 description: 'Add to folder.'
@@ -276,7 +280,7 @@ export const driveUpdateFileTool = {
 
     // Main execution function
     execute: async args => {
-        const { fileId, name, content, addParentFolderId, removeParentFolderId } = args;
+        const { fileId, name, content, mimeType = 'text/plain', addParentFolderId, removeParentFolderId } = args;
 
         // Log update attempt
         logger.debug(`Updating Drive file: ${fileId}`);
@@ -300,7 +304,7 @@ export const driveUpdateFileTool = {
             // Add media if content provided
             if (content) {
                 updateParams.media = {
-                    mimeType: 'text/plain',
+                    mimeType,
                     body: content
                 };
             }

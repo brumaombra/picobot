@@ -197,7 +197,7 @@ export const gmailReadTool = {
 export const gmailSendTool = {
     // Tool definition
     name: 'gmail_send',
-    description: 'Send plain text email via Gmail.',
+    description: 'Send email via Gmail (supports plain text and HTML).',
     parameters: {
         type: 'object',
         properties: {
@@ -211,7 +211,11 @@ export const gmailSendTool = {
             },
             body: {
                 type: 'string',
-                description: 'Email body (plain text only).'
+                description: 'Email body.'
+            },
+            html: {
+                type: 'boolean',
+                description: 'Send as HTML email (default: false for plain text).'
             },
             cc: {
                 type: 'string',
@@ -227,7 +231,7 @@ export const gmailSendTool = {
 
     // Main execution function
     execute: async args => {
-        const { to, subject, body, cc, bcc } = args;
+        const { to, subject, body, html = false, cc, bcc } = args;
 
         // Log send attempt
         logger.debug(`Sending Gmail to ${to}: ${subject}`);
@@ -236,8 +240,13 @@ export const gmailSendTool = {
             // Get Gmail client
             const gmail = await getGmailClient();
 
-            // Decode HTML entities and normalize body line endings (important for RFC compliance)
-            const safeBody = decodeHtmlEntities(body || '');
+            // Process body based on email type
+            let safeBody = (body || '').replace(/\r?\n/g, '\r\n'); // Normalize line endings for all emails
+
+            // For plain text emails, also decode HTML entities
+            if (!html) {
+                safeBody = decodeHtmlEntities(safeBody);
+            }
 
             // Build headers
             const headers = [
@@ -247,7 +256,7 @@ export const gmailSendTool = {
                 bcc ? `Bcc: ${bcc}` : null,
                 `Subject: ${subject}`,
                 `MIME-Version: 1.0`,
-                `Content-Type: text/plain; charset=UTF-8`
+                `Content-Type: ${html ? 'text/html' : 'text/plain'}; charset=UTF-8`
             ].filter(Boolean);
 
             // Build full raw message (CRITICAL: blank line between headers and body)
