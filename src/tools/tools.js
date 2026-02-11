@@ -11,7 +11,7 @@ import { cronCreateTool, cronListTool, cronGetTool, cronUpdateTool, cronDeleteTo
 import { gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool } from './gmail/gmail.js';
 import { calendarListEventsTool, calendarGetEventTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool } from './calendar/calendar.js';
 import { driveListFilesTool, driveGetFileTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool } from './drive/drive.js';
-import { browserOpenTool, browserClickTool, browserTypeTool, browserScreenshotTool, browserReadTool, browserScrollTool, browserWaitTool, browserSelectTool, browserEvalTool, browserCloseTool } from './browser/browser.js';
+import { browserNavigateTool, browserSnapshotTool, browserClickTool, browserTypeTool, browserSelectOptionTool, browserHoverTool, browserScrollDownTool, browserScrollUpTool, browserGoBackTool, browserEvaluateTool, browserWaitTool, browserTabsTool, browserCloseTool } from './browser/browser.js';
 
 let allTools = [];
 let toolMap = new Map();
@@ -27,7 +27,7 @@ export const initTools = () => {
     TOOLS_LIST.gmail.tools = [gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool];
     TOOLS_LIST.calendar.tools = [calendarListEventsTool, calendarGetEventTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool];
     TOOLS_LIST.drive.tools = [driveListFilesTool, driveGetFileTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool];
-    TOOLS_LIST.browser.tools = [browserOpenTool, browserClickTool, browserTypeTool, browserScreenshotTool, browserReadTool, browserScrollTool, browserWaitTool, browserSelectTool, browserEvalTool, browserCloseTool];
+    TOOLS_LIST.browser.tools = [browserNavigateTool, browserSnapshotTool, browserClickTool, browserTypeTool, browserSelectOptionTool, browserHoverTool, browserScrollDownTool, browserScrollUpTool, browserGoBackTool, browserEvaluateTool, browserWaitTool, browserTabsTool, browserCloseTool];
 
     // Create a flat list and lookup map for easy access
     allTools = Object.values(TOOLS_LIST).flatMap(category => category.tools);

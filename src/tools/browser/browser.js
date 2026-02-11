@@ -1,621 +1,508 @@
-import { chromium } from 'playwright-extra';
-import StealthPlugin from 'puppeteer-extra-plugin-stealth';
+import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
+import { Client } from '@modelcontextprotocol/sdk/client/index.js';
+import { join } from 'path';
 import { logger } from '../../utils/logger.js';
-import { BROWSER_DEFAULT_TIMEOUT_MS, BROWSER_MAX_CONTENT_LENGTH, BROWSER_VIEWPORT } from '../../config.js';
+import { BROWSER_MAX_CONTENT_LENGTH, BROWSER_VIEWPORT } from '../../config.js';
 
-// Apply stealth plugin — patches all common detection vectors
-chromium.use(StealthPlugin());
+/******************************** MCP Client ********************************/
 
-// Singleton browser session manager
-const session = {
-    browser: null,
-    context: null,
-    page: null
-};
+let mcpClient = null;
+let mcpTransport = null;
 
-// Human-like delays
-const humanDelay = (min = 50, max = 200) => {
-    return new Promise(resolve => setTimeout(resolve, Math.floor(Math.random() * (max - min) + min)));
-};
+// Resolve the path to the Playwright MCP CLI binary
+const MCP_CLI = join(process.cwd(), 'node_modules', '@playwright', 'mcp', 'cli.js');
 
-// Launch or return existing stealth browser
-const ensureBrowser = async () => {
-    // Reuse existing browser and page if still connected
-    if (session.browser?.isConnected()) return session.page;
-    logger.info('Launching stealth browser');
+// Start the Playwright MCP server as a subprocess and connect an MCP client
+const ensureClient = async () => {
+    if (mcpClient) return mcpClient;
+    logger.info('Starting Playwright MCP server');
 
-    // Launch a new browser instance with stealth settings
-    session.browser = await chromium.launch({
-        headless: true,
+    // Spawn the MCP server process with headless Chromium, no code generation
+    mcpTransport = new StdioClientTransport({
+        command: process.execPath,
         args: [
-            '--disable-blink-features=AutomationControlled',
-            '--disable-features=IsolateOrigins,site-per-process',
-            '--disable-infobars',
-            '--no-first-run',
-            '--no-default-browser-check',
-            '--disable-dev-shm-usage',
-            '--window-size=1920,1080'
+            MCP_CLI,
+            '--headless',
+            '--codegen=none',
+            `--viewport-size=${BROWSER_VIEWPORT.width}x${BROWSER_VIEWPORT.height}`
         ]
     });
 
-    // Create a new browser context with additional stealth options
-    session.context = await session.browser.newContext({
-        viewport: BROWSER_VIEWPORT,
-        userAgent: 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36',
-        locale: 'en-US',
-        timezoneId: 'America/New_York',
-        deviceScaleFactor: 1,
-        hasTouch: false,
-        javaScriptEnabled: true,
-        bypassCSP: false,
-        ignoreHTTPSErrors: false
-    });
-
-    // Inject extra stealth patches into every new page
-    await session.context.addInitScript(() => {
-        // Override webdriver flag
-        Object.defineProperty(navigator, 'webdriver', { get: () => false });
-
-        // Chrome runtime stub
-        window.chrome = { runtime: {}, loadTimes: () => ({}), csi: () => ({}) };
-
-        // Fake plugins
-        Object.defineProperty(navigator, 'plugins', {
-            get: () => [
-                { name: 'Chrome PDF Plugin', filename: 'internal-pdf-viewer' },
-                { name: 'Chrome PDF Viewer', filename: 'mhjfbmdgcfjbbpaeojofohoefgiehjai' },
-                { name: 'Native Client', filename: 'internal-nacl-plugin' }
-            ]
-        });
-
-        // Fake languages
-        Object.defineProperty(navigator, 'languages', { get: () => ['en-US', 'en'] });
-
-        // Permissions API patch
-        const originalQuery = window.navigator.permissions?.query?.bind(window.navigator.permissions);
-        if (originalQuery) {
-            window.navigator.permissions.query = params =>
-                params.name === 'notifications'
-                    ? Promise.resolve({ state: Notification.permission })
-                    : originalQuery(params);
-        }
-    });
-
-    // Create a new page in the context
-    session.page = await session.context.newPage();
-    session.page.setDefaultTimeout(BROWSER_DEFAULT_TIMEOUT_MS);
-
-    // Return the page
-    return session.page;
+    // Connect an MCP client to the server
+    mcpClient = new Client({ name: 'picobot', version: '1.0.0' });
+    await mcpClient.connect(mcpTransport);
+    return mcpClient;
 };
 
-// Human-like mouse movement to an element before interacting
-const humanMove = async (page, selector) => {
-    const element = await page.waitForSelector(selector, { timeout: BROWSER_DEFAULT_TIMEOUT_MS });
+// Call a tool on the MCP server and return the text output
+const callTool = async (name, args = {}) => {
+    const client = await ensureClient();
+    const result = await client.callTool({ name, arguments: args });
 
-    // Get element's bounding box for movement
-    const box = await element.boundingBox();
-    if (box) {
-        // Move mouse to a random point within the element
-        const x = box.x + box.width * (0.3 + Math.random() * 0.4);
-        const y = box.y + box.height * (0.3 + Math.random() * 0.4);
-        await page.mouse.move(x, y, { steps: 5 + Math.floor(Math.random() * 10) });
-        await humanDelay(30, 100);
+    // Extract text content from MCP response
+    const text = (result.content || [])
+        .filter(content => content.type === 'text')
+        .map(content => content.text)
+        .join('\n');
+
+    // Check for errors
+    if (result.isError) {
+        throw new Error(text || 'MCP tool call failed');
     }
 
-    // Return the element handle for chaining
-    return element;
+    // Truncate if needed
+    if (text.length > BROWSER_MAX_CONTENT_LENGTH) {
+        return text.slice(0, BROWSER_MAX_CONTENT_LENGTH) + '\n… (truncated)';
+    }
+
+    // Return the text output
+    return text;
 };
 
-/**************************** Browser Tools ****************************/
+// Shut down the MCP client and server process
+const shutdown = async () => {
+    // If the client is still connected, try to close it gracefully
+    if (mcpClient) {
+        try { await mcpClient.close(); } catch (error) { logger.debug(`MCP client close: ${error.message}`); }
+        mcpClient = null;
+    }
 
-// Navigate to URL
-export const browserOpenTool = {
+    // If the transport is still open, try to close it gracefully
+    if (mcpTransport) {
+        try { await mcpTransport.close(); } catch (error) { logger.debug(`MCP transport close: ${error.message}`); }
+        mcpTransport = null;
+    }
+};
+
+/******************************** Browser Automation Tools ********************************/
+
+// Navigate to a URL and return the accessibility snapshot
+export const browserNavigateTool = {
     // Tool definition
-    name: 'browser_open',
-    description: 'Open a URL in the stealth browser (launches browser if not running). Returns the page text content.',
+    name: 'browser_navigate',
+    description: 'Navigate to a URL. Returns accessibility snapshot with element [ref] markers for interaction.',
     parameters: {
         type: 'object',
         properties: {
             url: {
                 type: 'string',
                 description: 'URL to navigate to.'
-            },
-            waitUntil: {
-                type: 'string',
-                enum: ['load', 'domcontentloaded', 'networkidle'],
-                description: 'When to consider navigation complete. Default: domcontentloaded.'
             }
         },
         required: ['url']
     },
 
     // Main execution function
-    execute: async args => {
-        const { url, waitUntil = 'domcontentloaded' } = args;
+    execute: async ({ url }) => {
+        // Create the URL object to validate the URL format
+        try { new URL(url); } catch { return { success: false, error: 'Invalid URL' }; }
+        logger.debug(`browser_navigate: ${url}`);
 
         try {
-            new URL(url);
-        } catch {
-            return { success: false, error: 'Invalid URL format' };
-        }
-
-        logger.debug(`Browser navigating to: ${url}`);
-
-        try {
-            // Ensure browser is launched and get the page instance
-            const page = await ensureBrowser();
-            await page.goto(url, { waitUntil, timeout: BROWSER_DEFAULT_TIMEOUT_MS });
-            await humanDelay(500, 1500);
-
-            // Extract page title and text content
-            const title = await page.title();
-            let content = await page.innerText('body').catch(() => '');
-            if (content.length > BROWSER_MAX_CONTENT_LENGTH) {
-                content = content.slice(0, BROWSER_MAX_CONTENT_LENGTH) + '\n... (content truncated)';
-            }
-
-            // Return success with page info and content
             return {
                 success: true,
-                output: `Navigated to: ${url}\nTitle: ${title}\nURL: ${page.url()}\n\n${content}`
+                output: await callTool('browser_navigate', { url })
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            logger.error(`Browser open error: ${message}`);
-            return { success: false, error: `Failed to open URL: ${message}` };
+            logger.error(`browser_navigate: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 };
 
-// Click an element
-export const browserClickTool = {
+// Get the accessibility snapshot of the current page
+export const browserSnapshotTool = {
     // Tool definition
-    name: 'browser_click',
-    description: 'Click an element on the page. Supports CSS selectors and text selectors like text="Login".',
+    name: 'browser_snapshot',
+    description: 'Get the accessibility snapshot of the current page. Shows interactive elements with [ref] markers.',
     parameters: {
         type: 'object',
-        properties: {
-            selector: {
-                type: 'string',
-                description: 'CSS selector or Playwright text selector (e.g. text="Submit", button:has-text("OK")).'
-            }
-        },
-        required: ['selector']
+        properties: {},
+        required: []
     },
 
     // Main execution function
-    execute: async args => {
-        const { selector } = args;
-        logger.debug(`Browser clicking: ${selector}`);
-
+    execute: async () => {
         try {
-            // Click the element with human-like movement and delay
-            const page = await ensureBrowser();
-            await humanMove(page, selector);
-            await humanDelay(50, 150);
-            await page.click(selector);
-            await humanDelay(300, 800);
-
-            // Wait for any navigation triggered by the click
-            await page.waitForLoadState('domcontentloaded', { timeout: 5000 }).catch(() => { });
-
-            // Return success with current page info
-            const title = await page.title();
             return {
                 success: true,
-                output: `Clicked: ${selector}\nCurrent page: ${title} (${page.url()})`
+                output: await callTool('browser_snapshot')
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            logger.error(`Browser click error: ${message}`);
-            return { success: false, error: `Failed to click "${selector}": ${message}` };
+            logger.error(`browser_snapshot: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 };
 
-// Type text into an input
-export const browserTypeTool = {
+// Click an element by its ref from the page snapshot
+export const browserClickTool = {
     // Tool definition
-    name: 'browser_type',
-    description: 'Type text into an input field with human-like keystroke delays. Clicks the element first.',
+    name: 'browser_click',
+    description: 'Click an element using its [ref] from the accessibility snapshot. Returns updated snapshot.',
     parameters: {
         type: 'object',
         properties: {
-            selector: {
+            element: {
                 type: 'string',
-                description: 'CSS selector of the input element.'
+                description: 'Human-readable element description (e.g. "Submit button").'
+            },
+            ref: {
+                type: 'string',
+                description: 'Element ref from the snapshot (e.g. "e42").'
+            }
+        },
+        required: ['element', 'ref']
+    },
+
+    // Main execution function
+    execute: async ({ element, ref }) => {
+        logger.debug(`browser_click: ${ref} (${element})`);
+        try {
+            return {
+                success: true,
+                output: await callTool('browser_click', { element, ref })
+            };
+        } catch (error) {
+            logger.error(`browser_click: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+};
+
+// Type text into a form field by ref
+export const browserTypeTool = {
+    // Tool definition
+    name: 'browser_type',
+    description: 'Type text into a form field identified by its [ref]. Clears existing text first. Returns updated snapshot.',
+    parameters: {
+        type: 'object',
+        properties: {
+            element: {
+                type: 'string',
+                description: 'Human-readable element description (e.g. "Search input").'
+            },
+            ref: {
+                type: 'string',
+                description: 'Element ref from the snapshot (e.g. "e42").'
             },
             text: {
                 type: 'string',
-                description: 'Text to type.'
+                description: 'Text to type into the field.'
             },
-            clear: {
-                type: 'boolean',
-                description: 'Clear the field before typing. Default: true.'
-            },
-            pressEnter: {
+            submit: {
                 type: 'boolean',
                 description: 'Press Enter after typing. Default: false.'
             }
         },
-        required: ['selector', 'text']
+        required: ['element', 'ref', 'text']
     },
 
     // Main execution function
-    execute: async args => {
-        const { selector, text, clear = true, pressEnter = false } = args;
-        logger.debug(`Browser typing into: ${selector}`);
-
+    execute: async ({ element, ref, text, submit = false }) => {
+        logger.debug(`browser_type: ${ref} (${element})`);
         try {
-            // Click the element to focus it
-            const page = await ensureBrowser();
-            await humanMove(page, selector);
-            await page.click(selector);
-            await humanDelay(100, 300);
-
-            // Clear existing content if requested
-            if (clear) {
-                await page.fill(selector, '');
-                await humanDelay(50, 150);
-            }
-
-            // Type with human-like delay between keystrokes
-            await page.type(selector, text, { delay: 30 + Math.random() * 80 });
-
-            // Optionally press Enter after typing
-            if (pressEnter) {
-                await humanDelay(200, 500);
-                await page.keyboard.press('Enter');
-            }
-
-            // Return success with info about the action
             return {
                 success: true,
-                output: `Typed ${text.length} characters into: ${selector}${pressEnter ? ' (pressed Enter)' : ''}`
+                output: await callTool('browser_type', { element, ref, text, submit })
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            logger.error(`Browser type error: ${message}`);
-            return { success: false, error: `Failed to type into "${selector}": ${message}` };
+            logger.error(`browser_type: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 };
 
-// Take a screenshot
-export const browserScreenshotTool = {
+// Select an option from a dropdown by ref
+export const browserSelectOptionTool = {
     // Tool definition
-    name: 'browser_screenshot',
-    description: 'Take a screenshot of the current page or a specific element. Returns base64-encoded PNG.',
+    name: 'browser_select_option',
+    description: 'Select an option from a <select> dropdown by its [ref]. Returns updated snapshot.',
     parameters: {
         type: 'object',
         properties: {
-            selector: {
+            element: {
                 type: 'string',
-                description: 'CSS selector of element to screenshot (optional, defaults to full page).'
+                description: 'Human-readable element description.'
             },
-            fullPage: {
-                type: 'boolean',
-                description: 'Capture the full scrollable page. Default: false.'
+            ref: {
+                type: 'string',
+                description: 'Element ref from the snapshot.'
+            },
+            values: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Values to select.'
             }
         },
+        required: ['element', 'ref', 'values']
+    },
+
+    // Main execution function
+    execute: async ({ element, ref, values }) => {
+        logger.debug(`browser_select_option: ${ref} (${element})`);
+        try {
+            return {
+                success: true,
+                output: await callTool('browser_select_option', { element, ref, values })
+            };
+        } catch (error) {
+            logger.error(`browser_select_option: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+};
+
+// Hover over an element to reveal dropdowns or tooltips
+export const browserHoverTool = {
+    // Tool definition
+    name: 'browser_hover',
+    description: 'Hover over an element by its [ref]. Useful for revealing dropdowns or tooltips. Returns updated snapshot.',
+    parameters: {
+        type: 'object',
+        properties: {
+            element: {
+                type: 'string',
+                description: 'Human-readable element description.'
+            },
+            ref: {
+                type: 'string',
+                description: 'Element ref from the snapshot.'
+            }
+        },
+        required: ['element', 'ref']
+    },
+
+    // Main execution function
+    execute: async ({ element, ref }) => {
+        logger.debug(`browser_hover: ${ref} (${element})`);
+        try {
+            return {
+                success: true,
+                output: await callTool('browser_hover', { element, ref })
+            };
+        } catch (error) {
+            logger.error(`browser_hover: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+};
+
+// Scroll the page down
+export const browserScrollDownTool = {
+    // Tool definition
+    name: 'browser_scroll_down',
+    description: 'Scroll the page down to reveal more content. Returns updated snapshot.',
+    parameters: {
+        type: 'object',
+        properties: {},
         required: []
     },
 
     // Main execution function
-    execute: async args => {
-        const { selector, fullPage = false } = args;
-        logger.debug(`Browser screenshot${selector ? ` of: ${selector}` : ''}`);
-
+    execute: async () => {
+        logger.debug('browser_scroll_down');
         try {
-            // Ensure browser is launched and get the page instance
-            const page = await ensureBrowser();
-            let buffer;
-
-            // If a selector is provided, wait for the element and screenshot it; otherwise, screenshot the full page
-            if (selector) {
-                const element = await page.waitForSelector(selector, { timeout: BROWSER_DEFAULT_TIMEOUT_MS });
-                buffer = await element.screenshot({ type: 'png' });
-            } else {
-                buffer = await page.screenshot({ type: 'png', fullPage });
-            }
-
-            // Convert the screenshot buffer to a base64 string for output
-            const base64 = buffer.toString('base64');
-            const title = await page.title();
-
-            // Return success with the screenshot data and page info
             return {
                 success: true,
-                output: `Screenshot captured (${Math.round(buffer.length / 1024)} KB)\nPage: ${title} (${page.url()})\n\ndata:image/png;base64,${base64}`
+                output: await callTool('browser_scroll_down')
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            logger.error(`Browser screenshot error: ${message}`);
-            return { success: false, error: `Failed to take screenshot: ${message}` };
+            logger.error(`browser_scroll_down: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 };
 
-// Read page content
-export const browserReadTool = {
+// Scroll the page up
+export const browserScrollUpTool = {
     // Tool definition
-    name: 'browser_read',
-    description: 'Extract text content from the current page or a specific element.',
+    name: 'browser_scroll_up',
+    description: 'Scroll the page up. Returns updated snapshot.',
     parameters: {
         type: 'object',
-        properties: {
-            selector: {
-                type: 'string',
-                description: 'CSS selector to extract text from (optional, defaults to full page body).'
-            }
-        },
+        properties: {},
         required: []
     },
 
     // Main execution function
-    execute: async args => {
-        const { selector } = args;
-        logger.debug(`Browser reading content${selector ? ` from: ${selector}` : ''}`);
-
+    execute: async () => {
+        logger.debug('browser_scroll_up');
         try {
-            // Ensure browser is launched and get the page instance
-            const page = await ensureBrowser();
-            const title = await page.title();
-            const url = page.url();
-            let content;
-
-            // If a selector is provided, extract text from that element; otherwise, extract text from the entire body
-            if (selector) {
-                content = await page.innerText(selector);
-            } else {
-                content = await page.innerText('body');
-            }
-
-            // Truncate content if it exceeds the maximum length
-            if (content.length > BROWSER_MAX_CONTENT_LENGTH) {
-                content = content.slice(0, BROWSER_MAX_CONTENT_LENGTH) + '\n... (content truncated)';
-            }
-
-            // Return success with the extracted content and page info
             return {
                 success: true,
-                output: `Page: ${title} (${url})\n\n${content}`
+                output: await callTool('browser_scroll_up')
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            logger.error(`Browser read error: ${message}`);
-            return { success: false, error: `Failed to read content: ${message}` };
+            logger.error(`browser_scroll_up: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 };
 
-// Scroll the page
-export const browserScrollTool = {
+// Navigate back in browser history
+export const browserGoBackTool = {
     // Tool definition
-    name: 'browser_scroll',
-    description: 'Scroll the page up or down by a given amount, or to a specific element.',
+    name: 'browser_go_back',
+    description: 'Navigate back in browser history. Returns updated snapshot.',
     parameters: {
         type: 'object',
-        properties: {
-            direction: {
-                type: 'string',
-                enum: ['up', 'down'],
-                description: 'Scroll direction. Default: down.'
-            },
-            amount: {
-                type: 'number',
-                description: 'Pixels to scroll. Default: 500.'
-            },
-            selector: {
-                type: 'string',
-                description: 'Scroll a specific element into view instead of scrolling the page.'
-            }
-        },
+        properties: {},
         required: []
     },
 
     // Main execution function
-    execute: async args => {
-        const { direction = 'down', amount = 500, selector } = args;
-        logger.debug(`Browser scrolling ${selector ? `to: ${selector}` : `${direction} ${amount}px`}`);
-
+    execute: async () => {
+        logger.debug('browser_go_back');
         try {
-            // Ensure browser is launched and get the page instance
-            const page = await ensureBrowser();
-
-            // If a selector is provided, scroll that element into view; otherwise, scroll the page by the specified amount
-            if (selector) {
-                await page.locator(selector).scrollIntoViewIfNeeded({ timeout: BROWSER_DEFAULT_TIMEOUT_MS });
-                await humanDelay(200, 500);
-                return {
-                    success: true,
-                    output: `Scrolled element into view: ${selector}`
-                };
-            }
-
-            // Calculate scroll delta based on direction
-            const delta = direction === 'up' ? -amount : amount;
-            await page.mouse.wheel(0, delta);
-            await humanDelay(300, 700);
-
-            // Return success with info about the scroll action
             return {
                 success: true,
-                output: `Scrolled ${direction} by ${amount}px`
+                output: await callTool('browser_go_back')
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            logger.error(`Browser scroll error: ${message}`);
-            return { success: false, error: `Failed to scroll: ${message}` };
+            logger.error(`browser_go_back: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 };
 
-// Wait for something
+// Execute JavaScript in the page context
+export const browserEvaluateTool = {
+    // Tool definition
+    name: 'browser_evaluate',
+    description: 'Execute JavaScript in the page context. Use function syntax: () => { /* code */ }',
+    parameters: {
+        type: 'object',
+        properties: {
+            function: {
+                type: 'string',
+                description: 'JavaScript function to evaluate, e.g. () => document.title'
+            }
+        },
+        required: ['function']
+    },
+
+    // Main execution function
+    execute: async args => {
+        logger.debug('browser_evaluate');
+        try {
+            return {
+                success: true,
+                output: await callTool('browser_evaluate', { function: args.function })
+            };
+        } catch (error) {
+            logger.error(`browser_evaluate: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
+        }
+    }
+};
+
+// Wait for a specified number of seconds
 export const browserWaitTool = {
     // Tool definition
     name: 'browser_wait',
-    description: 'Wait for a selector to appear, for navigation, or for a fixed time.',
+    description: 'Wait for a specified number of seconds before continuing.',
     parameters: {
         type: 'object',
         properties: {
-            selector: {
-                type: 'string',
-                description: 'CSS selector to wait for.'
-            },
-            state: {
-                type: 'string',
-                enum: ['attached', 'detached', 'visible', 'hidden'],
-                description: 'State to wait for. Default: visible.'
-            },
-            timeout: {
+            time: {
                 type: 'number',
-                description: 'Maximum wait time in ms. Default: 10000.'
+                description: 'Time to wait in seconds. Default: 3.'
             }
         },
         required: []
     },
 
     // Main execution function
-    execute: async args => {
-        const { selector, state = 'visible', timeout = 10000 } = args;
-
+    execute: async ({ time = 3 } = {}) => {
+        logger.debug(`browser_wait: ${time}s`);
         try {
-            // Ensure browser is launched and get the page instance
-            const page = await ensureBrowser();
-
-            // If a selector is provided, wait for that element to reach the specified state; otherwise, just wait for the specified timeout
-            if (selector) {
-                logger.debug(`Browser waiting for: ${selector} (${state})`);
-                await page.waitForSelector(selector, { state, timeout });
-                return {
-                    success: true,
-                    output: `Element "${selector}" is now ${state}`
-                };
-            }
-
-            // Default: wait for a brief moment
-            logger.debug(`Browser waiting ${timeout}ms`);
-            await new Promise(resolve => setTimeout(resolve, timeout));
-
-            // Return success after waiting
             return {
                 success: true,
-                output: `Waited ${timeout}ms`
+                output: await callTool('browser_wait', { time })
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            logger.error(`Browser wait error: ${message}`);
-            return { success: false, error: `Wait failed: ${message}` };
+            logger.error(`browser_wait: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 };
 
-// Select from a dropdown
-export const browserSelectTool = {
+// Manage browser tabs
+export const browserTabsTool = {
     // Tool definition
-    name: 'browser_select',
-    description: 'Select an option from a <select> dropdown.',
+    name: 'browser_tabs',
+    description: 'Manage browser tabs. Actions: "list", "select", "close", "new".',
     parameters: {
         type: 'object',
         properties: {
-            selector: {
+            action: {
                 type: 'string',
-                description: 'CSS selector of the <select> element.'
+                enum: ['list', 'select', 'close', 'new'],
+                description: 'Tab action to perform.'
             },
-            value: {
-                type: 'string',
-                description: 'Option value, label, or text to select.'
+            index: {
+                type: 'number',
+                description: 'Tab index for select/close actions.'
             }
         },
-        required: ['selector', 'value']
+        required: ['action']
     },
 
     // Main execution function
-    execute: async args => {
-        const { selector, value } = args;
-        logger.debug(`Browser selecting "${value}" in: ${selector}`);
-
+    execute: async ({ action, index }) => {
+        logger.debug(`browser_tabs: ${action}`);
         try {
-            // Ensure browser is launched and get the page instance
-            const page = await ensureBrowser();
-            await humanMove(page, selector);
-            await humanDelay(100, 300);
-
-            // Try by value first, then by label
-            const selected = await page.selectOption(selector, value).catch(() =>
-                page.selectOption(selector, { label: value })
-            );
-
-            // Return success with info about the selected option
+            const args = { action };
+            if (index !== undefined) args.index = index;
             return {
                 success: true,
-                output: `Selected option in ${selector}: ${JSON.stringify(selected)}`
+                output: await callTool('browser_tabs', args)
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            logger.error(`Browser select error: ${message}`);
-            return { success: false, error: `Failed to select "${value}" in "${selector}": ${message}` };
+            logger.error(`browser_tabs: ${error.message}`);
+            return {
+                success: false,
+                error: error.message
+            };
         }
     }
 };
 
-// Execute JavaScript on the page
-export const browserEvalTool = {
-    // Tool definition
-    name: 'browser_eval',
-    description: 'Execute JavaScript code in the browser page context and return the result.',
-    parameters: {
-        type: 'object',
-        properties: {
-            script: {
-                type: 'string',
-                description: 'JavaScript code to execute in the page context.'
-            }
-        },
-        required: ['script']
-    },
-
-    // Main execution function
-    execute: async args => {
-        const { script } = args;
-        logger.debug(`Browser evaluating script`);
-
-        try {
-            // Ensure browser is launched and get the page instance
-            const page = await ensureBrowser();
-            const result = await page.evaluate(script);
-
-            // Convert the result to a string for output, handling different types appropriately
-            let output;
-            if (result === undefined || result === null) {
-                output = String(result);
-            } else if (typeof result === 'object') {
-                output = JSON.stringify(result, null, 2);
-            } else {
-                output = String(result);
-            }
-
-            // Truncate output if it exceeds the maximum length
-            if (output.length > BROWSER_MAX_CONTENT_LENGTH) {
-                output = output.slice(0, BROWSER_MAX_CONTENT_LENGTH) + '\n... (output truncated)';
-            }
-
-            // Return success with the script result
-            return {
-                success: true,
-                output
-            };
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            logger.error(`Browser eval error: ${message}`);
-            return { success: false, error: `Script execution failed: ${message}` };
-        }
-    }
-};
-
-// Close the browser
+// Close the browser and end the session
 export const browserCloseTool = {
     // Tool definition
     name: 'browser_close',
@@ -628,33 +515,18 @@ export const browserCloseTool = {
 
     // Main execution function
     execute: async () => {
-        logger.debug('Closing browser');
-
+        logger.debug('browser_close');
         try {
-            // If the browser is connected, close it; otherwise, just reset the session state
-            if (session.browser?.isConnected()) {
-                await session.browser.close();
-            }
-
-            // Reset session state
-            session.browser = null;
-            session.context = null;
-            session.page = null;
-
-            // Return success message
-            return {
-                success: true,
-                output: 'Browser closed'
-            };
+            await callTool('browser_close');
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            logger.error(`Browser close error: ${message}`);
-
-            // Reset session state even on error
-            session.browser = null;
-            session.context = null;
-            session.page = null;
-            return { success: false, error: `Failed to close browser: ${message}` };
+            logger.debug(`browser_close tool: ${error.message}`);
         }
+
+        // Shut down the MCP server process
+        await shutdown();
+        return {
+            success: true,
+            output: 'Browser closed'
+        };
     }
 };

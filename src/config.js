@@ -42,7 +42,9 @@ export const OPENROUTER_MODELS = [
     'openai/gpt-5-mini',
     'google/gemini-3-flash-preview',
     'moonshotai/kimi-k2.5',
-    'deepseek/deepseek-v3.2'
+    'deepseek/deepseek-v3.2',
+    'qwen/qwen3-coder-next',
+    'minimax/minimax-m2.1'
 ];
 
 /**************** Telegram *****************/
