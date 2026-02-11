@@ -5,7 +5,7 @@ import { getDriveClient } from '../../utils/google-client.js';
 export const driveListFilesTool = {
     // Tool definition
     name: 'drive_list_files',
-    description: 'List Google Drive files.',
+    description: 'List Google Drive files with essential metadata. Use drive_get_file to get full details.',
     parameters: {
         type: 'object',
         properties: {
@@ -50,7 +50,7 @@ export const driveListFilesTool = {
                 q,
                 pageSize: Math.min(maxResults, 100),
                 orderBy,
-                fields: 'files(id, name, mimeType, size, modifiedTime, owners, shared, webViewLink)'
+                fields: 'files(id, name, mimeType, modifiedTime)'
             });
 
             // Check if any files found
@@ -61,16 +61,12 @@ export const driveListFilesTool = {
                 };
             }
 
-            // Format output
+            // Format output with essential metadata only
             const files = response.data.files.map(file => ({
                 id: file.id,
                 name: file.name,
                 mimeType: file.mimeType,
-                size: file.size ? parseInt(file.size) : 0,
-                modifiedTime: file.modifiedTime,
-                shared: file.shared || false,
-                owners: file.owners?.map(o => o.emailAddress) || [],
-                webViewLink: file.webViewLink
+                modifiedTime: file.modifiedTime
             }));
 
             // Return the files
@@ -83,6 +79,70 @@ export const driveListFilesTool = {
             return {
                 success: false,
                 error: `Drive list failed: ${error.message}`
+            };
+        }
+    }
+};
+
+// Drive get file tool
+export const driveGetFileTool = {
+    // Tool definition
+    name: 'drive_get_file',
+    description: 'Get detailed metadata about a specific Google Drive file by ID.',
+    parameters: {
+        type: 'object',
+        properties: {
+            fileId: {
+                type: 'string',
+                description: 'File ID.'
+            }
+        },
+        required: ['fileId']
+    },
+
+    // Main execution function
+    execute: async args => {
+        const { fileId } = args;
+
+        // Log get attempt
+        logger.debug(`Getting Drive file metadata: ${fileId}`);
+
+        try {
+            // Get Drive client
+            const drive = await getDriveClient();
+
+            // Get file metadata
+            const response = await drive.files.get({
+                fileId,
+                fields: 'id, name, mimeType, size, modifiedTime, createdTime, owners, shared, webViewLink, description, starred, trashed'
+            });
+
+            // Get the file metadata from response
+            const file = response.data;
+
+            // Return full file metadata
+            return {
+                success: true,
+                output: {
+                    id: file.id,
+                    name: file.name,
+                    mimeType: file.mimeType,
+                    size: file.size ? parseInt(file.size) : 0,
+                    modifiedTime: file.modifiedTime,
+                    createdTime: file.createdTime,
+                    shared: file.shared || false,
+                    owners: file.owners?.map(owner => owner.emailAddress) || [],
+                    webViewLink: file.webViewLink,
+                    description: file.description || '',
+                    starred: file.starred || false,
+                    trashed: file.trashed || false
+                }
+            };
+        } catch (error) {
+            logger.error(`Drive get file error: ${error.message}`);
+            return {
+                success: false,
+                error: `Drive get file failed: ${error.message}`
             };
         }
     }

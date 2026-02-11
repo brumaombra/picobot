@@ -59,7 +59,7 @@ export const cronCreateTool = {
 export const cronListTool = {
     // Tool definition
     name: 'cron_list',
-    description: 'List all scheduled cron jobs.',
+    description: 'List all scheduled cron jobs with metadata. Use cron_get to get detailed information.',
     parameters: {
         type: 'object',
         properties: {},
@@ -78,10 +78,18 @@ export const cronListTool = {
                 };
             }
 
+            // Return metadata only
+            const metadata = jobs.map(job => ({
+                id: job.id,
+                name: job.name,
+                schedule: job.schedule,
+                action: job.action
+            }));
+
             // Return the list of jobs
             return {
                 success: true,
-                output: jobs
+                output: metadata
             };
         } catch (error) {
             logger.error(`Cron list error: ${error.message}`);

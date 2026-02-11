@@ -9,8 +9,8 @@ import { webSearchTool } from './web/search.js';
 import { readFileTool, writeFileTool, listDirTool, deleteTool, renameFileTool, copyFileTool, pathExistsTool, fileSearchTool } from './filesystem/filesystem.js';
 import { cronCreateTool, cronListTool, cronGetTool, cronUpdateTool, cronDeleteTool } from './cron/cron.js';
 import { gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool } from './gmail/gmail.js';
-import { calendarListEventsTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool } from './calendar/calendar.js';
-import { driveListFilesTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool } from './drive/drive.js';
+import { calendarListEventsTool, calendarGetEventTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool } from './calendar/calendar.js';
+import { driveListFilesTool, driveGetFileTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool } from './drive/drive.js';
 
 let allTools = [];
 let toolMap = new Map();
@@ -24,8 +24,8 @@ export const initTools = () => {
     TOOLS_LIST.filesystem.tools = [readFileTool, writeFileTool, listDirTool, deleteTool, renameFileTool, copyFileTool, pathExistsTool, fileSearchTool];
     TOOLS_LIST.cron.tools = [cronCreateTool, cronListTool, cronGetTool, cronUpdateTool, cronDeleteTool];
     TOOLS_LIST.gmail.tools = [gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool];
-    TOOLS_LIST.calendar.tools = [calendarListEventsTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool];
-    TOOLS_LIST.drive.tools = [driveListFilesTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool];
+    TOOLS_LIST.calendar.tools = [calendarListEventsTool, calendarGetEventTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool];
+    TOOLS_LIST.drive.tools = [driveListFilesTool, driveGetFileTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool];
 
     // Create a flat list and lookup map for easy access
     allTools = Object.values(TOOLS_LIST).flatMap(category => category.tools);

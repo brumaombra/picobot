@@ -5,7 +5,7 @@ import { getCalendarClient } from '../../utils/google-client.js';
 export const calendarListEventsTool = {
     // Tool definition
     name: 'calendar_list_events',
-    description: 'List Google Calendar events in date range.',
+    description: 'List Google Calendar events in date range with essential metadata. Use calendar_get_event to get full details.',
     parameters: {
         type: 'object',
         properties: {
@@ -58,16 +58,13 @@ export const calendarListEventsTool = {
                 };
             }
 
-            // Format output
+            // Format output with essential metadata only
             const events = response.data.items.map(event => ({
                 id: event.id,
                 summary: event.summary || '(No title)',
                 start: event.start?.dateTime || event.start?.date,
                 end: event.end?.dateTime || event.end?.date,
-                location: event.location || '',
-                description: event.description || '',
-                attendees: event.attendees?.map(a => a.email) || [],
-                htmlLink: event.htmlLink
+                location: event.location || ''
             }));
 
             // Return events
@@ -80,6 +77,73 @@ export const calendarListEventsTool = {
             return {
                 success: false,
                 error: `Calendar list failed: ${error.message}`
+            };
+        }
+    }
+};
+
+// Calendar get event tool
+export const calendarGetEventTool = {
+    // Tool definition
+    name: 'calendar_get_event',
+    description: 'Get detailed information about a specific Google Calendar event by ID.',
+    parameters: {
+        type: 'object',
+        properties: {
+            eventId: {
+                type: 'string',
+                description: 'Event ID.'
+            },
+            calendarId: {
+                type: 'string',
+                description: 'Calendar ID (default: primary).'
+            }
+        },
+        required: ['eventId']
+    },
+
+    // Main execution function
+    execute: async args => {
+        const { eventId, calendarId = 'primary' } = args;
+
+        // Log get attempt
+        logger.debug(`Getting calendar event: ${eventId}`);
+
+        try {
+            // Get Calendar client
+            const calendar = await getCalendarClient();
+
+            // Get event
+            const response = await calendar.events.get({
+                calendarId,
+                eventId
+            });
+
+            // Get the event details from response
+            const event = response.data;
+
+            // Return full event details
+            return {
+                success: true,
+                output: {
+                    id: event.id,
+                    summary: event.summary || '(No title)',
+                    start: event.start?.dateTime || event.start?.date,
+                    end: event.end?.dateTime || event.end?.date,
+                    location: event.location || '',
+                    description: event.description || '',
+                    attendees: event.attendees?.map(attendee => attendee.email) || [],
+                    htmlLink: event.htmlLink,
+                    status: event.status,
+                    created: event.created,
+                    updated: event.updated
+                }
+            };
+        } catch (error) {
+            logger.error(`Calendar get error: ${error.message}`);
+            return {
+                success: false,
+                error: `Calendar get failed: ${error.message}`
             };
         }
     }
