@@ -1,8 +1,8 @@
-import { toolCategories } from '../tools.js';
+import { TOOLS_LIST } from '../../config.js';
 import { logger } from '../../utils/logger.js';
 
 // The list of categories that can be routed to (all except 'general')
-const routableCategories = ['system', 'web', 'filesystem', 'cron', 'gmail', 'calendar', 'drive'];
+const routableCategories = Object.keys(TOOLS_LIST).filter(category => category !== 'general');
 
 // Route to category tool (Returns tools for a specific category)
 export const routeToCategoryTool = {
@@ -26,7 +26,13 @@ export const routeToCategoryTool = {
         const { category } = args;
 
         // Get the category
-        const categoryConfig = toolCategories[category];
+        const categoryConfig = TOOLS_LIST[category];
+        if (!categoryConfig) {
+            return {
+                success: false,
+                error: `Unknown category: "${category}". Valid categories: ${routableCategories.join(', ')}`
+            };
+        }
 
         // Log routing
         logger.info(`Routing to category: ${categoryConfig.name} (${category})`);

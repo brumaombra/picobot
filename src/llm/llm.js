@@ -1,6 +1,6 @@
 import OpenAI from 'openai';
 import { logger } from '../utils/logger.js';
-import { OPENROUTER_MAX_TOKENS, OPENROUTER_TEMPERATURE, OPENROUTER_TOOL_CHOICE } from '../config.js';
+import { OPENROUTER_MAX_TOKENS, OPENROUTER_TEMPERATURE, OPENROUTER_TOOL_CHOICE, OPENROUTER_REQUEST_TIMEOUT_MS } from '../config.js';
 
 // LLM provider class
 export class Llm {
@@ -14,7 +14,8 @@ export class Llm {
         // Create the OpenRouter client
         this.client = new OpenAI({
             apiKey,
-            baseURL: 'https://openrouter.ai/api/v1'
+            baseURL: 'https://openrouter.ai/api/v1',
+            timeout: OPENROUTER_REQUEST_TIMEOUT_MS
         });
 
         // Log initialization

@@ -75,16 +75,22 @@ export class ToolExecutor {
         }
     }
 
-    // Execute multiple tool calls
+    // Execute multiple tool calls in parallel
     async executeBatch(toolCalls, context) {
-        // Execute all tools sequentially
-        const results = [];
-        for (const call of toolCalls) {
-            const result = await this.execute(call, context);
-            results.push(result);
-        }
+        const settled = await Promise.allSettled(
+            toolCalls.map(call => this.execute(call, context))
+        );
 
-        // Return all results
-        return results;
+        // Map settled results, converting any unexpected rejections to error messages
+        return settled.map((result, i) => {
+            if (result.status === 'fulfilled') return result.value;
+            const message = result.reason instanceof Error ? result.reason.message : String(result.reason);
+            logger.error(`Unexpected tool batch error: ${message}`);
+            return {
+                role: 'tool',
+                content: `Error: ${message}`,
+                tool_call_id: toolCalls[i].id
+            };
+        });
     }
 }

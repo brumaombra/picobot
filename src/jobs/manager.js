@@ -87,12 +87,12 @@ const executeJob = async jobId => {
             case 'agent_prompt':
                 // Trigger an agent with a prompt
                 pushInbound({
+                    id: generateUniqueId('cron'),
                     channel: job.platform,
                     chatId: job.chatId,
                     senderId: job.chatId,
-                    userId: job.chatId,
-                    text: job.message,
-                    messageId: generateUniqueId('cron'),
+                    content: job.message,
+                    timestamp: new Date(),
                     sessionKey: `${job.platform}_${job.chatId}`
                 });
                 break;

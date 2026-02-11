@@ -6,9 +6,10 @@ import { initSessionManager } from './session/manager.js';
 import { initializeJobManager } from './jobs/manager.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google-client.js';
+import { initTools } from './tools/tools.js';
 
-// Active agent instance (accessible for commands like /model)
-let agent = null;
+let agent = null; // Active agent instance (accessible for commands like /model)
+let stopping = false; // Flag to prevent multiple stop attempts
 
 // Get the active agent instance
 export const getAgent = () => {
@@ -22,6 +23,9 @@ export const startBot = async () => {
 
     // Initial log message
     logger.info('Picobot starting up...');
+
+    // Initialize tools
+    initTools();
 
     // Initialize Google API clients
     await initializeGoogleClients();
@@ -76,6 +80,8 @@ export const startBot = async () => {
 
 // Stop the Picobot agent
 export const stopBot = async () => {
+    if (stopping) return;
+    stopping = true;
     logger.info('Shutting down...');
     agent?.stop();
     await stopTelegram();

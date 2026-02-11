@@ -228,8 +228,7 @@ export const splitMessageIntoChunks = (text, maxLength) => {
 export const parseJson = jsonString => {
     try {
         return JSON.parse(jsonString);
-    } catch (error) {
-        console.warn('JSON parse error:', error.message);
+    } catch {
         return {};
     }
 };
@@ -238,8 +237,7 @@ export const parseJson = jsonString => {
 export const stringifyJson = value => {
     try {
         return JSON.stringify(value);
-    } catch (error) {
-        console.warn('JSON stringify error:', error.message);
+    } catch {
         return '{}';
     }
 };

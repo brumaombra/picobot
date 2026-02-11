@@ -23,7 +23,7 @@ export class ConversationManager {
     async run(sessionKey, tools, context, onIntermediateMessage) {
         let iteration = 0;
         let finalResponse = null;
-        let nextIterationCategories = []; // Categories to add for next iteration only
+        let routedCategories = []; // Accumulated routed categories for this run
 
         // Main conversation loop
         while (iteration < MAX_AGENT_ITERATIONS) {
@@ -34,11 +34,11 @@ export class ConversationManager {
             // Get current messages
             const messages = getSessionMessages(sessionKey);
 
-            // Build tools for this iteration (base tools + any active categories)
+            // Build tools for this iteration (base tools + any routed categories)
             let currentTools = tools;
-            if (nextIterationCategories.length > 0) {
-                currentTools = getToolsDefinitions({ categories: ['general', ...nextIterationCategories] });
-                logger.debug(`Using expanded tools with categories: ${nextIterationCategories.join(', ')}`);
+            if (routedCategories.length > 0) {
+                currentTools = getToolsDefinitions({ categories: ['general', ...routedCategories] });
+                logger.debug(`Using expanded tools with categories: ${routedCategories.join(', ')}`);
             }
 
             // Call the LLM with current tools
@@ -77,19 +77,19 @@ export class ConversationManager {
 
                     // Expand tools if addTools is present (from route_to_category)
                     if (message.addTools?.categories) {
-                        // Queue categories for next iteration only
                         for (const category of message.addTools.categories) {
-                            if (!nextIterationCategories.includes(category)) {
-                                nextIterationCategories.push(category);
-                                logger.debug(`Queuing tools from category for next iteration: ${category}`);
+                            if (!routedCategories.includes(category)) {
+                                routedCategories.push(category);
+                                logger.debug(`Routed to category: ${category}`);
                             }
                         }
                     }
                 }
             }
 
-            // Check if we should stop
-            if (result.finish_reason === 'stop' && result.tool_calls.length === 0) {
+            // Handle empty response (no content, no tool calls) — treat as completion
+            if (!result.content && result.tool_calls.length === 0) {
+                logger.warn(`Empty LLM response at iteration ${iteration}, treating as completion`);
                 break;
             }
         }
@@ -97,7 +97,7 @@ export class ConversationManager {
         // Return conversation result
         return {
             response: finalResponse,
-            reachedMaxIterations: iteration >= MAX_AGENT_ITERATIONS
+            reachedMaxIterations: !finalResponse && iteration >= MAX_AGENT_ITERATIONS
         };
     }
 }

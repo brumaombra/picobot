@@ -33,10 +33,7 @@ export const getOrCreateSession = sessionKey => {
     // Update last active time
     session.lastActive = new Date();
 
-    // Save session to disk
-    saveSessionToFiles(sessionKey, session);
-
-    // Return the session
+    // Return the session (disk save is deferred to addMessageToSession)
     return session;
 };
 
@@ -54,7 +51,15 @@ export const addMessageToSession = (sessionKey, message) => {
 
         // Save only the latest messages up to the limit
         const keepCount = MAX_MESSAGES_PER_SESSION - systemMessages.length;
-        session.messages = [...systemMessages, ...otherMessages.slice(-keepCount)];
+        let trimmed = otherMessages.slice(-keepCount);
+
+        // Ensure trim point doesn't orphan tool results from their assistant tool_calls
+        while (trimmed.length > 0 && trimmed[0].role === 'tool') {
+            trimmed.shift();
+        }
+
+        // Combine system messages with trimmed recent messages
+        session.messages = [...systemMessages, ...trimmed];
 
         // Log trimming action
         logger.debug(`Trimmed session ${sessionKey} to ${session.messages.length} messages`);
@@ -77,13 +82,17 @@ export const clearSession = sessionKey => {
     logger.debug(`Cleared session: ${sessionKey}`);
 };
 
-// Clean up expired sessions
+// Clean up expired sessions (only temporary sessions like subagents)
 export const cleanupSessions = () => {
     const now = Date.now();
     let cleaned = 0;
 
     // Iterate through sessions and remove expired ones
     for (const [key, session] of sessions.entries()) {
+        // Only expire temporary sessions (subagents), keep main chat sessions forever
+        if (!key.startsWith('subagent_')) continue;
+
+        // Check if session is expired
         if (now - session.lastActive.getTime() > SESSION_TTL_MS) {
             sessions.delete(key); // Remove session from memory
             deleteSessionFile(key); // Remove session file from disk

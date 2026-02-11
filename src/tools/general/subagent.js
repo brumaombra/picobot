@@ -88,7 +88,7 @@ export const subagentTool = {
             // Run subagent conversation and await its completion
             const result = await conversation.run(subagentId, toolDefinitions, subagentContext);
 
-            // Log completion
+            // Log completion and clean up one-shot session
             logger.info(`Subagent [${subagentId}] completed: ${label}`);
 
             // Return subagent's final response to parent agent

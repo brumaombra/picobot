@@ -1,3 +1,4 @@
+import { TOOLS_LIST } from '../config.js';
 import { shellTool } from './general/shell.js';
 import { subagentTool } from './general/subagent.js';
 import { getDateTimeTool } from './general/datetime.js';
@@ -11,56 +12,29 @@ import { gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool } from '
 import { calendarListEventsTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool } from './calendar/calendar.js';
 import { driveListFilesTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool } from './drive/drive.js';
 
-// Tool categories for organized access
-export const toolCategories = {
-    general: {
-        name: 'General',
-        description: 'General-purpose tools for common operations and utilities',
-        tools: [shellTool, getDateTimeTool, subagentTool, routeToCategoryTool]
-    },
-    system: {
-        name: 'System',
-        description: 'System information and monitoring tools',
-        tools: [systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool]
-    },
-    web: {
-        name: 'Web',
-        description: 'Web browsing and search tools',
-        tools: [webFetchTool, webSearchTool]
-    },
-    filesystem: {
-        name: 'Filesystem',
-        description: 'File and directory operations',
-        tools: [readFileTool, writeFileTool, listDirTool, deleteTool, renameFileTool, copyFileTool, pathExistsTool, fileSearchTool]
-    },
-    cron: {
-        name: 'Cron',
-        description: 'Cron job scheduling and management tools',
-        tools: [cronCreateTool, cronListTool, cronGetTool, cronUpdateTool, cronDeleteTool]
-    },
-    gmail: {
-        name: 'Gmail',
-        description: 'Gmail tools for email management',
-        tools: [gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool]
-    },
-    calendar: {
-        name: 'Calendar',
-        description: 'Google Calendar tools for event management',
-        tools: [calendarListEventsTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool]
-    },
-    drive: {
-        name: 'Drive',
-        description: 'Google Drive tools for file management',
-        tools: [driveListFilesTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool]
-    }
-};
+let allTools = [];
+let toolMap = new Map();
 
-// Flat list of all tools
-const allTools = Object.values(toolCategories).flatMap(category => category.tools);
+// Initialize tool categories with actual tools
+export const initTools = () => {
+    // Fill the TOOLS_LIST with actual tool definitions
+    TOOLS_LIST.general.tools = [shellTool, getDateTimeTool, subagentTool, routeToCategoryTool];
+    TOOLS_LIST.system.tools = [systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool];
+    TOOLS_LIST.web.tools = [webFetchTool, webSearchTool];
+    TOOLS_LIST.filesystem.tools = [readFileTool, writeFileTool, listDirTool, deleteTool, renameFileTool, copyFileTool, pathExistsTool, fileSearchTool];
+    TOOLS_LIST.cron.tools = [cronCreateTool, cronListTool, cronGetTool, cronUpdateTool, cronDeleteTool];
+    TOOLS_LIST.gmail.tools = [gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool];
+    TOOLS_LIST.calendar.tools = [calendarListEventsTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool];
+    TOOLS_LIST.drive.tools = [driveListFilesTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool];
+
+    // Create a flat list and lookup map for easy access
+    allTools = Object.values(TOOLS_LIST).flatMap(category => category.tools);
+    toolMap = new Map(allTools.map(tool => [tool.name, tool]));
+};
 
 // Get a tool by name
 export const getTool = name => {
-    return allTools.find(tool => tool.name === name);
+    return toolMap.get(name);
 };
 
 // Filter tools based on include/exclude tool names or categories
@@ -71,7 +45,7 @@ const filterTools = filter => {
     if (filter?.include?.length) {
         toolsToUse = filter.include.map(name => getTool(name)).filter(Boolean);
     } else if (filter?.categories?.length) {
-        toolsToUse = filter.categories.flatMap(category => toolCategories[category]?.tools || []);
+        toolsToUse = filter.categories.flatMap(category => TOOLS_LIST[category]?.tools || []);
     } else {
         toolsToUse = allTools;
     }
@@ -109,7 +83,7 @@ export const generateToolsList = filter => {
     const sections = [];
 
     // Iterate over categories and their tools to build the list
-    for (const [categoryKey, category] of Object.entries(toolCategories)) {
+    for (const [categoryKey, category] of Object.entries(TOOLS_LIST)) {
         // Filter tools that belong to this category
         const categoryTools = category.tools.filter(tool => toolsToUse.includes(tool));
         if (categoryTools.length === 0) {

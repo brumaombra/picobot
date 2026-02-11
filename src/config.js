@@ -73,3 +73,47 @@ export const LOG_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
 export const ERROR_LOG_FILENAME = join(LOGS_DIR, 'picobot-error.log');
 export const ERROR_LOG_MAX_SIZE = 5 * 1024 * 1024; // 5 MB
 export const LOG_LEVELS = ['debug', 'info', 'warn', 'error'];
+
+/**************** Tools List *****************/
+export const TOOLS_LIST = {
+    general: {
+        name: 'General',
+        description: 'General-purpose tools for common operations and utilities',
+        tools: []
+    },
+    system: {
+        name: 'System',
+        description: 'System information and monitoring tools',
+        tools: []
+    },
+    web: {
+        name: 'Web',
+        description: 'Web browsing and search tools',
+        tools: []
+    },
+    filesystem: {
+        name: 'Filesystem',
+        description: 'File and directory operations',
+        tools: []
+    },
+    cron: {
+        name: 'Cron',
+        description: 'Cron job scheduling and management tools',
+        tools: []
+    },
+    gmail: {
+        name: 'Gmail',
+        description: 'Gmail tools for email management',
+        tools: []
+    },
+    calendar: {
+        name: 'Calendar',
+        description: 'Google Calendar tools for event management',
+        tools: []
+    },
+    drive: {
+        name: 'Drive',
+        description: 'Google Drive tools for file management',
+        tools: []
+    }
+};
