@@ -31,3 +31,6 @@ pids/
 
 # Coverage
 coverage/
+
+# Playwright
+.playwright-cli/

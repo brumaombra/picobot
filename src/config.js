@@ -67,7 +67,6 @@ export const WEB_ACCEPT_HEADER = 'text/html,application/json,text/plain';
 /**************** Browser tool *****************/
 export const BROWSER_DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
 export const BROWSER_MAX_CONTENT_LENGTH = 15000;
-export const BROWSER_VIEWPORT = { width: 1920, height: 1080 };
 
 /**************** Brave Search API *****************/
 export const BRAVE_SEARCH_TIMEOUT_MS = 10000; // 10 seconds

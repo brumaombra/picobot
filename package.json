@@ -12,8 +12,8 @@
         "onboard": "node src/cli/cli.js onboard",
         "status": "node src/cli/cli.js status",
         "nuke": "node src/cli/cli.js nuke",
-        "install-browsers": "npx -p @playwright/mcp playwright install chromium",
-        "postinstall": "npx -p @playwright/mcp playwright install chromium"
+        "install-browsers": "npx playwright install chromium",
+        "postinstall": "npx playwright install chromium"
     },
     "keywords": [
         "ai",
@@ -31,8 +31,7 @@
     },
     "dependencies": {
         "@google-cloud/local-auth": "3.0.1",
-        "@modelcontextprotocol/sdk": "1.26.0",
-        "@playwright/mcp": "0.0.64",
+        "@playwright/cli": "0.1.0",
         "chalk": "5.6.2",
         "commander": "14.0.3",
         "eventemitter3": "5.0.4",
