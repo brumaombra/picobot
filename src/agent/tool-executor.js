@@ -18,7 +18,7 @@ export class ToolExecutor {
             logger.warn(`Disallowed tool call attempted: ${toolName}`);
             return {
                 role: 'tool',
-                content: `Error: Tool "${toolName}" is not available. Use route_to_category to load the right category first.`,
+                content: `Error: Tool "${toolName}" is not available. Only tools listed in your allowed_tools can be used.`,
                 tool_call_id: toolCall?.id
             };
         }
@@ -80,20 +80,12 @@ export class ToolExecutor {
             // Log tool result
             logger.debug(`Tool ${toolName} executed`);
 
-            // Return tool message with optional addTools for expanding tool availability
-            const response = {
+            // Return the tool execution result
+            return {
                 role: 'tool',
                 content,
                 tool_call_id: toolCall?.id
             };
-
-            // Include addTools if present (for route_to_category tool)
-            if (result.addTools) {
-                response.addTools = result.addTools;
-            }
-
-            // Return the tool execution result
-            return response;
         } catch (error) {
             // Log execution error
             const message = error instanceof Error ? error.message : String(error);

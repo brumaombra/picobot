@@ -8,7 +8,7 @@ import { MessageProcessor } from './message-processor.js';
 // Agent class
 export class Agent {
     // Create a new agent instance
-    constructor({ llm, model, workspacePath, config, tools } = {}) {
+    constructor({ llm, model, workspacePath, config } = {}) {
         // Validate required dependencies
         if (!llm || !model || !workspacePath) {
             throw new Error('LLM, model, and workspace path are required');
@@ -24,8 +24,7 @@ export class Agent {
         this.messageProcessor = new MessageProcessor({
             conversation: this.conversation,
             workspacePath,
-            config,
-            tools
+            config
         });
 
         // Agent state

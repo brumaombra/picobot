@@ -1,13 +1,13 @@
 import { getOrCreateSession, addMessageToSession } from '../session/manager.js';
 import { getToolsDefinitions } from '../tools/tools.js';
-import { buildSystemPrompt } from './prompts.js';
+import { buildSystemPrompt, getMainAgentAllowedTools } from './prompts.js';
 import { logger } from '../utils/logger.js';
 import { sendOutbound } from '../bus/message-bus.js';
 
 // Message processor class
 export class MessageProcessor {
     // Create a new message processor instance
-    constructor({ conversation, workspacePath, config, tools }) {
+    constructor({ conversation, workspacePath, config }) {
         // Validate required dependencies
         if (!conversation || !workspacePath) {
             throw new Error('Conversation manager and workspace path are required');
@@ -17,7 +17,7 @@ export class MessageProcessor {
         this.conversation = conversation;
         this.workspacePath = workspacePath;
         this.config = config;
-        this.baseToolDefs = getToolsDefinitions(tools); // Cache base tool definitions (tools are initialized during boot)
+        this.baseToolDefs = getToolsDefinitions(getMainAgentAllowedTools()); // Tool definitions filtered to main agent's allowed tools
     }
 
     // Process a single inbound message

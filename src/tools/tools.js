@@ -1,9 +1,7 @@
-import { TOOLS_LIST } from '../config.js';
 import { shellTool } from './general/shell.js';
 import { subagentTool } from './general/subagent.js';
 import { getDateTimeTool } from './general/datetime.js';
 import { systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool } from './system/system.js';
-import { routeToCategoryTool } from './general/route.js';
 import { webFetchTool } from './web/fetch.js';
 import { webSearchTool } from './web/search.js';
 import { readFileTool, writeFileTool, listDirTool, deleteTool, renameFileTool, copyFileTool, pathExistsTool, fileSearchTool } from './filesystem/filesystem.js';
@@ -13,62 +11,89 @@ import { calendarListEventsTool, calendarGetEventTool, calendarCreateEventTool, 
 import { driveListFilesTool, driveGetFileTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool } from './drive/drive.js';
 import { browserTool } from './browser/browser.js';
 
-let allTools = [];
-let toolMap = new Map();
+// Registry of all available tools (flat map: name → tool)
+const TOOLS = new Map([
+    // General tools
+    [shellTool.name, shellTool],
+    [getDateTimeTool.name, getDateTimeTool],
+    [subagentTool.name, subagentTool],
 
-// Initialize tool categories with actual tools
-export const initTools = () => {
-    // Fill the TOOLS_LIST with actual tool definitions
-    TOOLS_LIST.general.tools = [shellTool, getDateTimeTool, subagentTool, routeToCategoryTool];
-    TOOLS_LIST.system.tools = [systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool];
-    TOOLS_LIST.web.tools = [webFetchTool, webSearchTool];
-    TOOLS_LIST.filesystem.tools = [readFileTool, writeFileTool, listDirTool, deleteTool, renameFileTool, copyFileTool, pathExistsTool, fileSearchTool];
-    TOOLS_LIST.cron.tools = [cronCreateTool, cronListTool, cronGetTool, cronUpdateTool, cronDeleteTool];
-    TOOLS_LIST.gmail.tools = [gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool];
-    TOOLS_LIST.calendar.tools = [calendarListEventsTool, calendarGetEventTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool];
-    TOOLS_LIST.drive.tools = [driveListFilesTool, driveGetFileTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool];
-    TOOLS_LIST.browser.tools = [browserTool];
+    // System tools
+    [systemInfoBasicTool.name, systemInfoBasicTool],
+    [systemInfoCpuTool.name, systemInfoCpuTool],
+    [systemInfoMemoryTool.name, systemInfoMemoryTool],
+    [systemInfoNetworkTool.name, systemInfoNetworkTool],
+    [systemInfoAllTool.name, systemInfoAllTool],
 
-    // Create a flat list and lookup map for easy access
-    allTools = Object.values(TOOLS_LIST).flatMap(category => category.tools);
-    toolMap = new Map(allTools.map(tool => [tool.name, tool]));
-};
+    // Web tools
+    [webFetchTool.name, webFetchTool],
+    [webSearchTool.name, webSearchTool],
+
+    // Filesystem tools
+    [readFileTool.name, readFileTool],
+    [writeFileTool.name, writeFileTool],
+    [listDirTool.name, listDirTool],
+    [deleteTool.name, deleteTool],
+    [renameFileTool.name, renameFileTool],
+    [copyFileTool.name, copyFileTool],
+    [pathExistsTool.name, pathExistsTool],
+    [fileSearchTool.name, fileSearchTool],
+
+    // Cron tools
+    [cronCreateTool.name, cronCreateTool],
+    [cronListTool.name, cronListTool],
+    [cronGetTool.name, cronGetTool],
+    [cronUpdateTool.name, cronUpdateTool],
+    [cronDeleteTool.name, cronDeleteTool],
+
+    // Gmail tools
+    [gmailSearchTool.name, gmailSearchTool],
+    [gmailReadTool.name, gmailReadTool],
+    [gmailSendTool.name, gmailSendTool],
+    [gmailLabelsTool.name, gmailLabelsTool],
+
+    // Calendar tools
+    [calendarListEventsTool.name, calendarListEventsTool],
+    [calendarGetEventTool.name, calendarGetEventTool],
+    [calendarCreateEventTool.name, calendarCreateEventTool],
+    [calendarUpdateEventTool.name, calendarUpdateEventTool],
+    [calendarDeleteEventTool.name, calendarDeleteEventTool],
+
+    // Drive tools
+    [driveListFilesTool.name, driveListFilesTool],
+    [driveGetFileTool.name, driveGetFileTool],
+    [driveReadFileTool.name, driveReadFileTool],
+    [driveCreateFileTool.name, driveCreateFileTool],
+    [driveUpdateFileTool.name, driveUpdateFileTool],
+    [driveDeleteFileTool.name, driveDeleteFileTool],
+    [driveShareFileTool.name, driveShareFileTool],
+
+    // Browser tools
+    [browserTool.name, browserTool]
+]);
 
 // Get a tool by name
 export const getTool = name => {
-    return toolMap.get(name);
+    return TOOLS.get(name);
 };
 
-// Filter tools based on include/exclude tool names or categories
-const filterTools = filter => {
-    let toolsToUse;
-
-    // Determine base tool set (include > categories > all)
-    if (filter?.include?.length) {
-        toolsToUse = filter.include.map(name => getTool(name)).filter(Boolean);
-    } else if (filter?.categories?.length) {
-        toolsToUse = filter.categories.flatMap(category => TOOLS_LIST[category]?.tools || []);
-    } else {
-        toolsToUse = allTools;
+// Resolve a list of tool names to tool objects, filtering out unknown names
+const resolveTools = toolNames => {
+    // If specific tool names are provided, return those tools (filtering out any unknown names)
+    if (toolNames?.length) {
+        return toolNames.map(name => TOOLS.get(name)).filter(Boolean);
     }
 
-    // Remove excluded tools
-    if (filter?.exclude?.length) {
-        const excludedSet = new Set(filter.exclude);
-        toolsToUse = toolsToUse.filter(tool => !excludedSet.has(tool.name));
-    }
-
-    // Return the final filtered list of tools
-    return toolsToUse;
+    // If no specific tool names provided, return all available tools
+    return [...TOOLS.values()];
 };
 
-// Get tool definitions for the LLM, optionally filtered by include/exclude tool names or categories
-export const getToolsDefinitions = filter => {
-    // Filter tools based on provided criteria
-    const toolsToUse = filterTools(filter);
+// Get tool definitions for the LLM, filtered by allowed tool names
+export const getToolsDefinitions = toolNames => {
+    const tools = resolveTools(toolNames);
 
     // Return tool definitions in the format expected by the LLM
-    return toolsToUse.map(tool => ({
+    return tools.map(tool => ({
         type: 'function',
         function: {
             name: tool.name,
@@ -78,38 +103,8 @@ export const getToolsDefinitions = filter => {
     }));
 };
 
-// Generate a formatted text list of all tools grouped by category for documentation
-export const generateToolsList = filter => {
-    // Filter tools based on provided criteria
-    const toolsToUse = filterTools(filter);
-    const sections = [];
-
-    // Iterate over categories and their tools to build the list
-    for (const [categoryKey, category] of Object.entries(TOOLS_LIST)) {
-        // Filter tools that belong to this category
-        const categoryTools = category.tools.filter(tool => toolsToUse.includes(tool));
-        if (categoryTools.length === 0) {
-            continue; // Skip categories with no tools after filtering
-        }
-
-        const lines = [];
-
-        // Category header with name and key
-        lines.push(`### ${category.name} (${categoryKey})`);
-        lines.push('');
-        lines.push(category.description);
-        lines.push('');
-
-        // Tool list - just name and description
-        for (const tool of categoryTools) {
-            lines.push(`- \`${tool.name}\`: ${tool.description}`);
-        }
-
-        // Add spacing after each category
-        lines.push('');
-        sections.push(lines.join('\n'));
-    }
-
-    // Combine all sections into the final output
-    return sections.join('\n\n');
+// Generate a formatted text list of tools for documentation/prompts
+export const generateToolsList = toolNames => {
+    const tools = resolveTools(toolNames);
+    return tools.map(tool => `- \`${tool.name}\`: ${tool.description}`).join('\n');
 };

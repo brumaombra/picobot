@@ -3,18 +3,28 @@ import { join } from 'path';
 import { logger } from '../utils/logger.js';
 import { PROMPTS_DIR } from '../config.js';
 import { generateToolsList } from '../tools/tools.js';
+import { parseFrontmatter, generateAgentsList } from './agents.js';
+
+// Cached main agent metadata (parsed once from AGENTS.md frontmatter)
+let mainAgentMeta = null;
 
 // Build the system prompt
 export const buildSystemPrompt = () => {
     const prompts = [];
 
-    // Load AGENTS.md
-    const agentsPrompt = getPromptContent('AGENTS.md');
-    if (!agentsPrompt) {
+    // Load and parse AGENTS.md
+    const agentsRaw = getPromptContent('AGENTS.md');
+    if (!agentsRaw) {
         throw new Error(`AGENTS.md is required in prompts directory: ${PROMPTS_DIR}`);
-    } else {
-        prompts.push(agentsPrompt);
     }
+
+    const { metadata, body } = parseFrontmatter(agentsRaw);
+    mainAgentMeta = metadata;
+
+    // Replace {agentsList} placeholder with loaded agents
+    let agentsPrompt = body;
+    agentsPrompt = agentsPrompt.replace('{agentsList}', generateAgentsList());
+    prompts.push(agentsPrompt);
 
     // Load SOUL.md
     const soulPrompt = getPromptContent('SOUL.md');
@@ -22,10 +32,11 @@ export const buildSystemPrompt = () => {
         prompts.push(soulPrompt);
     }
 
-    // Load TOOLS.md and replace {toolsList} placeholder
+    // Load TOOLS.md and replace {toolsList} with main agent's allowed tools
     let toolsPrompt = getPromptContent('TOOLS.md');
     if (toolsPrompt) {
-        const toolsList = generateToolsList(); // Generate and insert tools list
+        const allowedTools = metadata.allowed_tools || [];
+        const toolsList = generateToolsList(allowedTools);
         toolsPrompt = toolsPrompt.replace('{toolsList}', toolsList);
         prompts.push(toolsPrompt);
     }
@@ -34,24 +45,41 @@ export const buildSystemPrompt = () => {
     return prompts.join('\n\n');
 };
 
-// Build the subagent system prompt
-export const buildSubagentSystemPrompt = () => {
+// Get the main agent's allowed tool names from AGENTS.md frontmatter
+export const getMainAgentAllowedTools = () => {
+    // Use cached metadata if available
+    if (mainAgentMeta) {
+        return mainAgentMeta.allowed_tools || [];
+    }
+
+    // Otherwise parse AGENTS.md
+    const agentsRaw = getPromptContent('AGENTS.md');
+    if (!agentsRaw) return [];
+
+    const { metadata } = parseFrontmatter(agentsRaw);
+    mainAgentMeta = metadata;
+    return metadata.allowed_tools || [];
+};
+
+// Build the subagent system prompt for a specific agent definition
+export const buildSubagentSystemPrompt = agentDef => {
     const prompts = [];
 
-    // Load SUBAGENT.md
+    // Load SUBAGENT.md (generic subagent instructions)
     const subagentPrompt = getPromptContent('SUBAGENT.md');
     if (subagentPrompt) {
         prompts.push(subagentPrompt);
     }
 
-    // Load TOOLS.md and replace {toolsList} placeholder
+    // Add agent-specific instructions from the agent's markdown body
+    if (agentDef?.instructions) {
+        prompts.push(agentDef.instructions);
+    }
+
+    // Load TOOLS.md and replace {toolsList} with agent's allowed tools
     let toolsPrompt = getPromptContent('TOOLS.md');
     if (toolsPrompt) {
-        const toolsList = generateToolsList({
-            exclude: ['subagent'] // Exclude subagent tool from subagent prompt
-        });
-
-        // Replace placeholder with generated tools list
+        const toolsList = generateToolsList(agentDef?.allowedTools || []);
         toolsPrompt = toolsPrompt.replace('{toolsList}', toolsList);
         prompts.push(toolsPrompt);
     }

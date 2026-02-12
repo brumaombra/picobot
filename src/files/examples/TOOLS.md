@@ -1,6 +1,6 @@
 # Available Tools
 
-This section defines the tools available to the assistant, organized by category.
+This section defines the tools available to the assistant.
 
 ## Guidelines
 
@@ -22,20 +22,6 @@ Tools called in the same response run **in parallel** for speed. This means:
 ### Tool Usage Tips
 
 - Always use the `get_datetime` tool to get the current date or time, which is more than enough. NEVER use the `date` shell command for that.
-
-### Tool Routing
-
-**General** tools are always available by default.
-
-To access specialized tools, use the `route_to_category` tool:
-
-1. Call `route_to_category` with a category name.
-2. The specified category tools become available on the next step (i.e., subsequent turns/iterations after routing completes).
-3. You can route to multiple categories.
-4. General tools always remain available regardless of routing.
-5. Don’t attempt to call category tools until after routing has completed; otherwise they may be rejected as unavailable.
-
-IMPORTANT: Tools loaded via `route_to_category` become available only in subsequent steps/iterations after routing completes.
 
 ## Tools List
 

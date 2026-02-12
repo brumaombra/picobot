@@ -6,7 +6,7 @@ import { initSessionManager } from './session/manager.js';
 import { initializeJobManager } from './jobs/manager.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google-client.js';
-import { initTools } from './tools/tools.js';
+import { loadAgents } from './agent/agents.js';
 
 let agent = null; // Active agent instance (accessible for commands like /model)
 let stopping = false; // Flag to prevent multiple stop attempts
@@ -25,9 +25,6 @@ export const startBot = async () => {
     // Initial log message
     logger.info('Picobot starting up...');
 
-    // Initialize tools
-    initTools();
-
     // Initialize Google API clients
     await initializeGoogleClients();
 
@@ -36,6 +33,9 @@ export const startBot = async () => {
 
     // Initialize job manager (load and schedule cron jobs from disk)
     initializeJobManager();
+
+    // Load agent definitions from agents directory
+    loadAgents();
 
     // Get config
     const config = getConfig();
@@ -50,10 +50,7 @@ export const startBot = async () => {
         llm,
         model: config.agent?.model,
         workspacePath: config.workspace,
-        config: config.agent,
-        tools: {
-            categories: ['general'] // Main agent only uses general toolset
-        }
+        config: config.agent
     });
 
     // Initialize Telegram channel

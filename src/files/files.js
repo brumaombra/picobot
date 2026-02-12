@@ -1,7 +1,7 @@
-import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
+import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPTS_DIR, SESSIONS_DIR, JOBS_DIR, LOGS_DIR } from '../config.js';
+import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPTS_DIR, AGENTS_DIR, SESSIONS_DIR, JOBS_DIR, LOGS_DIR } from '../config.js';
 import { success, warning, error, newline } from '../utils/print.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -12,6 +12,7 @@ const CONFIG_ITEMS = [
     { path: CONFIG_DIR, type: 'directory', name: 'Config directory' },
     { path: WORKSPACE_DIR, type: 'directory', name: 'Workspace directory' },
     { path: PROMPTS_DIR, type: 'directory', name: 'Prompts directory' },
+    { path: AGENTS_DIR, type: 'directory', name: 'Agents directory' },
     { path: SESSIONS_DIR, type: 'directory', name: 'Sessions directory' },
     { path: JOBS_DIR, type: 'directory', name: 'Jobs directory' },
     { path: LOGS_DIR, type: 'directory', name: 'Logs directory' },
@@ -58,4 +59,33 @@ export const createConfigFiles = () => {
         // Log results
         success(exists ? `${item.name} already exists (${item.path})` : `Created ${item.name} (${item.path})`);
     });
+
+    // Copy example agent files to agents directory
+    copyExampleAgents();
+};
+
+// Copy example agent markdown files from examples/agents/ to the agents directory
+const copyExampleAgents = () => {
+    const examplesDir = join(__dirname, 'examples/agents');
+    if (!existsSync(examplesDir)) return;
+
+    try {
+        // Read all markdown files in the examples agents directory
+        const files = readdirSync(examplesDir).filter(f => f.endsWith('.md'));
+
+        // Copy each file to the agents directory if it doesn't already exist
+        for (const file of files) {
+            const destPath = join(AGENTS_DIR, file);
+
+            // If the destination file doesn't exist, copy it from the examples directory
+            if (!existsSync(destPath)) {
+                writeFileSync(destPath, readFileSync(join(examplesDir, file), 'utf-8'));
+                success(`Created agent file: ${file} (${destPath})`);
+            } else {
+                success(`Agent file already exists: ${file} (${destPath})`);
+            }
+        }
+    } catch (err) {
+        error(`Failed to copy example agents: ${err}`);
+    }
 };
