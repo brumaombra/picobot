@@ -10,6 +10,7 @@ import { initTools } from './tools/tools.js';
 
 let agent = null; // Active agent instance (accessible for commands like /model)
 let stopping = false; // Flag to prevent multiple stop attempts
+let agentPromise = null; // Tracks background agent loop for graceful shutdown
 
 // Get the active agent instance
 export const getAgent = () => {
@@ -65,7 +66,7 @@ export const startBot = async () => {
     // Start components
     try {
         // Start agent loop in background
-        const agentPromise = agent.start();
+        agentPromise = agent.start();
 
         // Start Telegram (this blocks)
         await startTelegram();
@@ -83,7 +84,14 @@ export const stopBot = async () => {
     if (stopping) return;
     stopping = true;
     logger.info('Shutting down...');
-    agent?.stop();
-    await stopTelegram();
-    process.exit(0);
+
+    try {
+        agent?.stop();
+        await stopTelegram();
+        await agentPromise;
+    } catch (error) {
+        logger.error(`Shutdown error: ${error}`);
+    } finally {
+        stopping = false;
+    }
 };

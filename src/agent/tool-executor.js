@@ -1,6 +1,6 @@
 import { getTool } from '../tools/tools.js';
 import { logger } from '../utils/logger.js';
-import { parseJson, stringifyJson } from '../utils/utils.js';
+import { stringifyJson } from '../utils/utils.js';
 
 // Tool executor class
 export class ToolExecutor {
@@ -10,25 +10,58 @@ export class ToolExecutor {
     }
 
     // Execute a single tool call
-    async execute(toolCall, context) {
-        // Find the tool
-        const tool = getTool(toolCall.function.name);
-        if (!tool) {
-            // Unknown tool - return error message
-            logger.warn(`Unknown tool: ${toolCall.function.name}`);
+    async execute(toolCall, context, allowedToolNames) {
+        const toolName = toolCall?.function?.name;
+
+        // Enforce allowed tools (prevents executing tools that were not exposed to the model)
+        if (allowedToolNames && toolName && !allowedToolNames.has(toolName)) {
+            logger.warn(`Disallowed tool call attempted: ${toolName}`);
             return {
                 role: 'tool',
-                content: `Error: Unknown tool "${toolCall.function.name}"`,
-                tool_call_id: toolCall.id
+                content: `Error: Tool "${toolName}" is not available. Use route_to_category to load the right category first.`,
+                tool_call_id: toolCall?.id
+            };
+        }
+
+        // Find the tool
+        const tool = toolName ? getTool(toolName) : null;
+        if (!tool) {
+            // Unknown tool - return error message
+            logger.warn(`Unknown tool: ${toolName}`);
+            return {
+                role: 'tool',
+                content: `Error: Unknown tool "${toolName}"`,
+                tool_call_id: toolCall?.id
             };
         }
 
         try {
             // Parse arguments
-            const args = parseJson(toolCall.function.arguments);
+            const rawArgs = toolCall?.function?.arguments;
+            let args = {};
+
+            // Check the type of the arguments and parse accordingly
+            if (typeof rawArgs === 'string') {
+                const trimmed = rawArgs.trim();
+                if (trimmed) {
+                    try {
+                        args = JSON.parse(trimmed);
+                    } catch (error) {
+                        const message = error instanceof Error ? error.message : String(error);
+                        logger.warn(`Invalid JSON arguments for tool ${toolName}: ${message}`);
+                        return {
+                            role: 'tool',
+                            content: `Error: Invalid JSON arguments for tool "${toolName}": ${message}`,
+                            tool_call_id: toolCall?.id
+                        };
+                    }
+                }
+            } else if (rawArgs && typeof rawArgs === 'object') {
+                args = rawArgs;
+            }
 
             // Execute the tool
-            logger.debug(`Executing tool: ${toolCall.function.name}`);
+            logger.debug(`Executing tool: ${toolName}`);
             const result = await tool.execute(args, context);
 
             // Create tool message with result
@@ -45,13 +78,13 @@ export class ToolExecutor {
             }
 
             // Log tool result
-            logger.debug(`Tool ${toolCall.function.name} executed`);
+            logger.debug(`Tool ${toolName} executed`);
 
             // Return tool message with optional addTools for expanding tool availability
             const response = {
                 role: 'tool',
                 content,
-                tool_call_id: toolCall.id
+                tool_call_id: toolCall?.id
             };
 
             // Include addTools if present (for route_to_category tool)
@@ -70,15 +103,15 @@ export class ToolExecutor {
             return {
                 role: 'tool',
                 content: `Error executing tool: ${message}`,
-                tool_call_id: toolCall.id
+                tool_call_id: toolCall?.id
             };
         }
     }
 
     // Execute multiple tool calls in parallel
-    async executeBatch(toolCalls, context) {
+    async executeBatch(toolCalls, context, allowedToolNames) {
         const settled = await Promise.allSettled(
-            toolCalls.map(call => this.execute(call, context))
+            toolCalls.map(call => this.execute(call, context, allowedToolNames))
         );
 
         // Map settled results, converting any unexpected rejections to error messages
@@ -89,7 +122,7 @@ export class ToolExecutor {
             return {
                 role: 'tool',
                 content: `Error: ${message}`,
-                tool_call_id: toolCalls[i].id
+                tool_call_id: toolCalls?.[i]?.id
             };
         });
     }

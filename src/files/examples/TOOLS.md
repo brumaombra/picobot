@@ -30,10 +30,12 @@ Tools called in the same response run **in parallel** for speed. This means:
 To access specialized tools, use the `route_to_category` tool:
 
 1. Call `route_to_category` with a category name.
-2. The specified category tools become available for subsequent tool calls within the current response.
+2. The specified category tools become available on the next step (i.e., subsequent turns/iterations after routing completes).
 3. You can route to multiple categories.
 4. General tools always remain available regardless of routing.
-5. Route to the needed category BEFORE attempting to use its tools in the same response.
+5. Don’t attempt to call category tools until after routing has completed; otherwise they may be rejected as unavailable.
+
+IMPORTANT: Tools loaded via `route_to_category` become available only in subsequent steps/iterations after routing completes.
 
 ## Tools List
 

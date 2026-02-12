@@ -17,7 +17,7 @@ export class MessageProcessor {
         this.conversation = conversation;
         this.workspacePath = workspacePath;
         this.config = config;
-        this.tools = tools; // Tool filter config: { include: [...], exclude: [...] }
+        this.baseToolDefs = getToolsDefinitions(tools); // Cache base tool definitions (tools are initialized during boot)
     }
 
     // Process a single inbound message
@@ -39,7 +39,7 @@ export class MessageProcessor {
             });
 
             // Get tool definitions for the LLM
-            const toolDefs = getToolsDefinitions(this.tools);
+            const toolDefs = this.baseToolDefs;
 
             // Run the conversation loop with callback for intermediate messages
             const result = await this.conversation.run(message.sessionKey, toolDefs, context, content => {

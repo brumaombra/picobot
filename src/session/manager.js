@@ -50,7 +50,7 @@ export const addMessageToSession = (sessionKey, message) => {
         const otherMessages = session.messages.filter(message => message.role !== 'system');
 
         // Save only the latest messages up to the limit
-        const keepCount = MAX_MESSAGES_PER_SESSION - systemMessages.length;
+        const keepCount = Math.max(0, MAX_MESSAGES_PER_SESSION - systemMessages.length);
         let trimmed = otherMessages.slice(-keepCount);
 
         // Ensure trim point doesn't orphan tool results from their assistant tool_calls

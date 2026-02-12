@@ -50,6 +50,8 @@ export const buildSubagentSystemPrompt = () => {
         const toolsList = generateToolsList({
             exclude: ['subagent'] // Exclude subagent tool from subagent prompt
         });
+
+        // Replace placeholder with generated tools list
         toolsPrompt = toolsPrompt.replace('{toolsList}', toolsList);
         prompts.push(toolsPrompt);
     }
