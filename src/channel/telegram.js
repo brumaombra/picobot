@@ -1,6 +1,6 @@
 import { Telegraf } from 'telegraf';
 import { logger } from '../utils/logger.js';
-import { markdownToTelegramHtml, splitMessageIntoChunks } from '../utils/utils.js';
+import { markdownToTelegramHtml, splitMessageIntoChunks, parseSessionKey } from '../utils/utils.js';
 import { onOutbound } from '../bus/message-bus.js';
 import { getConfigValue } from '../config/config.js';
 import { registerStartCommand } from './commands/start.js';
@@ -33,11 +33,14 @@ const setupHandlers = () => {
 // Set up outbound message listener
 const setupOutboundListener = () => {
     onOutbound(async message => {
+        // Parse session key to get channel and chatId
+        const { channel, chatId } = parseSessionKey(message.sessionKey);
+
         // Only handle Telegram messages
-        if (message.channel !== 'telegram') return;
+        if (channel !== 'telegram') return;
 
         // Stop typing indicator before sending the response
-        stopTyping(message.chatId);
+        stopTyping(chatId);
 
         try {
             // Convert markdown to HTML for Telegram
@@ -47,21 +50,21 @@ const setupOutboundListener = () => {
             const chunks = splitMessageIntoChunks(htmlContent, TELEGRAM_MAX_MESSAGE_LENGTH);
             for (const chunk of chunks) {
                 // Send each chunk
-                await bot.telegram.sendMessage(message.chatId, chunk, {
+                await bot.telegram.sendMessage(chatId, chunk, {
                     parse_mode: 'HTML',
                     reply_parameters: message.replyToId ? { message_id: parseInt(message.replyToId, 10) } : undefined,
                 });
             }
 
             // Log successful send
-            logger.debug(`Sent message to telegram_${message.chatId}`);
+            logger.debug(`Sent message to ${message.sessionKey}`);
         } catch (error) {
             // Log the error
             logger.error(`Failed to send telegram message: ${error}`);
 
             try {
                 // Try to send without HTML formatting as fallback
-                await bot.telegram.sendMessage(message.chatId, message.content.slice(0, TELEGRAM_MAX_MESSAGE_LENGTH));
+                await bot.telegram.sendMessage(chatId, message.content.slice(0, TELEGRAM_MAX_MESSAGE_LENGTH));
             } catch (fallbackError) {
                 logger.error(`Fallback send also failed: ${fallbackError}`);
             }

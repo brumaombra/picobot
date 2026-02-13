@@ -23,7 +23,7 @@ export class MessageProcessor {
     // Process a single inbound message
     async process(message) {
         // Log the message
-        logger.info(`Processing message from ${message.channel}:${message.senderId}`);
+        logger.info(`Processing message for session ${message.sessionKey}`);
 
         try {
             // Build execution context
@@ -45,8 +45,7 @@ export class MessageProcessor {
             const result = await this.agent.run(message.sessionKey, toolDefs, context, content => {
                 // Send intermediate messages immediately as they arrive
                 sendOutbound({
-                    channel: message.channel,
-                    chatId: message.chatId,
+                    sessionKey: message.sessionKey,
                     content
                 });
             });
@@ -55,16 +54,14 @@ export class MessageProcessor {
             if (result.response) {
                 // Send final response back to user
                 sendOutbound({
-                    channel: message.channel,
-                    chatId: message.chatId,
+                    sessionKey: message.sessionKey,
                     content: result.response
                 });
             } else if (result.reachedMaxIterations) {
                 // Send max iteration message back
                 logger.warn(`Max iterations reached for session ${message.sessionKey}`);
                 sendOutbound({
-                    channel: message.channel,
-                    chatId: message.chatId,
+                    sessionKey: message.sessionKey,
                     content: "I've reached my iteration limit. Let me know if you need anything else!"
                 });
             }
@@ -77,8 +74,7 @@ export class MessageProcessor {
     buildContext(message) {
         return {
             workingDir: this.workspacePath,
-            channel: message.channel,
-            chatId: message.chatId,
+            sessionKey: message.sessionKey,
             llm: this.agent.llm,
             model: this.agent.model,
             config: this.config
@@ -111,8 +107,7 @@ export class MessageProcessor {
 
         // Send error message back
         sendOutbound({
-            channel: message.channel,
-            chatId: message.chatId,
+            sessionKey: message.sessionKey,
             content: `Sorry, I encountered an error: ${errorMessage}`
         });
     }

@@ -89,8 +89,7 @@ export const subagentTool = {
             // Build execution context for subagent
             const subagentContext = {
                 workingDir: context.workingDir,
-                channel: context.channel,
-                chatId: context.chatId,
+                sessionKey: context.sessionKey,
                 llm: context.llm,
                 model: selectedModel,
                 config: context.config

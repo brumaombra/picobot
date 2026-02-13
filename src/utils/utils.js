@@ -176,6 +176,15 @@ export const generateUniqueId = (prefix = 'msg') => {
     return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
 };
 
+// Parse a session key into its channel and chatId components
+export const parseSessionKey = sessionKey => {
+    const separatorIndex = sessionKey.indexOf('_');
+    return {
+        channel: sessionKey.slice(0, separatorIndex),
+        chatId: sessionKey.slice(separatorIndex + 1)
+    };
+};
+
 // Split message into chunks
 export const splitMessageIntoChunks = (text, maxLength) => {
     // Check if splitting is needed

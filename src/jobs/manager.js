@@ -2,7 +2,6 @@ import cron from 'node-cron';
 import { logger } from '../utils/logger.js';
 import { loadJobsFromFiles } from './persistent.js';
 import { sendOutbound, pushInbound } from '../bus/message-bus.js';
-import { generateUniqueId } from '../utils/utils.js';
 
 // In-memory storage for scheduled jobs
 export const jobs = new Map();
@@ -14,7 +13,7 @@ export const serializeJob = job => ({
     schedule: job.schedule,
     action: job.action,
     chatId: job.chatId,
-    platform: job.platform,
+    channel: job.channel,
     message: job.message
 });
 
@@ -77,8 +76,7 @@ export const executeJob = async jobId => {
             case 'message':
                 // Send a message via message bus
                 sendOutbound({
-                    channel: job.platform,
-                    chatId: job.chatId,
+                    sessionKey: `${job.channel}_${job.chatId}`,
                     content: job.message
                 });
                 break;
@@ -87,13 +85,8 @@ export const executeJob = async jobId => {
             case 'agent_prompt':
                 // Trigger an agent with a prompt
                 pushInbound({
-                    id: generateUniqueId('cron'),
-                    channel: job.platform,
-                    chatId: job.chatId,
-                    senderId: job.chatId,
-                    content: job.message,
-                    timestamp: new Date(),
-                    sessionKey: `${job.platform}_${job.chatId}`
+                    sessionKey: `${job.channel}_${job.chatId}`,
+                    content: job.message
                 });
                 break;
 

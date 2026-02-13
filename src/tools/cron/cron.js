@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { logger } from '../../utils/logger.js';
 import { jobs, serializeJob, executeJob } from '../../jobs/manager.js';
 import { saveJobToFile, deleteJobFile } from '../../jobs/persistent.js';
-import { generateUniqueId, handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { generateUniqueId, handleToolError, handleToolResponse, parseSessionKey } from '../../utils/utils.js';
 
 // Create cron job tool
 export const cronCreateTool = {
@@ -38,8 +38,7 @@ export const cronCreateTool = {
         try {
             // Get arguments and context
             const { name, schedule, action_type, message } = args;
-            const chatId = context?.chatId;
-            const platform = context?.channel;
+            const { channel, chatId } = parseSessionKey(context?.sessionKey || '');
 
             // Validate cron expression
             if (!cron.validate(schedule)) {
@@ -56,7 +55,7 @@ export const cronCreateTool = {
                 schedule,
                 action: action_type,
                 chatId,
-                platform,
+                channel,
                 message,
                 task: null
             };
@@ -201,8 +200,9 @@ export const cronUpdateTool = {
             if (args.schedule !== undefined) updates.schedule = args.schedule;
             if (args.action_type !== undefined) updates.action = args.action_type;
             if (args.message !== undefined) {
-                updates.chatId = context?.chatId;
-                updates.platform = context?.channel;
+                const { channel, chatId } = parseSessionKey(context?.sessionKey || '');
+                updates.chatId = chatId;
+                updates.channel = channel;
                 updates.message = args.message;
             }
 
