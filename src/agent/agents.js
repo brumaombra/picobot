@@ -2,60 +2,10 @@ import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join, basename } from 'path';
 import { AGENTS_DIR } from '../config.js';
 import { logger } from '../utils/logger.js';
+import { parseFrontmatter } from '../utils/utils.js';
 
 // In-memory map of loaded agent definitions
 let agents = new Map();
-
-// Parse YAML-like frontmatter from markdown content
-export const parseFrontmatter = content => {
-    // Match frontmatter block at the start of the content
-    const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
-    if (!match) return { metadata: {}, body: content };
-
-    // Parse the frontmatter content into a metadata object
-    const rawMeta = match[1];
-    const body = content.slice(match[0].length).trim();
-    const metadata = {};
-    let currentKey = null;
-    let currentList = null;
-
-    // Process each line of the frontmatter
-    for (const line of rawMeta.split(/\r?\n/)) {
-        const listItem = line.match(/^\s+-\s+(.+)$/);
-        const keyValue = line.match(/^([\w_]+):\s*(.*)$/);
-
-        // Handle list items
-        if (listItem && currentKey) {
-            currentList.push(listItem[1].trim());
-        } else if (keyValue) {
-            // Flush previous list key
-            if (currentKey && currentList) {
-                metadata[currentKey] = currentList;
-            }
-
-            // Start new key
-            currentKey = keyValue[1];
-            const value = keyValue[2].trim();
-
-            // If value is empty, expect a list to follow
-            if (value) {
-                metadata[currentKey] = value;
-                currentKey = null;
-                currentList = null;
-            } else {
-                currentList = [];
-            }
-        }
-    }
-
-    // Flush final key
-    if (currentKey && currentList) {
-        metadata[currentKey] = currentList;
-    }
-
-    // Return the parsed metadata and the remaining body content
-    return { metadata, body };
-};
 
 // Load all agent definitions from the agents directory
 export const loadAgents = () => {

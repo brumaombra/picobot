@@ -1,5 +1,5 @@
 import { logger } from '../../utils/logger.js';
-import { extractTextFromHtml } from '../../utils/utils.js';
+import { extractTextFromHtml, handleToolError } from '../../utils/utils.js';
 import { WEB_MAX_CONTENT_LENGTH, WEB_FETCH_TIMEOUT_MS, WEB_USER_AGENT, WEB_ACCEPT_HEADER } from '../../config.js';
 
 // Web fetch tool
@@ -26,10 +26,7 @@ export const webFetchTool = {
         try {
             new URL(url);
         } catch {
-            return {
-                success: false,
-                error: 'Invalid URL format'
-            };
+            return handleToolError({ message: 'Invalid URL format' });
         }
 
         // Log fetch attempt
@@ -47,10 +44,7 @@ export const webFetchTool = {
 
             // Check for HTTP errors
             if (!response.ok) {
-                return {
-                    success: false,
-                    error: `HTTP error: ${response.status} ${response.statusText}`
-                };
+                return handleToolError({ message: `HTTP error: ${response.status} ${response.statusText}` });
             }
 
             // Process content based on type
@@ -81,11 +75,7 @@ export const webFetchTool = {
                 output: content
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            return {
-                success: false,
-                error: `Failed to fetch URL: ${message}`
-            };
+            return handleToolError({ error, message: 'Failed to fetch URL' });
         }
     }
 };

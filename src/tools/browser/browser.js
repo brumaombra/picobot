@@ -3,6 +3,7 @@ import { promisify } from 'util';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { logger } from '../../utils/logger.js';
+import { handleToolError } from '../../utils/utils.js';
 import { BROWSER_DEFAULT_TIMEOUT_MS, BROWSER_MAX_CONTENT_LENGTH } from '../../config.js';
 
 const execFileAsync = promisify(execFile);
@@ -116,7 +117,7 @@ Examples:
 
     execute: async ({ command }) => {
         if (!command?.trim()) {
-            return { success: false, error: 'No command provided. Try "open https://example.com" or "snapshot".' };
+            return handleToolError({ message: 'No command provided. Try "open https://example.com" or "snapshot".' });
         }
 
         const args = parseCommand(command.trim());
@@ -126,8 +127,7 @@ Examples:
             const output = await runCli(args);
             return { success: true, output };
         } catch (error) {
-            logger.error(`browser tool: ${error.message}`);
-            return { success: false, error: error.message };
+            return handleToolError({ error, message: 'Browser command failed' });
         }
     }
 };

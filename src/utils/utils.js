@@ -1,6 +1,7 @@
 import { isAbsolute, relative, resolve, join } from 'path';
 import { homedir } from 'os';
 import { SHELL_BLOCKED_COMMANDS } from '../config.js';
+import { logger } from './logger.js';
 
 // Expand ~ in paths and resolve relative paths
 export const expandPath = path => {
@@ -253,4 +254,76 @@ export const decodeHtmlEntities = text => {
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'")
         .replace(/&nbsp;/g, ' ');
+};
+
+// Parse YAML-like frontmatter from markdown content
+export const parseFrontmatter = content => {
+    // Match frontmatter block at the start of the content
+    const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+    if (!match) return { metadata: {}, body: content };
+
+    // Parse the frontmatter content into a metadata object
+    const rawMeta = match[1];
+    const body = content.slice(match[0].length).trim();
+    const metadata = {};
+    let currentKey = null;
+    let currentList = null;
+
+    // Process each line of the frontmatter
+    for (const line of rawMeta.split(/\r?\n/)) {
+        const listItem = line.match(/^\s+-\s+(.+)$/);
+        const keyValue = line.match(/^([\w_]+):\s*(.*)$/);
+
+        // Handle list items
+        if (listItem && currentKey) {
+            currentList.push(listItem[1].trim());
+        } else if (keyValue) {
+            // Flush previous list key
+            if (currentKey && currentList) {
+                metadata[currentKey] = currentList;
+            }
+
+            // Start new key
+            currentKey = keyValue[1];
+            const value = keyValue[2].trim();
+
+            // If value is empty, expect a list to follow
+            if (value) {
+                metadata[currentKey] = value;
+                currentKey = null;
+                currentList = null;
+            } else {
+                currentList = [];
+            }
+        }
+    }
+
+    // Flush final key
+    if (currentKey && currentList) {
+        metadata[currentKey] = currentList;
+    }
+
+    // Return the parsed metadata and the remaining body content
+    return { metadata, body };
+};
+
+// Handle tool execution errors with standardized format
+export const handleToolError = ({ error, message }) => {
+    // Construct a detailed error message
+    let errorMessage;
+    if (error) {
+        const errorDetail = error instanceof Error ? error.message : String(error);
+        errorMessage = `${message}: ${errorDetail}`;
+    } else {
+        errorMessage = message;
+    }
+
+    // Log the error
+    logger.error(errorMessage);
+
+    // Return standardized error response
+    return {
+        success: false,
+        error: errorMessage
+    };
 };

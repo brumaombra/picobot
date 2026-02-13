@@ -1,5 +1,6 @@
 import { logger } from '../../utils/logger.js';
 import { getCalendarClient } from '../../utils/google-client.js';
+import { handleToolError } from '../../utils/utils.js';
 
 // Calendar list events tool
 export const calendarListEventsTool = {
@@ -73,11 +74,7 @@ export const calendarListEventsTool = {
                 output: events
             };
         } catch (error) {
-            logger.error(`Calendar list error: ${error.message}`);
-            return {
-                success: false,
-                error: `Calendar list failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Calendar list failed' });
         }
     }
 };
@@ -140,11 +137,7 @@ export const calendarGetEventTool = {
                 }
             };
         } catch (error) {
-            logger.error(`Calendar get error: ${error.message}`);
-            return {
-                success: false,
-                error: `Calendar get failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Calendar get failed' });
         }
     }
 };
@@ -237,11 +230,7 @@ export const calendarCreateEventTool = {
                 output: `Event created successfully. Event ID: ${response.data.id}\nLink: ${response.data.htmlLink}`
             };
         } catch (error) {
-            logger.error(`Calendar create error: ${error.message}`);
-            return {
-                success: false,
-                error: `Calendar create failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Calendar create failed' });
         }
     }
 };
@@ -335,11 +324,7 @@ export const calendarUpdateEventTool = {
                 output: `Event updated successfully: ${response.data.summary}`
             };
         } catch (error) {
-            logger.error(`Calendar update error: ${error.message}`);
-            return {
-                success: false,
-                error: `Calendar update failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Calendar update failed' });
         }
     }
 };
@@ -388,11 +373,7 @@ export const calendarDeleteEventTool = {
                 output: 'Event deleted successfully'
             };
         } catch (error) {
-            logger.error(`Calendar delete error: ${error.message}`);
-            return {
-                success: false,
-                error: `Calendar delete failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Calendar delete failed' });
         }
     }
 };

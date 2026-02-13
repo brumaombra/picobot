@@ -1,5 +1,5 @@
 import { ConversationManager } from '../../agent/conversation.js';
-import { generateUniqueId } from '../../utils/utils.js';
+import { generateUniqueId, handleToolError } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { buildSubagentSystemPrompt } from '../../agent/prompts.js';
 import { getToolsDefinitions } from '../tools.js';
@@ -39,20 +39,14 @@ export const subagentTool = {
 
         // Validate context
         if (!context?.llm || !context?.model) {
-            return {
-                success: false,
-                error: 'No LLM provider or model available in context'
-            };
+            return handleToolError({ message: 'No LLM provider or model available in context' });
         }
 
         // Look up agent definition
         const agentDef = getAgent(agentId);
         if (!agentDef) {
             const available = [...getAgents().keys()].join(', ');
-            return {
-                success: false,
-                error: `Unknown agent "${agentId}". Available agents: ${available}`
-            };
+            return handleToolError({ message: `Unknown agent "${agentId}". Available agents: ${available}` });
         }
 
         // Use the same model as the parent agent
@@ -112,28 +106,17 @@ export const subagentTool = {
                 return {
                     success: true,
                     output: {
-                        sessionId: subagentId,
+                        session_id: subagentId,
                         message: result.response
                     }
                 };
             } else if (result.reachedMaxIterations) {
-                return {
-                    success: false,
-                    error: `Subagent reached maximum iterations without completing task (session_id: ${subagentId})`
-                };
+                return handleToolError({ message: `Subagent reached maximum iterations without completing task (session_id: ${subagentId})` });
             } else {
-                return {
-                    success: false,
-                    error: `Subagent completed without producing a response (session_id: ${subagentId})`
-                };
+                return handleToolError({ message: `Subagent completed without producing a response (session_id: ${subagentId})` });
             }
         } catch (error) {
-            const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error(`Subagent [${subagentId}] error: ${errorMessage}`);
-            return {
-                success: false,
-                error: `Subagent failed: ${errorMessage}`
-            };
+            return handleToolError({ error, message: 'Subagent failed' });
         }
     }
 };

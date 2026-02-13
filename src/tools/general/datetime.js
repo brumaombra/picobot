@@ -1,3 +1,5 @@
+import { handleToolError } from '../../utils/utils.js';
+
 // Date and time tool
 export const getDateTimeTool = {
     // Tool definition
@@ -25,10 +27,7 @@ export const getDateTimeTool = {
                 }
             };
         } catch (error) {
-            return {
-                success: false,
-                error: `Date/time retrieval failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Date/time retrieval failed' });
         }
     }
 };

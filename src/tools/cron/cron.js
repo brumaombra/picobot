@@ -1,5 +1,6 @@
 import { logger } from '../../utils/logger.js';
 import { createJob, listJobs, getJob, updateJob, deleteJob } from '../../jobs/manager.js';
+import { handleToolError } from '../../utils/utils.js';
 
 // Create cron job tool
 export const cronCreateTool = {
@@ -46,11 +47,7 @@ export const cronCreateTool = {
             // Return the result of job creation
             return result;
         } catch (error) {
-            logger.error(`Cron create error: ${error.message}`);
-            return {
-                success: false,
-                error: error.message
-            };
+            return handleToolError({ error, message: 'Cron create failed' });
         }
     }
 };
@@ -92,11 +89,7 @@ export const cronListTool = {
                 output: metadata
             };
         } catch (error) {
-            logger.error(`Cron list error: ${error.message}`);
-            return {
-                success: false,
-                error: error.message
-            };
+            return handleToolError({ error, message: 'Cron list failed' });
         }
     }
 };
@@ -123,10 +116,7 @@ export const cronGetTool = {
             // Get the job details
             const job = getJob(args.jobId);
             if (!job) {
-                return {
-                    success: false,
-                    error: `Job not found: ${args.jobId}`
-                };
+                return handleToolError({ message: `Job not found: ${args.jobId}` });
             }
 
             // Return the job details
@@ -135,11 +125,7 @@ export const cronGetTool = {
                 output: job
             };
         } catch (error) {
-            logger.error(`Cron get error: ${error.message}`);
-            return {
-                success: false,
-                error: error.message
-            };
+            return handleToolError({ error, message: 'Cron get failed' });
         }
     }
 };
@@ -195,11 +181,7 @@ export const cronUpdateTool = {
             // Update the job with the provided fields
             return updateJob(args.jobId, updates);
         } catch (error) {
-            logger.error(`Cron update error: ${error.message}`);
-            return {
-                success: false,
-                error: error.message
-            };
+            return handleToolError({ error, message: 'Cron update failed' });
         }
     }
 };
@@ -226,11 +208,7 @@ export const cronDeleteTool = {
             // Delete the job
             return deleteJob(args.jobId);
         } catch (error) {
-            logger.error(`Cron delete error: ${error.message}`);
-            return {
-                success: false,
-                error: error.message
-            };
+            return handleToolError({ error, message: 'Cron delete failed' });
         }
     }
 };

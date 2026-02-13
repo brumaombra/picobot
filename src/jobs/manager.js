@@ -2,7 +2,7 @@ import cron from 'node-cron';
 import { logger } from '../utils/logger.js';
 import { loadJobsFromFiles, saveJobToFile, deleteJobFile } from './persistent.js';
 import { sendOutbound, pushInbound } from '../bus/message-bus.js';
-import { generateUniqueId } from '../utils/utils.js';
+import { generateUniqueId, handleToolError } from '../utils/utils.js';
 
 // In-memory storage for scheduled jobs
 const jobs = new Map();
@@ -114,10 +114,7 @@ export const createJob = ({ name, schedule, action, chatId, platform, message })
     try {
         // Validate cron expression
         if (!cron.validate(schedule)) {
-            return {
-                success: false,
-                error: `Invalid cron schedule: ${schedule}. Use standard cron syntax (e.g., "0 0 * * *" for daily at midnight).`
-            };
+            return handleToolError({ message: `Invalid cron schedule: ${schedule}. Use standard cron syntax (e.g., "0 0 * * *" for daily at midnight).` });
         }
 
         // Generate unique ID
@@ -154,11 +151,7 @@ export const createJob = ({ name, schedule, action, chatId, platform, message })
             message: `Job "${name}" created successfully with schedule: ${schedule}`
         };
     } catch (error) {
-        logger.error(`Failed to create job: ${error.message}`);
-        return {
-            success: false,
-            error: error.message
-        };
+        return handleToolError({ error, message: 'Failed to create job' });
     }
 };
 
@@ -180,18 +173,12 @@ export const updateJob = (jobId, updates) => {
         // Get job details
         const job = jobs.get(jobId);
         if (!job) {
-            return {
-                success: false,
-                error: `Job not found: ${jobId}`
-            };
+            return handleToolError({ message: `Job not found: ${jobId}` });
         }
 
         // Validate new schedule if provided
         if (updates.schedule && !cron.validate(updates.schedule)) {
-            return {
-                success: false,
-                error: `Invalid cron schedule: ${updates.schedule}`
-            };
+            return handleToolError({ message: `Invalid cron schedule: ${updates.schedule}` });
         }
 
         // Apply updates
@@ -214,11 +201,7 @@ export const updateJob = (jobId, updates) => {
             message: `Job "${job.name}" updated successfully`
         };
     } catch (error) {
-        logger.error(`Failed to update job ${jobId}: ${error.message}`);
-        return {
-            success: false,
-            error: error.message
-        };
+        return handleToolError({ error, message: `Failed to update job ${jobId}` });
     }
 };
 
@@ -228,10 +211,7 @@ export const deleteJob = jobId => {
         // Get job details
         const job = jobs.get(jobId);
         if (!job) {
-            return {
-                success: false,
-                error: `Job not found: ${jobId}`
-            };
+            return handleToolError({ message: `Job not found: ${jobId}` });
         }
 
         // Stop and destroy the task
@@ -251,10 +231,6 @@ export const deleteJob = jobId => {
             message: `Job "${job.name}" deleted successfully`
         };
     } catch (error) {
-        logger.error(`Failed to delete job ${jobId}: ${error.message}`);
-        return {
-            success: false,
-            error: error.message
-        };
+        return handleToolError({ error, message: `Failed to delete job ${jobId}` });
     }
 };

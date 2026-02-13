@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir, readdir, stat, access, unlink, rm, rename, copyFile } from 'fs/promises';
 import { dirname, join, resolve, isAbsolute, normalize } from 'path';
-import { checkPathForWrite } from '../../utils/utils.js';
+import { checkPathForWrite, handleToolError } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 
 // Read file tool
@@ -30,10 +30,7 @@ export const readFileTool = {
             try {
                 await access(fullPath);
             } catch {
-                return {
-                    success: false,
-                    error: `File not found: ${path}`
-                };
+                return handleToolError({ message: `File not found: ${path}` });
             }
 
             // Read file content
@@ -46,11 +43,7 @@ export const readFileTool = {
                 output: content
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            return {
-                success: false,
-                error: `Failed to read file: ${message}`
-            };
+            return handleToolError({ error, message: 'Failed to read file' });
         }
     }
 };
@@ -84,10 +77,7 @@ export const writeFileTool = {
 
         // Check if path is allowed for writing
         if (!checkPathForWrite({ fullPath, workDir })) {
-            return {
-                success: false,
-                error: `Access denied: You can only write to the workspace directory`
-            };
+            return handleToolError({ message: 'Access denied: You can only write to the workspace directory' });
         }
 
         try {
@@ -104,11 +94,7 @@ export const writeFileTool = {
                 output: `Successfully wrote ${content.length} characters to ${path}`
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            return {
-                success: false,
-                error: `Failed to write file: ${message}`
-            };
+            return handleToolError({ error, message: 'Failed to write file' });
         }
     }
 };
@@ -145,10 +131,7 @@ export const listDirTool = {
             try {
                 await access(fullPath);
             } catch {
-                return {
-                    success: false,
-                    error: `Directory not found: ${path}`
-                };
+                return handleToolError({ message: `Directory not found: ${path}` });
             }
 
             // Helper function to recursively list directories
@@ -221,11 +204,7 @@ export const listDirTool = {
                 output: details
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            return {
-                success: false,
-                error: `Failed to list directory: ${message}`
-            };
+            return handleToolError({ error, message: 'Failed to list directory' });
         }
     }
 };
@@ -259,10 +238,7 @@ export const deleteTool = {
 
         // Check if path is allowed for writing
         if (!checkPathForWrite({ fullPath, workDir })) {
-            return {
-                success: false,
-                error: `Access denied: You can only delete within the workspace directory`
-            };
+            return handleToolError({ message: 'Access denied: You can only delete within the workspace directory' });
         }
 
         try {
@@ -270,10 +246,7 @@ export const deleteTool = {
             try {
                 await access(fullPath);
             } catch {
-                return {
-                    success: false,
-                    error: `Path not found: ${path}`
-                };
+                return handleToolError({ message: `Path not found: ${path}` });
             }
 
             // Check if it's a file or directory
@@ -299,27 +272,18 @@ export const deleteTool = {
                     output: `Successfully deleted directory: ${path}`
                 };
             } else {
-                return {
-                    success: false,
-                    error: `Path is neither a file nor a directory: ${path}`
-                };
+                return handleToolError({ message: `Path is neither a file nor a directory: ${path}` });
             }
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);
 
             // Provide helpful error for non-empty directories
             if (message.includes('not empty') || message.includes('ENOTEMPTY')) {
-                return {
-                    success: false,
-                    error: `Directory is not empty: ${path}. Set recursive=true to delete non-empty directories.`
-                };
+                return handleToolError({ message: `Directory is not empty: ${path}. Set recursive=true to delete non-empty directories.` });
             }
 
             // Return generic error message
-            return {
-                success: false,
-                error: `Failed to delete: ${message}`
-            };
+            return handleToolError({ error, message: 'Failed to delete' });
         }
     }
 };
@@ -354,18 +318,12 @@ export const renameFileTool = {
 
         // Check if the source path is allowed for writing
         if (!checkPathForWrite({ fullPath: fullOldPath, workDir })) {
-            return {
-                success: false,
-                error: `Access denied: Source path must be in the workspace directory`
-            };
+            return handleToolError({ message: 'Access denied: Source path must be in the workspace directory' });
         }
 
         // Check if the destination path is allowed for writing
         if (!checkPathForWrite({ fullPath: fullNewPath, workDir })) {
-            return {
-                success: false,
-                error: `Access denied: Destination path must be in the workspace directory`
-            };
+            return handleToolError({ message: 'Access denied: Destination path must be in the workspace directory' });
         }
 
         try {
@@ -373,10 +331,7 @@ export const renameFileTool = {
             try {
                 await access(fullOldPath);
             } catch {
-                return {
-                    success: false,
-                    error: `Source not found: ${oldPath}`
-                };
+                return handleToolError({ message: `Source not found: ${oldPath}` });
             }
 
             // Ensure destination directory exists
@@ -392,11 +347,7 @@ export const renameFileTool = {
                 output: `Successfully renamed/moved from ${oldPath} to ${newPath}`
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            return {
-                success: false,
-                error: `Failed to rename/move: ${message}`
-            };
+            return handleToolError({ error, message: 'Failed to rename/move' });
         }
     }
 };
@@ -431,10 +382,7 @@ export const copyFileTool = {
 
         // Check if destination path is allowed for writing
         if (!checkPathForWrite({ fullPath: fullDestPath, workDir })) {
-            return {
-                success: false,
-                error: `Access denied: Destination path must be in the workspace directory`
-            };
+            return handleToolError({ message: 'Access denied: Destination path must be in the workspace directory' });
         }
 
         try {
@@ -442,19 +390,13 @@ export const copyFileTool = {
             try {
                 await access(fullSourcePath);
             } catch {
-                return {
-                    success: false,
-                    error: `Source file not found: ${sourcePath}`
-                };
+                return handleToolError({ message: `Source file not found: ${sourcePath}` });
             }
 
             // Check if source is a file
             const stats = await stat(fullSourcePath);
             if (!stats.isFile()) {
-                return {
-                    success: false,
-                    error: `Source is not a file: ${sourcePath}`
-                };
+                return handleToolError({ message: `Source is not a file: ${sourcePath}` });
             }
 
             // Ensure destination directory exists
@@ -470,11 +412,7 @@ export const copyFileTool = {
                 output: `Successfully copied file from ${sourcePath} to ${destPath}`
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            return {
-                success: false,
-                error: `Failed to copy file: ${message}`
-            };
+            return handleToolError({ error, message: 'Failed to copy file' });
         }
     }
 };
@@ -576,10 +514,7 @@ export const fileSearchTool = {
             try {
                 await access(fullPath);
             } catch {
-                return {
-                    success: false,
-                    error: `Directory not found: ${path}`
-                };
+                return handleToolError({ message: `Directory not found: ${path}` });
             }
 
             // Convert glob pattern to regex
@@ -650,11 +585,7 @@ export const fileSearchTool = {
                 output: matches
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            return {
-                success: false,
-                error: `Failed to search files: ${message}`
-            };
+            return handleToolError({ error, message: 'Failed to search files' });
         }
     }
 };

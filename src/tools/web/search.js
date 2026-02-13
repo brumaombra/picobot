@@ -1,6 +1,7 @@
 import { logger } from '../../utils/logger.js';
 import { getConfigValue } from '../../config/config.js';
 import { BRAVE_SEARCH_TIMEOUT_MS } from '../../config.js';
+import { handleToolError } from '../../utils/utils.js';
 
 // Web search tool using Brave Search API
 export const webSearchTool = {
@@ -30,10 +31,7 @@ export const webSearchTool = {
         // Check if Brave API key is configured
         const apiKey = getConfigValue('brave.apiKey');
         if (!apiKey) {
-            return {
-                success: false,
-                error: 'Brave Search API key not configured. Please add brave.apiKey to your config.'
-            };
+            return handleToolError({ message: 'Brave Search API key not configured. Please add brave.apiKey to your config.' });
         }
 
         // Log search attempt
@@ -58,10 +56,7 @@ export const webSearchTool = {
             // Check for HTTP errors
             if (!response.ok) {
                 const errorText = await response.text();
-                return {
-                    success: false,
-                    error: `Brave Search API error: ${response.status} ${response.statusText} - ${errorText}`
-                };
+                return handleToolError({ message: `Brave Search API error: ${response.status} ${response.statusText} - ${errorText}` });
             }
 
             // Parse response
@@ -97,11 +92,7 @@ export const webSearchTool = {
                 }
             };
         } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-            return {
-                success: false,
-                error: `Failed to search web: ${message}`
-            };
+            return handleToolError({ error, message: 'Failed to search web' });
         }
     }
 };

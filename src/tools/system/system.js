@@ -1,4 +1,5 @@
 import * as os from 'os';
+import { handleToolError } from '../../utils/utils.js';
 
 // System information tools
 export const systemInfoBasicTool = {
@@ -30,10 +31,7 @@ export const systemInfoBasicTool = {
                 output: result
             };
         } catch (error) {
-            return {
-                success: false,
-                error: `System info retrieval failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'System info retrieval failed' });
         }
     }
 };
@@ -68,10 +66,7 @@ export const systemInfoCpuTool = {
                 output: result
             };
         } catch (error) {
-            return {
-                success: false,
-                error: `System info retrieval failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'System info retrieval failed' });
         }
     }
 };
@@ -102,10 +97,7 @@ export const systemInfoMemoryTool = {
                 output: result
             };
         } catch (error) {
-            return {
-                success: false,
-                error: `System info retrieval failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'System info retrieval failed' });
         }
     }
 };
@@ -140,10 +132,7 @@ export const systemInfoNetworkTool = {
                 output: result
             };
         } catch (error) {
-            return {
-                success: false,
-                error: `System info retrieval failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'System info retrieval failed' });
         }
     }
 };
@@ -191,10 +180,7 @@ export const systemInfoAllTool = {
                 output: result
             };
         } catch (error) {
-            return {
-                success: false,
-                error: `System info retrieval failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'System info retrieval failed' });
         }
     }
 };

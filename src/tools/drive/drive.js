@@ -1,5 +1,6 @@
 import { logger } from '../../utils/logger.js';
 import { getDriveClient } from '../../utils/google-client.js';
+import { handleToolError } from '../../utils/utils.js';
 
 // Drive list files tool
 export const driveListFilesTool = {
@@ -75,11 +76,7 @@ export const driveListFilesTool = {
                 output: files
             };
         } catch (error) {
-            logger.error(`Drive list error: ${error.message}`);
-            return {
-                success: false,
-                error: `Drive list failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Drive list failed' });
         }
     }
 };
@@ -139,11 +136,7 @@ export const driveGetFileTool = {
                 }
             };
         } catch (error) {
-            logger.error(`Drive get file error: ${error.message}`);
-            return {
-                success: false,
-                error: `Drive get file failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Drive get file failed' });
         }
     }
 };
@@ -212,11 +205,7 @@ export const driveReadFileTool = {
                 output: content
             };
         } catch (error) {
-            logger.error(`Drive read error: ${error.message}`);
-            return {
-                success: false,
-                error: `Drive read failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Drive read failed' });
         }
     }
 };
@@ -293,11 +282,7 @@ export const driveCreateFileTool = {
                 output: `File created successfully: ${response.data.name}\nID: ${response.data.id}\nLink: ${response.data.webViewLink}`
             };
         } catch (error) {
-            logger.error(`Drive create error: ${error.message}`);
-            return {
-                success: false,
-                error: `Drive create failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Drive create failed' });
         }
     }
 };
@@ -378,11 +363,7 @@ export const driveUpdateFileTool = {
                 output: `File updated successfully: ${response.data.name}`
             };
         } catch (error) {
-            logger.error(`Drive update error: ${error.message}`);
-            return {
-                success: false,
-                error: `Drive update failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Drive update failed' });
         }
     }
 };
@@ -425,11 +406,7 @@ export const driveDeleteFileTool = {
                 output: 'File moved to trash successfully'
             };
         } catch (error) {
-            logger.error(`Drive delete error: ${error.message}`);
-            return {
-                success: false,
-                error: `Drive delete failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Drive delete failed' });
         }
     }
 };
@@ -505,11 +482,7 @@ export const driveShareFileTool = {
                 output: `File shared successfully.\nView link: ${file.data.webViewLink}\nDownload link: ${file.data.webContentLink || 'N/A'}`
             };
         } catch (error) {
-            logger.error(`Drive share error: ${error.message}`);
-            return {
-                success: false,
-                error: `Drive share failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Drive share failed' });
         }
     }
 };

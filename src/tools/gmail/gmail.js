@@ -1,6 +1,6 @@
 import { logger } from '../../utils/logger.js';
 import { getGmailClient } from '../../utils/google-client.js';
-import { decodeHtmlEntities } from '../../utils/utils.js';
+import { decodeHtmlEntities, handleToolError } from '../../utils/utils.js';
 
 // Gmail search tool
 export const gmailSearchTool = {
@@ -88,11 +88,7 @@ export const gmailSearchTool = {
                 output: formatted
             };
         } catch (error) {
-            logger.error(`Gmail search error: ${error.message}`);
-            return {
-                success: false,
-                error: `Gmail search failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Gmail search failed' });
         }
     }
 };
@@ -184,11 +180,7 @@ export const gmailReadTool = {
                 output: output
             };
         } catch (error) {
-            logger.error(`Gmail read error: ${error.message}`);
-            return {
-                success: false,
-                error: `Gmail read failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Gmail read failed' });
         }
     }
 };
@@ -286,11 +278,7 @@ export const gmailSendTool = {
                 output: `Email sent successfully. Message ID: ${response.data.id}`
             };
         } catch (error) {
-            logger.error(`Gmail send error: ${error.message}`);
-            return {
-                success: false,
-                error: `Gmail send failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Gmail send failed' });
         }
     }
 };
@@ -332,11 +320,7 @@ export const gmailLabelsTool = {
                 output: labels
             };
         } catch (error) {
-            logger.error(`Gmail labels error: ${error.message}`);
-            return {
-                success: false,
-                error: `Gmail labels list failed: ${error.message}`
-            };
+            return handleToolError({ error, message: 'Gmail labels list failed' });
         }
     }
 };
