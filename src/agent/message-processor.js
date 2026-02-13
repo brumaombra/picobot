@@ -7,14 +7,14 @@ import { sendOutbound } from '../bus/message-bus.js';
 // Message processor class
 export class MessageProcessor {
     // Create a new message processor instance
-    constructor({ conversation, workspacePath, config }) {
+    constructor({ agent, workspacePath, config }) {
         // Validate required dependencies
-        if (!conversation || !workspacePath) {
-            throw new Error('Conversation manager and workspace path are required');
+        if (!agent || !workspacePath) {
+            throw new Error('Agent and workspace path are required');
         }
 
         // Store dependencies
-        this.conversation = conversation;
+        this.agent = agent;
         this.workspacePath = workspacePath;
         this.config = config;
         this.baseToolDefs = getToolsDefinitions(getMainAgentAllowedTools()); // Tool definitions filtered to main agent's allowed tools
@@ -42,7 +42,7 @@ export class MessageProcessor {
             const toolDefs = this.baseToolDefs;
 
             // Run the conversation loop with callback for intermediate messages
-            const result = await this.conversation.run(message.sessionKey, toolDefs, context, content => {
+            const result = await this.agent.run(message.sessionKey, toolDefs, context, content => {
                 // Send intermediate messages immediately as they arrive
                 sendOutbound({
                     channel: message.channel,
@@ -79,8 +79,8 @@ export class MessageProcessor {
             workingDir: this.workspacePath,
             channel: message.channel,
             chatId: message.chatId,
-            llm: this.conversation.llm,
-            model: this.conversation.model,
+            llm: this.agent.llm,
+            model: this.agent.model,
             config: this.config
         };
     }

@@ -1,4 +1,4 @@
-import { ConversationManager } from '../../agent/conversation.js';
+import { Agent } from '../../agent/agent.js';
 import { generateUniqueId, handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { buildSubagentSystemPrompt } from '../../agent/prompts.js';
@@ -58,10 +58,11 @@ export const subagentTool = {
         logger.info(`${isResuming ? 'Resuming' : 'Spawning'} subagent [${subagentId}]: ${agentDef.name} (model: ${selectedModel})`);
 
         try {
-            // Create conversation manager for subagent
-            const conversation = new ConversationManager({
+            // Create subagent
+            const subagent = new Agent({
                 llm: context.llm,
-                model: selectedModel
+                model: selectedModel,
+                isSubagent: true
             });
 
             // Initialize subagent session with system prompt built from agent definition
@@ -96,7 +97,7 @@ export const subagentTool = {
             };
 
             // Run subagent conversation and await its completion
-            const result = await conversation.run(subagentId, toolDefinitions, subagentContext);
+            const result = await subagent.run(subagentId, toolDefinitions, subagentContext);
 
             // Log completion
             logger.info(`Subagent [${subagentId}] completed: ${agentDef.name}`);
