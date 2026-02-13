@@ -10,7 +10,7 @@ import { getAgent, getAgents, getAgentIds } from '../../agent/agents.js';
 export const subagentTool = {
     // Tool definition
     name: 'subagent',
-    description: 'Delegate task to a specialized AI subagent for autonomous execution. Each agent has specific expertise and a dedicated set of tools.',
+    description: 'Delegate task to a specialized AI subagent for autonomous execution. Each agent has specific expertise and a dedicated set of tools. To continue a previous subagent session (e.g. to answer a clarification request), pass the session_id returned from the previous call.',
     get parameters() {
         return {
             type: 'object',
@@ -22,7 +22,11 @@ export const subagentTool = {
                 },
                 task: {
                     type: 'string',
-                    description: 'Detailed task description with all context and requirements.'
+                    description: 'Detailed task description with all context and requirements. When resuming a session, this is your reply to the subagent\'s clarification question.'
+                },
+                session_id: {
+                    type: 'string',
+                    description: 'Optional. The session_id from a previous subagent call to resume that conversation (e.g. to answer a clarification request).'
                 }
             },
             required: ['agent', 'task']
@@ -31,7 +35,7 @@ export const subagentTool = {
 
     // Main execution function
     execute: async (args, context) => {
-        const { agent: agentId, task } = args;
+        const { agent: agentId, task, session_id: existingSessionId } = args;
 
         // Validate context
         if (!context?.llm || !context?.model) {
@@ -54,9 +58,10 @@ export const subagentTool = {
         // Use the same model as the parent agent
         const selectedModel = context.model;
 
-        // Generate a unique ID for the subagent session
-        const subagentId = generateUniqueId('subagent');
-        logger.info(`Spawning subagent [${subagentId}]: ${agentDef.name} (model: ${selectedModel})`);
+        // Reuse existing session or generate a new one
+        const subagentId = existingSessionId || generateUniqueId('subagent');
+        const isResuming = !!existingSessionId;
+        logger.info(`${isResuming ? 'Resuming' : 'Spawning'} subagent [${subagentId}]: ${agentDef.name} (model: ${selectedModel})`);
 
         try {
             // Create conversation manager for subagent
@@ -102,21 +107,24 @@ export const subagentTool = {
             // Log completion
             logger.info(`Subagent [${subagentId}] completed: ${agentDef.name}`);
 
-            // Return subagent's final response to parent agent
+            // Return subagent's final response to parent agent (structured JSON with session_id and message)
             if (result.response) {
                 return {
                     success: true,
-                    output: result.response
+                    output: {
+                        sessionId: subagentId,
+                        message: result.response
+                    }
                 };
             } else if (result.reachedMaxIterations) {
                 return {
                     success: false,
-                    error: 'Subagent reached maximum iterations without completing task'
+                    error: `Subagent reached maximum iterations without completing task (session_id: ${subagentId})`
                 };
             } else {
                 return {
                     success: false,
-                    error: 'Subagent completed without producing a response'
+                    error: `Subagent completed without producing a response (session_id: ${subagentId})`
                 };
             }
         } catch (error) {

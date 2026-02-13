@@ -8,7 +8,7 @@ import { parseFrontmatter, generateAgentsList } from './agents.js';
 // Cached main agent metadata (parsed once from AGENTS.md frontmatter)
 let mainAgentMeta = null;
 
-// Build the system prompt
+// Build the system prompt for the main agent (AGENTS.md + SOUL.md + TOOLS.md)
 export const buildSystemPrompt = () => {
     const prompts = [];
 
@@ -46,7 +46,7 @@ export const buildSystemPrompt = () => {
     return prompts.join('\n\n');
 };
 
-// Build the subagent system prompt for a specific agent definition
+// Build the subagent system prompt for a specific agent definition (SUBAGENT.md + agent instructions + TOOLS.md)
 export const buildSubagentSystemPrompt = agentDef => {
     const prompts = [];
 

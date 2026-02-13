@@ -19,10 +19,6 @@ Tools called in the same response run **in parallel** for speed. This means:
 - You CANNOT chain dependent operations in a single response (e.g., create a file then read it).
 - For dependent operations, call the first tool, wait for its result, then call the next tool in your follow-up response.
 
-### Tool Usage Tips
-
-- Always use the `get_datetime` tool to get the current date or time, which is more than enough. NEVER use the `date` shell command for that.
-
 ## Tools List
 
 {toolsList}

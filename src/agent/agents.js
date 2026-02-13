@@ -124,7 +124,11 @@ export const generateAgentsList = () => {
     if (agents.size === 0) return 'No specialized agents available.';
     const lines = [];
     for (const [id, agent] of agents) {
-        lines.push(`- **${agent.name}** (\`${id}\`): ${agent.description}`);
+        // Create the list of allowed tools for each agent
+        const tools = agent.allowedTools.join(', ');
+
+        // Format each agent as a markdown list item with name, description, and allowed tools
+        lines.push(`- **${agent.name}** (\`${id}\`): ${agent.description} Tools: \`${tools}\``);
     }
 
     // Return the formatted list as a string
