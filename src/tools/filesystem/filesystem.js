@@ -1,6 +1,6 @@
 import { readFile, writeFile, mkdir, readdir, stat, access, unlink, rm, rename, copyFile } from 'fs/promises';
 import { dirname, join, resolve, isAbsolute, normalize } from 'path';
-import { checkPathForWrite, handleToolError } from '../../utils/utils.js';
+import { checkPathForWrite, handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 
 // Read file tool
@@ -38,10 +38,7 @@ export const readFileTool = {
             logger.debug(`Read file: ${path} (${content.length} chars)`);
 
             // Return file content
-            return {
-                success: true,
-                output: content
-            };
+            return handleToolResponse(content);
         } catch (error) {
             return handleToolError({ error, message: 'Failed to read file' });
         }
@@ -89,10 +86,7 @@ export const writeFileTool = {
             logger.debug(`Wrote file: ${path} (${content.length} chars)`);
 
             // Return success
-            return {
-                success: true,
-                output: `Successfully wrote ${content.length} characters to ${path}`
-            };
+            return handleToolResponse(`Successfully wrote ${content.length} characters to ${path}`);
         } catch (error) {
             return handleToolError({ error, message: 'Failed to write file' });
         }
@@ -192,17 +186,11 @@ export const listDirTool = {
 
             // Return empty array message if no entries
             if (details.length === 0) {
-                return {
-                    success: true,
-                    output: 'No entries found.'
-                };
+                return handleToolResponse('No entries found.');
             }
 
             // Return directory listing as structured data
-            return {
-                success: true,
-                output: details
-            };
+            return handleToolResponse(details);
         } catch (error) {
             return handleToolError({ error, message: 'Failed to list directory' });
         }
@@ -257,20 +245,14 @@ export const deleteTool = {
                 logger.debug(`Deleted file: ${path}`);
 
                 // Return success message
-                return {
-                    success: true,
-                    output: `Successfully deleted file: ${path}`
-                };
+                return handleToolResponse(`Successfully deleted file: ${path}`);
             } else if (stats.isDirectory()) {
                 // Delete directory
                 await rm(fullPath, { recursive });
                 logger.debug(`Deleted directory: ${path} (recursive: ${recursive})`);
 
                 // Return success message
-                return {
-                    success: true,
-                    output: `Successfully deleted directory: ${path}`
-                };
+                return handleToolResponse(`Successfully deleted directory: ${path}`);
             } else {
                 return handleToolError({ message: `Path is neither a file nor a directory: ${path}` });
             }
@@ -342,10 +324,7 @@ export const renameFileTool = {
             logger.debug(`Renamed/moved: ${oldPath} -> ${newPath}`);
 
             // Return success message
-            return {
-                success: true,
-                output: `Successfully renamed/moved from ${oldPath} to ${newPath}`
-            };
+            return handleToolResponse(`Successfully renamed/moved from ${oldPath} to ${newPath}`);
         } catch (error) {
             return handleToolError({ error, message: 'Failed to rename/move' });
         }
@@ -407,10 +386,7 @@ export const copyFileTool = {
             logger.debug(`Copied file: ${sourcePath} -> ${destPath}`);
 
             // Return success message
-            return {
-                success: true,
-                output: `Successfully copied file from ${sourcePath} to ${destPath}`
-            };
+            return handleToolResponse(`Successfully copied file from ${sourcePath} to ${destPath}`);
         } catch (error) {
             return handleToolError({ error, message: 'Failed to copy file' });
         }
@@ -451,23 +427,17 @@ export const pathExistsTool = {
             logger.debug(`Path exists check: ${path} (${type})`);
 
             // Return existence and type information
-            return {
-                success: true,
-                output: {
-                    exists: true,
-                    type,
-                    size: stats.isFile() ? stats.size : undefined
-                }
-            };
+            return handleToolResponse({
+                exists: true,
+                type,
+                size: stats.isFile() ? stats.size : undefined
+            });
         } catch (error) {
             // Path doesn't exist or not accessible
             logger.debug(`Path exists check failed: ${path}`);
-            return {
-                success: true,
-                output: {
-                    exists: false
-                }
-            };
+            return handleToolResponse({
+                exists: false
+            });
         }
     }
 };
@@ -573,17 +543,11 @@ export const fileSearchTool = {
 
             // Return results
             if (matches.length === 0) {
-                return {
-                    success: true,
-                    output: 'No files found matching the pattern.'
-                };
+                return handleToolResponse('No files found matching the pattern.');
             }
 
             // Return list of matching files
-            return {
-                success: true,
-                output: matches
-            };
+            return handleToolResponse(matches);
         } catch (error) {
             return handleToolError({ error, message: 'Failed to search files' });
         }

@@ -1,6 +1,6 @@
 import { logger } from '../../utils/logger.js';
 import { getDriveClient } from '../../utils/google-client.js';
-import { handleToolError } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 
 // Drive list files tool
 export const driveListFilesTool = {
@@ -56,10 +56,7 @@ export const driveListFilesTool = {
 
             // Check if any files found
             if (!response.data.files || response.data.files.length === 0) {
-                return {
-                    success: true,
-                    output: 'No files found matching the criteria.'
-                };
+                return handleToolResponse('No files found matching the criteria.');
             }
 
             // Format output with essential metadata only
@@ -71,10 +68,7 @@ export const driveListFilesTool = {
             }));
 
             // Return the files
-            return {
-                success: true,
-                output: files
-            };
+            return handleToolResponse(files);
         } catch (error) {
             return handleToolError({ error, message: 'Drive list failed' });
         }
@@ -118,23 +112,20 @@ export const driveGetFileTool = {
             const file = response.data;
 
             // Return full file metadata
-            return {
-                success: true,
-                output: {
-                    id: file.id,
-                    name: file.name,
-                    mimeType: file.mimeType,
-                    size: file.size ? parseInt(file.size) : 0,
-                    modifiedTime: file.modifiedTime,
-                    createdTime: file.createdTime,
-                    shared: file.shared || false,
-                    owners: file.owners?.map(owner => owner.emailAddress) || [],
-                    webViewLink: file.webViewLink,
-                    description: file.description || '',
-                    starred: file.starred || false,
-                    trashed: file.trashed || false
-                }
-            };
+            return handleToolResponse({
+                id: file.id,
+                name: file.name,
+                mimeType: file.mimeType,
+                size: file.size ? parseInt(file.size) : 0,
+                modifiedTime: file.modifiedTime,
+                createdTime: file.createdTime,
+                shared: file.shared || false,
+                owners: file.owners?.map(owner => owner.emailAddress) || [],
+                webViewLink: file.webViewLink,
+                description: file.description || '',
+                starred: file.starred || false,
+                trashed: file.trashed || false
+            });
         } catch (error) {
             return handleToolError({ error, message: 'Drive get file failed' });
         }
@@ -200,10 +191,7 @@ export const driveReadFileTool = {
             }
 
             // Return file content
-            return {
-                success: true,
-                output: content
-            };
+            return handleToolResponse(content);
         } catch (error) {
             return handleToolError({ error, message: 'Drive read failed' });
         }
@@ -277,10 +265,7 @@ export const driveCreateFileTool = {
             }
 
             // Return success with created file info
-            return {
-                success: true,
-                output: `File created successfully: ${response.data.name}\nID: ${response.data.id}\nLink: ${response.data.webViewLink}`
-            };
+            return handleToolResponse(`File created successfully: ${response.data.name}\nID: ${response.data.id}\nLink: ${response.data.webViewLink}`);
         } catch (error) {
             return handleToolError({ error, message: 'Drive create failed' });
         }
@@ -358,10 +343,7 @@ export const driveUpdateFileTool = {
             const response = await drive.files.update(updateParams);
 
             // Return success with updated file info
-            return {
-                success: true,
-                output: `File updated successfully: ${response.data.name}`
-            };
+            return handleToolResponse(`File updated successfully: ${response.data.name}`);
         } catch (error) {
             return handleToolError({ error, message: 'Drive update failed' });
         }
@@ -401,10 +383,7 @@ export const driveDeleteFileTool = {
             });
 
             // Return success with deleted file ID
-            return {
-                success: true,
-                output: 'File moved to trash successfully'
-            };
+            return handleToolResponse('File moved to trash successfully');
         } catch (error) {
             return handleToolError({ error, message: 'Drive delete failed' });
         }
@@ -477,10 +456,7 @@ export const driveShareFileTool = {
             });
 
             // Return success with file links
-            return {
-                success: true,
-                output: `File shared successfully.\nView link: ${file.data.webViewLink}\nDownload link: ${file.data.webContentLink || 'N/A'}`
-            };
+            return handleToolResponse(`File shared successfully.\nView link: ${file.data.webViewLink}\nDownload link: ${file.data.webContentLink || 'N/A'}`);
         } catch (error) {
             return handleToolError({ error, message: 'Drive share failed' });
         }

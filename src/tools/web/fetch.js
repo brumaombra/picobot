@@ -1,5 +1,5 @@
 import { logger } from '../../utils/logger.js';
-import { extractTextFromHtml, handleToolError } from '../../utils/utils.js';
+import { extractTextFromHtml, handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { WEB_MAX_CONTENT_LENGTH, WEB_FETCH_TIMEOUT_MS, WEB_USER_AGENT, WEB_ACCEPT_HEADER } from '../../config.js';
 
 // Web fetch tool
@@ -70,10 +70,7 @@ export const webFetchTool = {
             }
 
             // Return fetched content
-            return {
-                success: true,
-                output: content
-            };
+            return handleToolResponse(content);
         } catch (error) {
             return handleToolError({ error, message: 'Failed to fetch URL' });
         }

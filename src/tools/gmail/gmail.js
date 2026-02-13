@@ -1,6 +1,6 @@
 import { logger } from '../../utils/logger.js';
 import { getGmailClient } from '../../utils/google-client.js';
-import { decodeHtmlEntities, handleToolError } from '../../utils/utils.js';
+import { decodeHtmlEntities, handleToolError, handleToolResponse } from '../../utils/utils.js';
 
 // Gmail search tool
 export const gmailSearchTool = {
@@ -42,10 +42,7 @@ export const gmailSearchTool = {
 
             // Check if any messages found
             if (!listResponse.data.messages || listResponse.data.messages.length === 0) {
-                return {
-                    success: true,
-                    output: 'No messages found matching the query.'
-                };
+                return handleToolResponse('No messages found matching the query.');
             }
 
             // Fetch full metadata for each message
@@ -83,10 +80,7 @@ export const gmailSearchTool = {
             });
 
             // Return the list of messages
-            return {
-                success: true,
-                output: formatted
-            };
+            return handleToolResponse(formatted);
         } catch (error) {
             return handleToolError({ error, message: 'Gmail search failed' });
         }
@@ -175,10 +169,7 @@ export const gmailReadTool = {
             }
 
             // Return the message details
-            return {
-                success: true,
-                output: output
-            };
+            return handleToolResponse(output);
         } catch (error) {
             return handleToolError({ error, message: 'Gmail read failed' });
         }
@@ -273,10 +264,7 @@ export const gmailSendTool = {
             });
 
             // Return success with sent message ID
-            return {
-                success: true,
-                output: `Email sent successfully. Message ID: ${response.data.id}`
-            };
+            return handleToolResponse(`Email sent successfully. Message ID: ${response.data.id}`);
         } catch (error) {
             return handleToolError({ error, message: 'Gmail send failed' });
         }
@@ -315,10 +303,7 @@ export const gmailLabelsTool = {
             }));
 
             // Return the list of labels
-            return {
-                success: true,
-                output: labels
-            };
+            return handleToolResponse(labels);
         } catch (error) {
             return handleToolError({ error, message: 'Gmail labels list failed' });
         }

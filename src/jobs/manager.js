@@ -1,14 +1,14 @@
 import cron from 'node-cron';
 import { logger } from '../utils/logger.js';
-import { loadJobsFromFiles, saveJobToFile, deleteJobFile } from './persistent.js';
+import { loadJobsFromFiles } from './persistent.js';
 import { sendOutbound, pushInbound } from '../bus/message-bus.js';
-import { generateUniqueId, handleToolError } from '../utils/utils.js';
+import { generateUniqueId } from '../utils/utils.js';
 
 // In-memory storage for scheduled jobs
-const jobs = new Map();
+export const jobs = new Map();
 
 // Serialize job for external use (excludes task reference)
-const serializeJob = job => ({
+export const serializeJob = job => ({
     id: job.id,
     name: job.name,
     schedule: job.schedule,
@@ -59,7 +59,7 @@ export const initializeJobManager = () => {
 };
 
 // Execute a job by ID
-const executeJob = async jobId => {
+export const executeJob = async jobId => {
     // Get job details
     const job = jobs.get(jobId);
     if (!job) {
@@ -106,131 +106,5 @@ const executeJob = async jobId => {
         logger.info(`Job completed: ${job.name}`);
     } catch (error) {
         logger.error(`Job execution failed (${job.name}): ${error.message}`);
-    }
-};
-
-// Create a new cron job
-export const createJob = ({ name, schedule, action, chatId, platform, message }) => {
-    try {
-        // Validate cron expression
-        if (!cron.validate(schedule)) {
-            return handleToolError({ message: `Invalid cron schedule: ${schedule}. Use standard cron syntax (e.g., "0 0 * * *" for daily at midnight).` });
-        }
-
-        // Generate unique ID
-        const jobId = generateUniqueId('job');
-
-        // Create job object
-        const job = {
-            id: jobId,
-            name,
-            schedule,
-            action,
-            chatId,
-            platform,
-            message,
-            task: null
-        };
-
-        // Create the scheduled task
-        job.task = cron.schedule(schedule, async () => {
-            await executeJob(jobId);
-        });
-
-        // Store in memory
-        jobs.set(jobId, job);
-
-        // Save to disk
-        saveJobToFile(jobId, job);
-        logger.info(`Created job: ${name} (${schedule})`);
-
-        // Return success response
-        return {
-            success: true,
-            jobId,
-            message: `Job "${name}" created successfully with schedule: ${schedule}`
-        };
-    } catch (error) {
-        return handleToolError({ error, message: 'Failed to create job' });
-    }
-};
-
-// List all jobs
-export const listJobs = () => {
-    const jobsList = [...jobs.values()];
-    return jobsList.map(serializeJob);
-};
-
-// Get a specific job by ID
-export const getJob = jobId => {
-    const job = jobs.get(jobId);
-    return job ? serializeJob(job) : null;
-};
-
-// Update a job
-export const updateJob = (jobId, updates) => {
-    try {
-        // Get job details
-        const job = jobs.get(jobId);
-        if (!job) {
-            return handleToolError({ message: `Job not found: ${jobId}` });
-        }
-
-        // Validate new schedule if provided
-        if (updates.schedule && !cron.validate(updates.schedule)) {
-            return handleToolError({ message: `Invalid cron schedule: ${updates.schedule}` });
-        }
-
-        // Apply updates
-        Object.assign(job, updates);
-
-        // Always recreate task to ensure schedule is current
-        job.task.stop();
-        job.task.destroy();
-        job.task = cron.schedule(job.schedule, async () => {
-            await executeJob(jobId);
-        });
-
-        // Save to disk
-        saveJobToFile(jobId, job);
-        logger.info(`Updated job: ${job.name}`);
-
-        // Return success response
-        return {
-            success: true,
-            message: `Job "${job.name}" updated successfully`
-        };
-    } catch (error) {
-        return handleToolError({ error, message: `Failed to update job ${jobId}` });
-    }
-};
-
-// Delete a job
-export const deleteJob = jobId => {
-    try {
-        // Get job details
-        const job = jobs.get(jobId);
-        if (!job) {
-            return handleToolError({ message: `Job not found: ${jobId}` });
-        }
-
-        // Stop and destroy the task
-        job.task.stop();
-        job.task.destroy();
-
-        // Remove from memory
-        jobs.delete(jobId);
-
-        // Remove from disk
-        deleteJobFile(jobId);
-        logger.info(`Deleted job: ${job.name}`);
-
-        // Return success response
-        return {
-            success: true,
-            message: `Job "${job.name}" deleted successfully`
-        };
-    } catch (error) {
-        return handleToolError({ error, message: `Failed to delete job ${jobId}` });
     }
 };

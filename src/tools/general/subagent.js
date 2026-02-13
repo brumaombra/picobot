@@ -1,5 +1,5 @@
 import { ConversationManager } from '../../agent/conversation.js';
-import { generateUniqueId, handleToolError } from '../../utils/utils.js';
+import { generateUniqueId, handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { buildSubagentSystemPrompt } from '../../agent/prompts.js';
 import { getToolsDefinitions } from '../tools.js';
@@ -103,13 +103,10 @@ export const subagentTool = {
 
             // Return subagent's final response to parent agent (structured JSON with session_id and message)
             if (result.response) {
-                return {
-                    success: true,
-                    output: {
-                        session_id: subagentId,
-                        message: result.response
-                    }
-                };
+                return handleToolResponse({
+                    session_id: subagentId,
+                    message: result.response
+                });
             } else if (result.reachedMaxIterations) {
                 return handleToolError({ message: `Subagent reached maximum iterations without completing task (session_id: ${subagentId})` });
             } else {

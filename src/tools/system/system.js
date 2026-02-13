@@ -1,5 +1,5 @@
 import * as os from 'os';
-import { handleToolError } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 
 // System information tools
 export const systemInfoBasicTool = {
@@ -26,10 +26,7 @@ export const systemInfoBasicTool = {
             };
 
             // Return the system information
-            return {
-                success: true,
-                output: result
-            };
+            return handleToolResponse(result);
         } catch (error) {
             return handleToolError({ error, message: 'System info retrieval failed' });
         }
@@ -61,10 +58,7 @@ export const systemInfoCpuTool = {
             };
 
             // Return the system information
-            return {
-                success: true,
-                output: result
-            };
+            return handleToolResponse(result);
         } catch (error) {
             return handleToolError({ error, message: 'System info retrieval failed' });
         }
@@ -92,10 +86,7 @@ export const systemInfoMemoryTool = {
             };
 
             // Return the system information
-            return {
-                success: true,
-                output: result
-            };
+            return handleToolResponse(result);
         } catch (error) {
             return handleToolError({ error, message: 'System info retrieval failed' });
         }
@@ -127,10 +118,7 @@ export const systemInfoNetworkTool = {
             }
 
             // Return the system information
-            return {
-                success: true,
-                output: result
-            };
+            return handleToolResponse(result);
         } catch (error) {
             return handleToolError({ error, message: 'System info retrieval failed' });
         }
@@ -175,10 +163,7 @@ export const systemInfoAllTool = {
             };
 
             // Return the system information
-            return {
-                success: true,
-                output: result
-            };
+            return handleToolResponse(result);
         } catch (error) {
             return handleToolError({ error, message: 'System info retrieval failed' });
         }

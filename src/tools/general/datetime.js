@@ -1,4 +1,4 @@
-import { handleToolError } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 
 // Date and time tool
 export const getDateTimeTool = {
@@ -18,14 +18,11 @@ export const getDateTimeTool = {
             const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
             // Return both UTC and local date/time strings with timezone
-            return {
-                success: true,
-                output: {
-                    utc: now.toISOString(),
-                    local: getLocalDateTimeString(now),
-                    timezone: timezone
-                }
-            };
+            return handleToolResponse({
+                utc: now.toISOString(),
+                local: getLocalDateTimeString(now),
+                timezone: timezone
+            });
         } catch (error) {
             return handleToolError({ error, message: 'Date/time retrieval failed' });
         }

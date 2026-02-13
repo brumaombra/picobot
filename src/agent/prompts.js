@@ -3,7 +3,8 @@ import { join } from 'path';
 import { logger } from '../utils/logger.js';
 import { PROMPTS_DIR } from '../config.js';
 import { generateToolsList } from '../tools/tools.js';
-import { parseFrontmatter, generateAgentsList } from './agents.js';
+import { generateAgentsList } from './agents.js';
+import { parseFrontmatter } from '../utils/utils.js';
 
 // Cached main agent metadata (parsed once from AGENTS.md frontmatter)
 let mainAgentMeta = null;

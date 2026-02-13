@@ -327,3 +327,11 @@ export const handleToolError = ({ error, message }) => {
         error: errorMessage
     };
 };
+
+// Handle tool execution success with standardized format
+export const handleToolResponse = output => {
+    return {
+        success: true,
+        output
+    };
+};

@@ -1,7 +1,7 @@
 import { logger } from '../../utils/logger.js';
 import { getConfigValue } from '../../config/config.js';
 import { BRAVE_SEARCH_TIMEOUT_MS } from '../../config.js';
-import { handleToolError } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 
 // Web search tool using Brave Search API
 export const webSearchTool = {
@@ -65,10 +65,7 @@ export const webSearchTool = {
             // Extract search results
             const results = data.web?.results || [];
             if (results.length === 0) {
-                return {
-                    success: true,
-                    output: `No results found for query: "${query}"`
-                };
+                return handleToolResponse(`No results found for query: "${query}"`);
             }
 
             // Format results
@@ -84,13 +81,10 @@ export const webSearchTool = {
             logger.debug(`Web search completed: ${results.length} results found`);
 
             // Return formatted results
-            return {
-                success: true,
-                output: {
-                    count: results.length,
-                    results: formattedResults
-                }
-            };
+            return handleToolResponse({
+                count: results.length,
+                results: formattedResults
+            });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to search web' });
         }

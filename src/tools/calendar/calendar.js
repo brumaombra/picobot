@@ -1,6 +1,6 @@
 import { logger } from '../../utils/logger.js';
 import { getCalendarClient } from '../../utils/google-client.js';
-import { handleToolError } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 
 // Calendar list events tool
 export const calendarListEventsTool = {
@@ -53,10 +53,7 @@ export const calendarListEventsTool = {
 
             // Check if any events found
             if (!response.data.items || response.data.items.length === 0) {
-                return {
-                    success: true,
-                    output: 'No events found in the specified date range.'
-                };
+                return handleToolResponse('No events found in the specified date range.');
             }
 
             // Format output with essential metadata only
@@ -69,10 +66,7 @@ export const calendarListEventsTool = {
             }));
 
             // Return events
-            return {
-                success: true,
-                output: events
-            };
+            return handleToolResponse(events);
         } catch (error) {
             return handleToolError({ error, message: 'Calendar list failed' });
         }
@@ -120,22 +114,19 @@ export const calendarGetEventTool = {
             const event = response.data;
 
             // Return full event details
-            return {
-                success: true,
-                output: {
-                    id: event.id,
-                    summary: event.summary || '(No title)',
-                    start: event.start?.dateTime || event.start?.date,
-                    end: event.end?.dateTime || event.end?.date,
-                    location: event.location || '',
-                    description: event.description || '',
-                    attendees: event.attendees?.map(attendee => attendee.email) || [],
-                    htmlLink: event.htmlLink,
-                    status: event.status,
-                    created: event.created,
-                    updated: event.updated
-                }
-            };
+            return handleToolResponse({
+                id: event.id,
+                summary: event.summary || '(No title)',
+                start: event.start?.dateTime || event.start?.date,
+                end: event.end?.dateTime || event.end?.date,
+                location: event.location || '',
+                description: event.description || '',
+                attendees: event.attendees?.map(attendee => attendee.email) || [],
+                htmlLink: event.htmlLink,
+                status: event.status,
+                created: event.created,
+                updated: event.updated
+            });
         } catch (error) {
             return handleToolError({ error, message: 'Calendar get failed' });
         }
@@ -225,10 +216,7 @@ export const calendarCreateEventTool = {
             });
 
             // Return success with event link
-            return {
-                success: true,
-                output: `Event created successfully. Event ID: ${response.data.id}\nLink: ${response.data.htmlLink}`
-            };
+            return handleToolResponse(`Event created successfully. Event ID: ${response.data.id}\nLink: ${response.data.htmlLink}`);
         } catch (error) {
             return handleToolError({ error, message: 'Calendar create failed' });
         }
@@ -319,10 +307,7 @@ export const calendarUpdateEventTool = {
             });
 
             // Return success with event link
-            return {
-                success: true,
-                output: `Event updated successfully: ${response.data.summary}`
-            };
+            return handleToolResponse(`Event updated successfully: ${response.data.summary}`);
         } catch (error) {
             return handleToolError({ error, message: 'Calendar update failed' });
         }
@@ -368,10 +353,7 @@ export const calendarDeleteEventTool = {
             });
 
             // Return success with event link
-            return {
-                success: true,
-                output: 'Event deleted successfully'
-            };
+            return handleToolResponse('Event deleted successfully');
         } catch (error) {
             return handleToolError({ error, message: 'Calendar delete failed' });
         }

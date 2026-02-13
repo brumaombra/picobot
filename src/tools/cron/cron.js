@@ -1,6 +1,8 @@
+import cron from 'node-cron';
 import { logger } from '../../utils/logger.js';
-import { createJob, listJobs, getJob, updateJob, deleteJob } from '../../jobs/manager.js';
-import { handleToolError } from '../../utils/utils.js';
+import { jobs, serializeJob, executeJob } from '../../jobs/manager.js';
+import { saveJobToFile, deleteJobFile } from '../../jobs/persistent.js';
+import { generateUniqueId, handleToolError, handleToolResponse } from '../../utils/utils.js';
 
 // Create cron job tool
 export const cronCreateTool = {
@@ -34,18 +36,48 @@ export const cronCreateTool = {
     // Main execution function
     execute: async (args, context) => {
         try {
-            // Create the job
-            const result = createJob({
-                name: args.name,
-                schedule: args.schedule,
-                action: args.action_type,
-                chatId: context?.chatId,
-                platform: context?.channel,
-                message: args.message
+            // Get arguments and context
+            const { name, schedule, action_type, message } = args;
+            const chatId = context?.chatId;
+            const platform = context?.channel;
+
+            // Validate cron expression
+            if (!cron.validate(schedule)) {
+                return handleToolError({ message: `Invalid cron schedule: ${schedule}. Use standard cron syntax (e.g., "0 0 * * *" for daily at midnight).` });
+            }
+
+            // Generate unique ID
+            const jobId = generateUniqueId('job');
+
+            // Create job object
+            const job = {
+                id: jobId,
+                name,
+                schedule,
+                action: action_type,
+                chatId,
+                platform,
+                message,
+                task: null
+            };
+
+            // Create the scheduled task
+            job.task = cron.schedule(schedule, async () => {
+                await executeJob(jobId);
             });
 
-            // Return the result of job creation
-            return result;
+            // Store in memory
+            jobs.set(jobId, job);
+
+            // Save to disk
+            saveJobToFile(jobId, job);
+            logger.info(`Created job: ${name} (${schedule})`);
+
+            // Return success response
+            return handleToolResponse({
+                jobId,
+                message: `Job "${name}" created successfully with schedule: ${schedule}`
+            });
         } catch (error) {
             return handleToolError({ error, message: 'Cron create failed' });
         }
@@ -67,16 +99,13 @@ export const cronListTool = {
     execute: async () => {
         try {
             // List all jobs
-            const jobs = listJobs();
-            if (jobs.length === 0) {
-                return {
-                    success: true,
-                    output: 'No scheduled jobs found.'
-                };
+            const jobsList = [...jobs.values()].map(serializeJob);
+            if (jobsList.length === 0) {
+                return handleToolResponse('No scheduled jobs found.');
             }
 
             // Return metadata only
-            const metadata = jobs.map(job => ({
+            const metadata = jobsList.map(job => ({
                 id: job.id,
                 name: job.name,
                 schedule: job.schedule,
@@ -84,10 +113,7 @@ export const cronListTool = {
             }));
 
             // Return the list of jobs
-            return {
-                success: true,
-                output: metadata
-            };
+            return handleToolResponse(metadata);
         } catch (error) {
             return handleToolError({ error, message: 'Cron list failed' });
         }
@@ -114,16 +140,13 @@ export const cronGetTool = {
     execute: async args => {
         try {
             // Get the job details
-            const job = getJob(args.jobId);
+            const job = jobs.get(args.jobId);
             if (!job) {
                 return handleToolError({ message: `Job not found: ${args.jobId}` });
             }
 
             // Return the job details
-            return {
-                success: true,
-                output: job
-            };
+            return handleToolResponse(serializeJob(job));
         } catch (error) {
             return handleToolError({ error, message: 'Cron get failed' });
         }
@@ -166,9 +189,14 @@ export const cronUpdateTool = {
     // Main execution function
     execute: async (args, context) => {
         try {
-            const updates = {};
+            // Get job details
+            const job = jobs.get(args.jobId);
+            if (!job) {
+                return handleToolError({ message: `Job not found: ${args.jobId}` });
+            }
 
             // Build the updates object with only provided fields
+            const updates = {};
             if (args.name !== undefined) updates.name = args.name;
             if (args.schedule !== undefined) updates.schedule = args.schedule;
             if (args.action_type !== undefined) updates.action = args.action_type;
@@ -178,8 +206,27 @@ export const cronUpdateTool = {
                 updates.message = args.message;
             }
 
-            // Update the job with the provided fields
-            return updateJob(args.jobId, updates);
+            // Validate new schedule if provided
+            if (updates.schedule && !cron.validate(updates.schedule)) {
+                return handleToolError({ message: `Invalid cron schedule: ${updates.schedule}` });
+            }
+
+            // Apply updates
+            Object.assign(job, updates);
+
+            // Always recreate task to ensure schedule is current
+            job.task.stop();
+            job.task.destroy();
+            job.task = cron.schedule(job.schedule, async () => {
+                await executeJob(args.jobId);
+            });
+
+            // Save to disk
+            saveJobToFile(args.jobId, job);
+            logger.info(`Updated job: ${job.name}`);
+
+            // Return success response
+            return handleToolResponse(`Job "${job.name}" updated successfully`);
         } catch (error) {
             return handleToolError({ error, message: 'Cron update failed' });
         }
@@ -205,8 +252,25 @@ export const cronDeleteTool = {
     // Main execution function
     execute: async args => {
         try {
-            // Delete the job
-            return deleteJob(args.jobId);
+            // Get job details
+            const job = jobs.get(args.jobId);
+            if (!job) {
+                return handleToolError({ message: `Job not found: ${args.jobId}` });
+            }
+
+            // Stop and destroy the task
+            job.task.stop();
+            job.task.destroy();
+
+            // Remove from memory
+            jobs.delete(args.jobId);
+
+            // Remove from disk
+            deleteJobFile(args.jobId);
+            logger.info(`Deleted job: ${job.name}`);
+
+            // Return success response
+            return handleToolResponse(`Job "${job.name}" deleted successfully`);
         } catch (error) {
             return handleToolError({ error, message: 'Cron delete failed' });
         }

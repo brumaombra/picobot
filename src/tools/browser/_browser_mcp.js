@@ -2,7 +2,7 @@ import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js'
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { join } from 'path';
 import { logger } from '../../utils/logger.js';
-import { handleToolError } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { BROWSER_MAX_CONTENT_LENGTH, BROWSER_VIEWPORT } from '../../config.js';
 
 /******************************** MCP Client ********************************/
@@ -104,10 +104,7 @@ export const browserNavigateTool = {
         logger.debug(`browser_navigate: ${url}`);
 
         try {
-            return {
-                success: true,
-                output: await callTool('browser_navigate', { url })
-            };
+            return handleToolResponse(await callTool('browser_navigate', { url }));
         } catch (error) {
             return handleToolError({ error, message: 'Browser navigation failed' });
         }
@@ -128,10 +125,7 @@ export const browserSnapshotTool = {
     // Main execution function
     execute: async () => {
         try {
-            return {
-                success: true,
-                output: await callTool('browser_snapshot')
-            };
+            return handleToolResponse(await callTool('browser_snapshot'));
         } catch (error) {
             return handleToolError({ error, message: 'Browser snapshot failed' });
         }
@@ -162,10 +156,7 @@ export const browserClickTool = {
     execute: async ({ element, ref }) => {
         logger.debug(`browser_click: ${ref} (${element})`);
         try {
-            return {
-                success: true,
-                output: await callTool('browser_click', { element, ref })
-            };
+            return handleToolResponse(await callTool('browser_click', { element, ref }));
         } catch (error) {
             return handleToolError({ error, message: 'Browser click failed' });
         }
@@ -204,10 +195,7 @@ export const browserTypeTool = {
     execute: async ({ element, ref, text, submit = false }) => {
         logger.debug(`browser_type: ${ref} (${element})`);
         try {
-            return {
-                success: true,
-                output: await callTool('browser_type', { element, ref, text, submit })
-            };
+            return handleToolResponse(await callTool('browser_type', { element, ref, text, submit }));
         } catch (error) {
             return handleToolError({ error, message: 'Browser type failed' });
         }
@@ -243,10 +231,7 @@ export const browserSelectOptionTool = {
     execute: async ({ element, ref, values }) => {
         logger.debug(`browser_select_option: ${ref} (${element})`);
         try {
-            return {
-                success: true,
-                output: await callTool('browser_select_option', { element, ref, values })
-            };
+            return handleToolResponse(await callTool('browser_select_option', { element, ref, values }));
         } catch (error) {
             return handleToolError({ error, message: 'Browser select option failed' });
         }
@@ -277,10 +262,7 @@ export const browserHoverTool = {
     execute: async ({ element, ref }) => {
         logger.debug(`browser_hover: ${ref} (${element})`);
         try {
-            return {
-                success: true,
-                output: await callTool('browser_hover', { element, ref })
-            };
+            return handleToolResponse(await callTool('browser_hover', { element, ref }));
         } catch (error) {
             return handleToolError({ error, message: 'Browser hover failed' });
         }
@@ -302,10 +284,7 @@ export const browserScrollDownTool = {
     execute: async () => {
         logger.debug('browser_scroll_down');
         try {
-            return {
-                success: true,
-                output: await callTool('browser_scroll_down')
-            };
+            return handleToolResponse(await callTool('browser_scroll_down'));
         } catch (error) {
             return handleToolError({ error, message: 'Browser scroll down failed' });
         }
@@ -327,10 +306,7 @@ export const browserScrollUpTool = {
     execute: async () => {
         logger.debug('browser_scroll_up');
         try {
-            return {
-                success: true,
-                output: await callTool('browser_scroll_up')
-            };
+            return handleToolResponse(await callTool('browser_scroll_up'));
         } catch (error) {
             return handleToolError({ error, message: 'Browser scroll up failed' });
         }
@@ -352,10 +328,7 @@ export const browserGoBackTool = {
     execute: async () => {
         logger.debug('browser_go_back');
         try {
-            return {
-                success: true,
-                output: await callTool('browser_go_back')
-            };
+            return handleToolResponse(await callTool('browser_go_back'));
         } catch (error) {
             return handleToolError({ error, message: 'Browser go back failed' });
         }
@@ -382,10 +355,7 @@ export const browserEvaluateTool = {
     execute: async args => {
         logger.debug('browser_evaluate');
         try {
-            return {
-                success: true,
-                output: await callTool('browser_evaluate', { function: args.function })
-            };
+            return handleToolResponse(await callTool('browser_evaluate', { function: args.function }));
         } catch (error) {
             return handleToolError({ error, message: 'Browser evaluate failed' });
         }
@@ -412,10 +382,7 @@ export const browserWaitTool = {
     execute: async ({ time = 3 } = {}) => {
         logger.debug(`browser_wait: ${time}s`);
         try {
-            return {
-                success: true,
-                output: await callTool('browser_wait', { time })
-            };
+            return handleToolResponse(await callTool('browser_wait', { time }));
         } catch (error) {
             return handleToolError({ error, message: 'Browser wait failed' });
         }
@@ -449,10 +416,7 @@ export const browserTabsTool = {
         try {
             const args = { action };
             if (index !== undefined) args.index = index;
-            return {
-                success: true,
-                output: await callTool('browser_tabs', args)
-            };
+            return handleToolResponse(await callTool('browser_tabs', args));
         } catch (error) {
             return handleToolError({ error, message: 'Browser tabs failed' });
         }
@@ -481,9 +445,6 @@ export const browserCloseTool = {
 
         // Shut down the MCP server process
         await shutdown();
-        return {
-            success: true,
-            output: 'Browser closed'
-        };
+        return handleToolResponse('Browser closed');
     }
 };

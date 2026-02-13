@@ -3,7 +3,7 @@ import { promisify } from 'util';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { logger } from '../../utils/logger.js';
-import { handleToolError } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { BROWSER_DEFAULT_TIMEOUT_MS, BROWSER_MAX_CONTENT_LENGTH } from '../../config.js';
 
 const execFileAsync = promisify(execFile);
@@ -125,7 +125,7 @@ Examples:
 
         try {
             const output = await runCli(args);
-            return { success: true, output };
+            return handleToolResponse(output);
         } catch (error) {
             return handleToolError({ error, message: 'Browser command failed' });
         }

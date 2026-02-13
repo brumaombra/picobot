@@ -2,7 +2,7 @@ import { exec } from 'child_process';
 import { promisify } from 'util';
 import { logger } from '../../utils/logger.js';
 import { SHELL_MAX_OUTPUT_LENGTH, SHELL_DEFAULT_TIMEOUT_MS, SHELL_MAX_BUFFER } from '../../config.js';
-import { checkShellCommand, handleToolError } from '../../utils/utils.js';
+import { checkShellCommand, handleToolError, handleToolResponse } from '../../utils/utils.js';
 
 const execAsync = promisify(exec);
 
@@ -61,10 +61,7 @@ export const shellTool = {
             }
 
             // Return success
-            return {
-                success: true,
-                output: output || '(no output)'
-            };
+            return handleToolResponse(output || '(no output)');
         } catch (error) {
             return handleToolError({ error, message: 'Shell command failed' });
         }
