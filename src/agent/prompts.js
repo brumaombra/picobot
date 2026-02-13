@@ -18,6 +18,7 @@ export const buildSystemPrompt = () => {
         throw new Error(`AGENTS.md is required in prompts directory: ${PROMPTS_DIR}`);
     }
 
+    // Parse frontmatter to get main agent metadata and instructions
     const { metadata, body } = parseFrontmatter(agentsRaw);
     mainAgentMeta = metadata;
 
@@ -45,22 +46,6 @@ export const buildSystemPrompt = () => {
     return prompts.join('\n\n');
 };
 
-// Get the main agent's allowed tool names from AGENTS.md frontmatter
-export const getMainAgentAllowedTools = () => {
-    // Use cached metadata if available
-    if (mainAgentMeta) {
-        return mainAgentMeta.allowed_tools || [];
-    }
-
-    // Otherwise parse AGENTS.md
-    const agentsRaw = getPromptContent('AGENTS.md');
-    if (!agentsRaw) return [];
-
-    const { metadata } = parseFrontmatter(agentsRaw);
-    mainAgentMeta = metadata;
-    return metadata.allowed_tools || [];
-};
-
 // Build the subagent system prompt for a specific agent definition
 export const buildSubagentSystemPrompt = agentDef => {
     const prompts = [];
@@ -86,6 +71,23 @@ export const buildSubagentSystemPrompt = agentDef => {
 
     // Return the combined prompt
     return prompts.join('\n\n');
+};
+
+// Get the main agent's allowed tool names from AGENTS.md frontmatter
+export const getMainAgentAllowedTools = () => {
+    // Use cached metadata if available
+    if (mainAgentMeta) {
+        return mainAgentMeta.allowed_tools || [];
+    }
+
+    // Otherwise parse AGENTS.md
+    const agentsRaw = getPromptContent('AGENTS.md');
+    if (!agentsRaw) return [];
+
+    // Parse frontmatter to get allowed tools
+    const { metadata } = parseFrontmatter(agentsRaw);
+    mainAgentMeta = metadata;
+    return metadata.allowed_tools || [];
 };
 
 // Get prompt content from prompts directory by filename
