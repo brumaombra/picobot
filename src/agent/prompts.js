@@ -3,7 +3,8 @@ import { join } from 'path';
 import { logger } from '../utils/logger.js';
 import { PROMPTS_DIR } from '../config.js';
 import { generateToolsList } from '../tools/tools.js';
-import { generateAgentsList } from './agents.js';
+import { generateAgentsListPrompt } from './agents.js';
+import { generateBrowserCommandsPrompt } from '../tools/browser/browser.js';
 import { parseFrontmatter } from '../utils/utils.js';
 
 // Cached main agent metadata (parsed once from AGENTS.md frontmatter)
@@ -25,7 +26,7 @@ export const buildSystemPrompt = () => {
 
     // Replace {agentsList} placeholder with loaded agents
     let agentsPrompt = body;
-    agentsPrompt = agentsPrompt.replace('{agentsList}', generateAgentsList());
+    agentsPrompt = agentsPrompt.replace('{agentsList}', generateAgentsListPrompt());
     prompts.push(agentsPrompt);
 
     // Load SOUL.md
@@ -59,7 +60,14 @@ export const buildSubagentSystemPrompt = agentDef => {
 
     // Add agent-specific instructions from the agent's markdown body
     if (agentDef?.instructions) {
-        prompts.push(agentDef.instructions);
+        // Base instructions on the agent definition, which may contain placeholders for tool commands
+        let instructions = agentDef.instructions;
+
+        // Add any relevant tool command prompts based on the agent's allowed tools
+        instructions = instructions.replace('{browserCommands}', generateBrowserCommandsPrompt());
+
+        // Add the agent's instructions to the prompt
+        prompts.push(instructions);
     }
 
     // Load TOOLS.md and replace {toolsList} with agent's allowed tools

@@ -1,3 +1,5 @@
+/**** OLD CODE, DO NOT USE ****/
+
 import { StdioClientTransport } from '@modelcontextprotocol/sdk/client/stdio.js';
 import { Client } from '@modelcontextprotocol/sdk/client/index.js';
 import { join } from 'path';

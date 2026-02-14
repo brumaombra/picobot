@@ -70,7 +70,7 @@ export const getAgentIds = () => {
 };
 
 // Generate a formatted list of available agents for prompt injection
-export const generateAgentsList = () => {
+export const generateAgentsListPrompt = () => {
     if (agents.size === 0) return 'No specialized agents available.';
     const lines = [];
     for (const [id, agent] of agents) {
