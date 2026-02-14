@@ -1,40 +1,36 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { readFileSync } from 'fs';
 import { logger } from '../../utils/logger.js';
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
-import { BROWSER_DEFAULT_TIMEOUT_MS, BROWSER_MAX_CONTENT_LENGTH, SNAPSHOT_FILE_PATH } from '../../config.js';
+import { BROWSER_DEFAULT_TIMEOUT_MS, BROWSER_MAX_CONTENT_LENGTH } from '../../config.js';
 
 // Promisified version of execFile for async/await usage
 const execFileAsync = promisify(execFile);
 
 /******************************** Available Commands ********************************/
 
-// List of supported browser commands
+// List of supported browser commands (core set — use `eval` for advanced/niche operations)
 const BROWSER_COMMANDS = [
-    { name: 'open', description: 'Navigate/open browser (optionally to a URL). Usage: open [url] [--headed]' },
-    { name: 'goto', description: 'Navigate to a URL. Usage: goto <url>' },
-    { name: 'snapshot', description: 'Get page accessibility snapshot with element [ref] markers.' },
-    { name: 'click', description: 'Click an element by ref. Usage: click <ref>' },
-    { name: 'type', description: 'Type text into the focused/editable element. Usage: type <text>' },
-    { name: 'fill', description: 'Fill a field by ref. Usage: fill <ref> <text>' },
-    { name: 'press', description: 'Press a key (Enter, Tab, Escape, etc.). Usage: press <key>' },
-    { name: 'hover', description: 'Hover over an element. Usage: hover <ref>' },
-    { name: 'select', description: 'Select a dropdown option. Usage: select <ref> <value>' },
-    { name: 'check', description: 'Check a checkbox. Usage: check <ref>' },
-    { name: 'uncheck', description: 'Uncheck a checkbox. Usage: uncheck <ref>' },
-    { name: 'screenshot', description: 'Take a screenshot (full page or element). Usage: screenshot [ref]' },
+    { name: 'open', description: 'Navigate/open browser (optionally to a URL). Usage: open <url> [--headed]' },
+    { name: 'snapshot', description: 'Get page accessibility snapshot with element [ref] markers. Usage: snapshot [-d <depth>] [-s <selector>]' },
+    { name: 'click', description: 'Click an element by ref or selector. Usage: click <ref|selector>' },
+    { name: 'type', description: 'Type text into an element. Usage: type <ref|selector> <text>' },
+    { name: 'fill', description: 'Clear and fill a field by ref. Usage: fill <ref|selector> <text>' },
+    { name: 'press', description: 'Press a key (Enter, Tab, Escape, Control+a, etc.). Usage: press <key>' },
+    { name: 'hover', description: 'Hover over an element. Usage: hover <ref|selector>' },
+    { name: 'select', description: 'Select a dropdown option. Usage: select <ref|selector> <value>' },
+    { name: 'check', description: 'Check a checkbox. Usage: check <ref|selector>' },
+    { name: 'uncheck', description: 'Uncheck a checkbox. Usage: uncheck <ref|selector>' },
+    { name: 'scroll', description: 'Scroll the page. Usage: scroll <up|down|left|right> [px]' },
+    { name: 'screenshot', description: 'Take a screenshot. Usage: screenshot [path] [--full]' },
     { name: 'eval', description: 'Evaluate JavaScript on the page. Usage: eval <js>' },
-    { name: 'go-back', description: 'Navigate back in browser history.' },
-    { name: 'go-forward', description: 'Navigate forward in browser history.' },
+    { name: 'get', description: 'Get element info. Usage: get <text|html|value|attr|title|url|count|box> [ref|selector] [attr]' },
+    { name: 'wait', description: 'Wait for element, time, text, URL, or load state. Usage: wait <selector|ms> [--text|--url|--load|--fn]' },
+    { name: 'back', description: 'Navigate back in browser history.' },
+    { name: 'forward', description: 'Navigate forward in browser history.' },
     { name: 'reload', description: 'Reload the current page.' },
-    { name: 'close', description: 'Close the current page.' },
-    { name: 'tab-list', description: 'List all open tabs.' },
-    { name: 'tab-new', description: 'Open a new tab. Usage: tab-new [url]' },
-    { name: 'tab-select', description: 'Switch to a tab by index. Usage: tab-select <i>' },
-    { name: 'tab-close', description: 'Close a tab by index. Usage: tab-close [i]' },
-    { name: 'console', description: 'Get console messages. Usage: console [level]' },
-    { name: 'network', description: 'List network requests.' }
+    { name: 'close', description: 'Close the browser.' },
+    { name: 'tab', description: 'List, open, switch, or close tabs. Usage: tab [new [url] | <n> | close [n]]' }
 ];
 
 // Returns the list of available command names
@@ -48,18 +44,27 @@ export const generateBrowserCommandsPrompt = () => {
     return lines.join('\n');
 };
 
-/******************************** Playwright CLI Runner ********************************/
+/******************************** Agent Browser CLI Runner ********************************/
 
-// Run a playwright-cli command via npx and return its stdout
+// Clean environment: strip Node.js debugger variables to prevent auto-attach on child processes
+const cleanEnv = () => {
+    const env = { ...process.env };
+    delete env.NODE_OPTIONS;
+    delete env.VSCODE_INSPECTOR_OPTIONS;
+    return env;
+};
+
+// Run an agent-browser command via npx and return its stdout
 const runCli = async (args, timeoutMs = BROWSER_DEFAULT_TIMEOUT_MS) => {
-    logger.debug(`npx playwright-cli --config=playwright-cli.json ${args.join(' ')}`);
+    logger.debug(`npx agent-browser ${args.join(' ')}`);
 
     try {
         // Execute the command
-        const { stdout } = await execFileAsync('npx', ['playwright-cli', '--config=playwright-cli.json', ...args], {
+        const { stdout } = await execFileAsync('npx', ['agent-browser', ...args], {
             timeout: timeoutMs,
             maxBuffer: 1024 * 1024,
-            shell: true
+            shell: true,
+            env: cleanEnv()
         });
 
         // Get the output
@@ -116,13 +121,13 @@ const parseCommand = raw => {
 export const browserTool = {
     // Tool definition
     name: 'browser',
-    description: 'Run a Playwright CLI command for browser automation. Pass a valid command name with its arguments.',
+    description: 'Run an agent-browser command for browser automation. Pass a valid command name with its arguments.',
     parameters: {
         type: 'object',
         properties: {
             command: {
                 type: 'string',
-                description: 'Playwright CLI command (without the "playwright-cli" prefix).'
+                description: 'Agent-browser command (without the "agent-browser" prefix).'
             }
         },
         required: ['command']
@@ -148,15 +153,12 @@ export const browserTool = {
             // Execute the command and return the output
             logger.debug(`browser tool: ${command}`);
 
-            // For snapshot commands, save to file and read it back
+            // For snapshot commands, always force -i (interactive only)
             if (commandName === 'snapshot') {
-                await runCli([...args, `--filename=${SNAPSHOT_FILE_PATH}`]);
-                const content = readFileSync(SNAPSHOT_FILE_PATH, 'utf-8').trim();
-                const output = content.length > BROWSER_MAX_CONTENT_LENGTH ? content.slice(0, BROWSER_MAX_CONTENT_LENGTH) + '\n… (truncated)' : content;
-                return handleToolResponse(output || '(empty snapshot)');
+                if (!args.includes('-i')) args.splice(1, 0, '-i');
             }
 
-            // For other commands, just run and return output
+            // Execute the CLI command and handle the response
             const output = await runCli(args);
             return handleToolResponse(output);
         } catch (error) {
