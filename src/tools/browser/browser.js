@@ -1,8 +1,9 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { readFileSync } from 'fs';
 import { logger } from '../../utils/logger.js';
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
-import { BROWSER_DEFAULT_TIMEOUT_MS, BROWSER_MAX_CONTENT_LENGTH } from '../../config.js';
+import { BROWSER_DEFAULT_TIMEOUT_MS, BROWSER_MAX_CONTENT_LENGTH, SNAPSHOT_FILE_PATH } from '../../config.js';
 
 // Promisified version of execFile for async/await usage
 const execFileAsync = promisify(execFile);
@@ -146,6 +147,16 @@ export const browserTool = {
         try {
             // Execute the command and return the output
             logger.debug(`browser tool: ${command}`);
+
+            // For snapshot commands, save to file and read it back
+            if (commandName === 'snapshot') {
+                await runCli([...args, `--filename=${SNAPSHOT_FILE_PATH}`]);
+                const content = readFileSync(SNAPSHOT_FILE_PATH, 'utf-8').trim();
+                const output = content.length > BROWSER_MAX_CONTENT_LENGTH ? content.slice(0, BROWSER_MAX_CONTENT_LENGTH) + '\n… (truncated)' : content;
+                return handleToolResponse(output || '(empty snapshot)');
+            }
+
+            // For other commands, just run and return output
             const output = await runCli(args);
             return handleToolResponse(output);
         } catch (error) {

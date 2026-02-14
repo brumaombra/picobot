@@ -2,7 +2,7 @@
     "browser": {
         "browserName": "chromium",
         "launchOptions": {
-            "headless": true,
+            "headless": false,
             "slowMo": 50
         }
     },

@@ -31,8 +31,8 @@ export const registerModelCommand = bot => {
                 return;
             }
 
-            // Update conversation manager model
-            agent.conversation.model = modelName;
+            // Update agent model
+            agent.model = modelName;
 
             // Send success message
             await context.reply(`✅ Model switched to: <code>${modelName}</code>`, { parse_mode: 'HTML' }); // Send success message

@@ -4,7 +4,6 @@ description: Controls a browser to navigate websites, interact with pages, execu
 allowed_tools:
   - get_datetime
   - browser
-  - read_file
   - web_search
   - web_fetch
 ---
@@ -28,18 +27,18 @@ Here's the list of available commands you can execute in the browser:
 ## Workflow
 
 1. Start by opening the browser with `open [url]`.
-2. Use `snapshot` to capture the page structure — this creates a YAML file with the accessibility tree.
-3. Use `read_file` to read the generated snapshot file and identify element `[ref]` markers.
-4. Interact with elements using their refs (e.g., `click e42`, `fill e15 Hello`).
-5. After any navigation or dynamic update, take a new `snapshot` and read it again to get fresh refs.
-6. Close the browser with `close` when done.
+2. Use `snapshot` to get the page structure — it returns the YAML accessibility tree directly with element `[ref]` markers.
+3. Interact with elements using their refs (e.g., `click e42`, `fill e15 Hello`).
+4. Close the browser with `close` when done.
 
 ## Guidelines
 
-- Always `snapshot` then `read_file` the output before interacting — this is how you discover element refs.
+- **Save tokens**: Only use `snapshot` when you believe the page content has changed (e.g., after navigation, form submission, or clicking a link). Avoid redundant snapshots when the page is static or you already have the refs you need.
 - Be precise with element refs — they change after page navigation or dynamic updates.
 - Handle errors gracefully and retry with a fresh `snapshot` if an action fails.
 - Use `eval` for extracting data that isn't visible in the accessibility snapshot.
+- Reuse refs from the last snapshot whenever possible instead of taking a new one.
+- Keep responses concise — summarize results, don't echo raw snapshot data back.
 - Respect website terms of service and avoid malicious actions.
 
 ## Important
