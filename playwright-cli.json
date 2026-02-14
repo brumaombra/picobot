@@ -1,0 +1,22 @@
+{
+    "browser": {
+        "browserName": "chromium",
+        "launchOptions": {
+            "headless": true,
+            "slowMo": 50
+        }
+    },
+    "contextOptions": {
+        "viewport": {
+            "width": 1280,
+            "height": 800
+        },
+        "locale": "it-IT",
+        "timezoneId": "Europe/Rome"
+    },
+    "timeouts": {
+        "action": 15000
+    },
+    "outputDir": null,
+    "outputMode": "stdout"
+}

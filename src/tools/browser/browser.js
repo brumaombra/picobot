@@ -51,11 +51,11 @@ export const generateBrowserCommandsPrompt = () => {
 
 // Run a playwright-cli command via npx and return its stdout
 const runCli = async (args, timeoutMs = BROWSER_DEFAULT_TIMEOUT_MS) => {
-    logger.debug(`npx playwright-cli ${args.join(' ')}`);
+    logger.debug(`npx playwright-cli --config=playwright-cli.json ${args.join(' ')}`);
 
     try {
         // Execute the command
-        const { stdout } = await execFileAsync('npx', ['playwright-cli', ...args], {
+        const { stdout } = await execFileAsync('npx', ['playwright-cli', '--config=playwright-cli.json', ...args], {
             timeout: timeoutMs,
             maxBuffer: 1024 * 1024,
             shell: true
