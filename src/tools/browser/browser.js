@@ -11,7 +11,7 @@ const execFileAsync = promisify(execFile);
 
 // List of supported browser commands (core set — use `eval` for advanced/niche operations)
 const BROWSER_COMMANDS = [
-    { name: 'open', description: 'Navigate/open browser (optionally to a URL). Usage: open <url> [--headed]' },
+    { name: 'open', description: 'Navigate/open browser (optionally to a URL). Usage: open <url>' },
     { name: 'snapshot', description: 'Get page accessibility snapshot with element [ref] markers. Usage: snapshot [-d <depth>] [-s <selector>]' },
     { name: 'click', description: 'Click an element by ref or selector. Usage: click <ref|selector>' },
     { name: 'type', description: 'Type text into an element. Usage: type <ref|selector> <text>' },

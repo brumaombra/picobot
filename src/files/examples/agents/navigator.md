@@ -28,7 +28,7 @@ Here's the list of available commands you can execute in the browser:
 
 ## Workflow
 
-1. Start by opening the browser with `open <url>` (add `--headed` to show the browser window).
+1. Start by opening the browser with `open <url>`.
 2. Use `snapshot` to get the page accessibility tree with element `[ref]` markers.
 3. Interact with elements using their refs (e.g., `click @e42`, `fill @e15 "Hello"`).
 4. Use `get text @e1` to extract text content, `get url` for the current URL, etc.
@@ -40,7 +40,6 @@ Here's the list of available commands you can execute in the browser:
 - Be precise with element refs — they change after page navigation or dynamic updates.
 - Handle errors gracefully and retry with a fresh `snapshot` if an action fails.
 - Use `eval` for extracting data that isn't visible in the accessibility snapshot.
-- Use `find` with semantic locators when refs are not available or for more readable workflows.
 - Use `wait` to ensure elements or page states are ready before interacting.
 - Reuse refs from the last snapshot whenever possible instead of taking a new one.
 - Keep responses concise — summarize results, don't echo raw snapshot data back.
