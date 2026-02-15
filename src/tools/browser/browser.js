@@ -1,11 +1,14 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { logger } from '../../utils/logger.js';
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse, generateUniqueId } from '../../utils/utils.js';
 import { BROWSER_DEFAULT_TIMEOUT_MS, BROWSER_MAX_CONTENT_LENGTH } from '../../config.js';
 
 // Promisified version of execFile for async/await usage
 const execFileAsync = promisify(execFile);
+
+// Current browser session name (unique per open/close cycle)
+let currentSession = null;
 
 /******************************** Available Commands ********************************/
 
@@ -56,6 +59,12 @@ const cleanEnv = () => {
 
 // Run an agent-browser command via npx and return its stdout
 const runCli = async (args, timeoutMs = BROWSER_DEFAULT_TIMEOUT_MS) => {
+    // Inject session flag if a session is active
+    if (currentSession) {
+        args = ['--session', currentSession, ...args];
+    }
+
+    // Log the command being executed
     logger.debug(`npx agent-browser ${args.join(' ')}`);
 
     try {
@@ -152,6 +161,14 @@ export const browserTool = {
         try {
             // Execute the command and return the output
             logger.debug(`browser tool: ${command}`);
+
+            // Start a new session on open, clear it on close
+            if (commandName === 'open') {
+                currentSession = generateUniqueId('browser');
+                logger.debug(`New browser session: ${currentSession}`);
+            } else if (commandName === 'close') {
+                currentSession = null;
+            }
 
             // For snapshot commands, always force -i (interactive only)
             if (commandName === 'snapshot') {
