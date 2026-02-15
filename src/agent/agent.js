@@ -20,7 +20,7 @@ export class Agent {
         this.model = model;
         this.toolExecutor = new ToolExecutor();
 
-        // Initialize the message processor (skip for subagents and job runners)
+        // Initialize the message processor (skip for subagents and cron runners)
         if (!skipMessageProcessor) {
             this.messageProcessor = new MessageProcessor({
                 agent: this,

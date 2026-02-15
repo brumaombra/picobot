@@ -13,7 +13,7 @@ export const WORKSPACE_DIR = join(CONFIG_DIR, 'workspace');
 export const PROMPTS_DIR = join(CONFIG_DIR, 'prompts');
 export const AGENTS_DIR = join(CONFIG_DIR, 'agents');
 export const SESSIONS_DIR = join(CONFIG_DIR, 'sessions');
-export const JOBS_DIR = join(CONFIG_DIR, 'jobs');
+export const CRONS_DIR = join(CONFIG_DIR, 'crons');
 export const LOGS_DIR = join(CONFIG_DIR, 'logs');
 export const DEFAULT_WORKSPACE_PATH = '~/.picobot/workspace';
 

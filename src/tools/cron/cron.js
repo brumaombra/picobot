@@ -1,20 +1,20 @@
 import cron from 'node-cron';
 import { logger } from '../../utils/logger.js';
-import { jobs, serializeJob, executeJob } from '../../jobs/manager.js';
-import { saveJobToFile, deleteJobFile } from '../../jobs/persistent.js';
+import { crons, serializeCron, executeCron } from '../../crons/manager.js';
+import { saveCronToFile, deleteCronFile } from '../../crons/persistent.js';
 import { generateUniqueId, handleToolError, handleToolResponse, parseSessionKey } from '../../utils/utils.js';
 
-// Create cron job tool
+// Create cron tool
 export const cronCreateTool = {
     // Tool definition
     name: 'cron_create',
-    description: 'Schedule a new cron job that runs automatically.',
+    description: 'Schedule a new cron that runs automatically.',
     parameters: {
         type: 'object',
         properties: {
             name: {
                 type: 'string',
-                description: 'Job name for identification.'
+                description: 'Cron name for identification.'
             },
             schedule: {
                 type: 'string',
@@ -46,11 +46,11 @@ export const cronCreateTool = {
             }
 
             // Generate unique ID
-            const jobId = generateUniqueId('job');
+            const cronId = generateUniqueId('cron');
 
-            // Create job object
-            const job = {
-                id: jobId,
+            // Create cron object
+            const cronEntry = {
+                id: cronId,
                 name,
                 schedule,
                 action: action_type,
@@ -61,21 +61,21 @@ export const cronCreateTool = {
             };
 
             // Create the scheduled task
-            job.task = cron.schedule(schedule, async () => {
-                await executeJob(jobId);
+            cronEntry.task = cron.schedule(schedule, async () => {
+                await executeCron(cronId);
             });
 
             // Store in memory
-            jobs.set(jobId, job);
+            crons.set(cronId, cronEntry);
 
             // Save to disk
-            saveJobToFile(jobId, job);
-            logger.info(`Created job: ${name} (${schedule})`);
+            saveCronToFile(cronId, cronEntry);
+            logger.info(`Created cron: ${name} (${schedule})`);
 
             // Return success response
             return handleToolResponse({
-                jobId,
-                message: `Job "${name}" created successfully with schedule: ${schedule}`
+                cronId,
+                message: `Cron "${name}" created successfully with schedule: ${schedule}`
             });
         } catch (error) {
             return handleToolError({ error, message: 'Cron create failed' });
@@ -83,11 +83,11 @@ export const cronCreateTool = {
     }
 };
 
-// List all cron jobs tool
+// List all crons tool
 export const cronListTool = {
     // Tool definition
     name: 'cron_list',
-    description: 'List all scheduled cron jobs with metadata. Use cron_get to get detailed information.',
+    description: 'List all scheduled crons with metadata. Use cron_get to get detailed information.',
     parameters: {
         type: 'object',
         properties: {},
@@ -97,21 +97,21 @@ export const cronListTool = {
     // Main execution function
     execute: async () => {
         try {
-            // List all jobs
-            const jobsList = [...jobs.values()].map(serializeJob);
-            if (jobsList.length === 0) {
-                return handleToolResponse('No scheduled jobs found.');
+            // List all crons
+            const cronsList = [...crons.values()].map(serializeCron);
+            if (cronsList.length === 0) {
+                return handleToolResponse('No scheduled crons found.');
             }
 
             // Return metadata only
-            const metadata = jobsList.map(job => ({
-                id: job.id,
-                name: job.name,
-                schedule: job.schedule,
-                action: job.action
+            const metadata = cronsList.map(cronEntry => ({
+                id: cronEntry.id,
+                name: cronEntry.name,
+                schedule: cronEntry.schedule,
+                action: cronEntry.action
             }));
 
-            // Return the list of jobs
+            // Return the list of crons
             return handleToolResponse(metadata);
         } catch (error) {
             return handleToolError({ error, message: 'Cron list failed' });
@@ -119,54 +119,54 @@ export const cronListTool = {
     }
 };
 
-// Get specific cron job details tool
+// Get specific cron details tool
 export const cronGetTool = {
     // Tool definition
     name: 'cron_get',
-    description: 'Get detailed information about a specific cron job by its ID.',
+    description: 'Get detailed information about a specific cron by its ID.',
     parameters: {
         type: 'object',
         properties: {
-            jobId: {
+            cronId: {
                 type: 'string',
-                description: 'Job ID to get details for.'
+                description: 'Cron ID to get details for.'
             }
         },
-        required: ['jobId']
+        required: ['cronId']
     },
 
     // Main execution function
     execute: async args => {
         try {
-            // Get the job details
-            const job = jobs.get(args.jobId);
-            if (!job) {
-                return handleToolError({ message: `Job not found: ${args.jobId}` });
+            // Get the cron details
+            const cronEntry = crons.get(args.cronId);
+            if (!cronEntry) {
+                return handleToolError({ message: `Cron not found: ${args.cronId}` });
             }
 
-            // Return the job details
-            return handleToolResponse(serializeJob(job));
+            // Return the cron details
+            return handleToolResponse(serializeCron(cronEntry));
         } catch (error) {
             return handleToolError({ error, message: 'Cron get failed' });
         }
     }
 };
 
-// Update existing cron job tool
+// Update existing cron tool
 export const cronUpdateTool = {
     // Tool definition
     name: 'cron_update',
-    description: 'Update an existing cron job. Only provide fields to change.',
+    description: 'Update an existing cron. Only provide fields to change.',
     parameters: {
         type: 'object',
         properties: {
-            jobId: {
+            cronId: {
                 type: 'string',
-                description: 'Job ID to update.'
+                description: 'Cron ID to update.'
             },
             name: {
                 type: 'string',
-                description: 'Job name (optional).'
+                description: 'Cron name (optional).'
             },
             schedule: {
                 type: 'string',
@@ -182,16 +182,16 @@ export const cronUpdateTool = {
                 description: 'New content (optional).'
             }
         },
-        required: ['jobId']
+        required: ['cronId']
     },
 
     // Main execution function
     execute: async (args, context) => {
         try {
-            // Get job details
-            const job = jobs.get(args.jobId);
-            if (!job) {
-                return handleToolError({ message: `Job not found: ${args.jobId}` });
+            // Get cron details
+            const cronEntry = crons.get(args.cronId);
+            if (!cronEntry) {
+                return handleToolError({ message: `Cron not found: ${args.cronId}` });
             }
 
             // Build the updates object with only provided fields
@@ -212,65 +212,65 @@ export const cronUpdateTool = {
             }
 
             // Apply updates
-            Object.assign(job, updates);
+            Object.assign(cronEntry, updates);
 
             // Always recreate task to ensure schedule is current
-            job.task.stop();
-            job.task.destroy();
-            job.task = cron.schedule(job.schedule, async () => {
-                await executeJob(args.jobId);
+            cronEntry.task.stop();
+            cronEntry.task.destroy();
+            cronEntry.task = cron.schedule(cronEntry.schedule, async () => {
+                await executeCron(args.cronId);
             });
 
             // Save to disk
-            saveJobToFile(args.jobId, job);
-            logger.info(`Updated job: ${job.name}`);
+            saveCronToFile(args.cronId, cronEntry);
+            logger.info(`Updated cron: ${cronEntry.name}`);
 
             // Return success response
-            return handleToolResponse(`Job "${job.name}" updated successfully`);
+            return handleToolResponse(`Cron "${cronEntry.name}" updated successfully`);
         } catch (error) {
             return handleToolError({ error, message: 'Cron update failed' });
         }
     }
 };
 
-// Delete cron job tool
+// Delete cron tool
 export const cronDeleteTool = {
     // Tool definition
     name: 'cron_delete',
-    description: 'Delete a scheduled cron job.',
+    description: 'Delete a scheduled cron.',
     parameters: {
         type: 'object',
         properties: {
-            jobId: {
+            cronId: {
                 type: 'string',
-                description: 'Job ID to delete.'
+                description: 'Cron ID to delete.'
             }
         },
-        required: ['jobId']
+        required: ['cronId']
     },
 
     // Main execution function
     execute: async args => {
         try {
-            // Get job details
-            const job = jobs.get(args.jobId);
-            if (!job) {
-                return handleToolError({ message: `Job not found: ${args.jobId}` });
+            // Get cron details
+            const cronEntry = crons.get(args.cronId);
+            if (!cronEntry) {
+                return handleToolError({ message: `Cron not found: ${args.cronId}` });
             }
 
             // Stop and destroy the task
-            job.task.stop();
-            job.task.destroy();
+            cronEntry.task.stop();
+            cronEntry.task.destroy();
 
             // Remove from memory
-            jobs.delete(args.jobId);
+            crons.delete(args.cronId);
 
             // Remove from disk
-            deleteJobFile(args.jobId);
-            logger.info(`Deleted job: ${job.name}`);
+            deleteCronFile(args.cronId);
+            logger.info(`Deleted cron: ${cronEntry.name}`);
 
             // Return success response
-            return handleToolResponse(`Job "${job.name}" deleted successfully`);
+            return handleToolResponse(`Cron "${cronEntry.name}" deleted successfully`);
         } catch (error) {
             return handleToolError({ error, message: 'Cron delete failed' });
         }

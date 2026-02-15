@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPTS_DIR, AGENTS_DIR, SESSIONS_DIR, JOBS_DIR, LOGS_DIR } from '../config.js';
+import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPTS_DIR, AGENTS_DIR, SESSIONS_DIR, CRONS_DIR, LOGS_DIR } from '../config.js';
 import { success, warning, error, newline } from '../utils/print.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -14,7 +14,7 @@ const CONFIG_ITEMS = [
     { path: PROMPTS_DIR, type: 'directory', name: 'Prompts directory' },
     { path: AGENTS_DIR, type: 'directory', name: 'Agents directory' },
     { path: SESSIONS_DIR, type: 'directory', name: 'Sessions directory' },
-    { path: JOBS_DIR, type: 'directory', name: 'Jobs directory' },
+    { path: CRONS_DIR, type: 'directory', name: 'Crons directory' },
     { path: LOGS_DIR, type: 'directory', name: 'Logs directory' },
     { path: join(PROMPTS_DIR, 'AGENTS.md'), type: 'file', name: 'AGENTS.md', source: join(__dirname, 'examples/AGENTS.md') },
     { path: join(PROMPTS_DIR, 'SOUL.md'), type: 'file', name: 'SOUL.md', source: join(__dirname, 'examples/SOUL.md') },

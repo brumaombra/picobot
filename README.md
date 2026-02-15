@@ -39,7 +39,7 @@ Picobot uses an **orchestrator + subagents** architecture. You talk to one main 
 | 💻 **Code Implementer** | Write, refactor, and test code with execution tools |
 | 🌐 **Web Researcher** | Search the web and synthesize information |
 | 🧭 **Web Navigator** | Control a browser to interact with pages and fill forms |
-| ⏰ **Task Scheduler** | Set up cron jobs and automated recurring tasks |
+| ⏰ **Task Scheduler** | Set up crons and automated recurring tasks |
 | 🖥️ **System Admin** | Monitor system health and manage processes |
 
 The main agent only has one real tool: **`subagent`**. It reads your message, picks the right specialist(s), writes a detailed task brief, and kicks off the work. Subagents execute autonomously with their own dedicated toolset and report back. The main agent reviews the results and iterates if needed — it's the supervisor, not a pass-through.
