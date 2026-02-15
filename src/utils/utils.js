@@ -173,7 +173,7 @@ export const checkShellCommand = ({ command, workDir }) => {
 
 // Generate a unique ID
 export const generateUniqueId = (prefix = 'msg') => {
-    return `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 11)}`;
+    return `${prefix}_${Date.now()}`;
 };
 
 // Parse a session key into its channel and chatId components

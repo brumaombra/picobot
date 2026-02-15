@@ -3,7 +3,7 @@ import { Agent } from './agent/agent.js';
 import { initTelegram, startTelegram, stopTelegram } from './channel/telegram.js';
 import { initLogger, logger } from './utils/logger.js';
 import { initSessionManager } from './session/manager.js';
-import { initializeJobManager } from './jobs/manager.js';
+import { initializeJobManager, setAgentContext } from './jobs/manager.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google-client.js';
 import { loadAgents } from './agent/agents.js';
@@ -47,6 +47,14 @@ export const startBot = async () => {
 
     // Create agent
     agent = new Agent({
+        llm,
+        model: config.agent?.model,
+        workspacePath: config.workspace,
+        config: config.agent
+    });
+
+    // Set agent context for job manager (enables agent_prompt cron jobs)
+    setAgentContext({
         llm,
         model: config.agent?.model,
         workspacePath: config.workspace,

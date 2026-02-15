@@ -62,7 +62,7 @@ export const subagentTool = {
             const subagent = new Agent({
                 llm: context.llm,
                 model: selectedModel,
-                isSubagent: true
+                skipMessageProcessor: true
             });
 
             // Initialize subagent session with system prompt built from agent definition

@@ -4,7 +4,7 @@ import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 export const getDateTimeTool = {
     // Tool definition
     name: 'get_datetime',
-    description: 'Get the current date and time in both UTC and local timezone formats.',
+    description: 'Get the current local date and time with timezone.',
     parameters: {
         type: 'object',
         properties: {}
@@ -17,9 +17,8 @@ export const getDateTimeTool = {
             const now = new Date();
             const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
 
-            // Return both UTC and local date/time strings with timezone
+            // Return local date/time string with timezone
             return handleToolResponse({
-                utc: now.toISOString(),
                 local: getLocalDateTimeString(now),
                 timezone: timezone
             });

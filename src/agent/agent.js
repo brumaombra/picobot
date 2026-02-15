@@ -9,7 +9,7 @@ import { ToolExecutor } from './tool-executor.js';
 // Agent class — used for both the main agent and subagents
 export class Agent {
     // Create a new agent instance
-    constructor({ llm, model, workspacePath, config, isSubagent = false } = {}) {
+    constructor({ llm, model, workspacePath, config, skipMessageProcessor = false } = {}) {
         // Validate required dependencies
         if (!llm || !model) {
             throw new Error('LLM and model are required');
@@ -18,11 +18,10 @@ export class Agent {
         // Store core dependencies
         this.llm = llm;
         this.model = model;
-        this.isSubagent = isSubagent;
         this.toolExecutor = new ToolExecutor();
 
-        // Initialize the message processor (main agent only — subagents don't need it)
-        if (!this.isSubagent) {
+        // Initialize the message processor (skip for subagents and job runners)
+        if (!skipMessageProcessor) {
             this.messageProcessor = new MessageProcessor({
                 agent: this,
                 workspacePath,
