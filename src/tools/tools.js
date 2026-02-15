@@ -1,6 +1,7 @@
 import { shellTool } from './general/shell.js';
 import { subagentTool } from './general/subagent.js';
 import { getDateTimeTool } from './general/datetime.js';
+import { sendFileTool } from './general/send-file.js';
 import { systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool } from './system/system.js';
 import { webFetchTool } from './web/fetch.js';
 import { webSearchTool } from './web/search.js';
@@ -17,6 +18,7 @@ const TOOLS = new Map([
     [shellTool.name, shellTool],
     [getDateTimeTool.name, getDateTimeTool],
     [subagentTool.name, subagentTool],
+    [sendFileTool.name, sendFileTool],
 
     // System tools
     [systemInfoBasicTool.name, systemInfoBasicTool],

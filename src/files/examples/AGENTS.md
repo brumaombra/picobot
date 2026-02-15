@@ -4,6 +4,7 @@ description: The main agent orchestrator. Delegates tasks to specialized subagen
 allowed_tools:
   - get_datetime
   - subagent
+  - send_file
 ---
 
 # Agent Instructions

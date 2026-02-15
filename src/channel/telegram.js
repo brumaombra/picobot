@@ -43,6 +43,20 @@ const setupOutboundListener = () => {
         stopTyping(chatId);
 
         try {
+            // If message includes a file, send it
+            if (message.file) {
+                // Send the file with optional caption (use message content as fallback caption)
+                await bot.telegram.sendDocument(chatId, { source: message.file.path }, {
+                    caption: message.file.caption || message.content,
+                    parse_mode: 'HTML',
+                    reply_parameters: message.replyToId ? { message_id: parseInt(message.replyToId, 10) } : undefined
+                });
+
+                // Log successful send and exit
+                logger.debug(`Sent file to ${message.sessionKey}: ${message.file.path}`);
+                return;
+            }
+
             // Convert markdown to HTML for Telegram
             const htmlContent = markdownToTelegramHtml(message.content);
 
