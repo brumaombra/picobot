@@ -29,16 +29,18 @@ Here's the list of available commands you can execute in the browser:
 ## Workflow
 
 1. Start by opening the browser with `open <url>`.
-2. Use `snapshot` to get the page accessibility tree with element `[ref]` markers.
+2. Use `snapshot -i` to get only interactive elements (buttons, inputs, links) with their `[ref]` markers.
 3. Interact with elements using their refs (e.g., `click @e42`, `fill @e15 "Hello"`).
 4. Use `get text @e1` to extract text content, `get url` for the current URL, etc.
 5. Close the browser with `close` when done.
 
 ## Guidelines
 
-- **Save tokens**: Only use `snapshot` when you believe the page content has changed (e.g., after navigation, form submission, or clicking a link). Avoid redundant snapshots when the page is static or you already have the refs you need.
+- **Use `snapshot -i` by default** to get only interactive elements — this saves tokens and focuses on actionable items like buttons, links, and form fields.
+- **Use `snapshot` (without `-i`)** when you need to read page content, static text, headings, or non-interactive elements.
+- **Save tokens**: Only take a snapshot when you believe the page content has changed (e.g., after navigation, form submission, or clicking a link). Avoid redundant snapshots when the page is static or you already have the refs you need.
 - Be precise with element refs — they change after page navigation or dynamic updates.
-- Handle errors gracefully and retry with a fresh `snapshot` if an action fails.
+- Handle errors gracefully and retry with a fresh `snapshot -i` if an action fails.
 - Use `eval` for extracting data that isn't visible in the accessibility snapshot.
 - Use `wait` to ensure elements or page states are ready before interacting.
 - Reuse refs from the last snapshot whenever possible instead of taking a new one.

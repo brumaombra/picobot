@@ -1,8 +1,10 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
+import { join } from 'path';
+import { mkdirSync } from 'fs';
 import { logger } from '../../utils/logger.js';
 import { handleToolError, handleToolResponse, generateUniqueId } from '../../utils/utils.js';
-import { BROWSER_DEFAULT_TIMEOUT_MS, BROWSER_MAX_CONTENT_LENGTH } from '../../config.js';
+import { BROWSER_DEFAULT_TIMEOUT_MS, BROWSER_MAX_CONTENT_LENGTH, BROWSER_HEADED, SCREENSHOTS_DIR } from '../../config.js';
 
 // Promisified version of execFile for async/await usage
 const execFileAsync = promisify(execFile);
@@ -15,7 +17,7 @@ let currentSession = null;
 // List of supported browser commands (core set — use `eval` for advanced/niche operations)
 const BROWSER_COMMANDS = [
     { name: 'open', description: 'Navigate/open browser (optionally to a URL). Usage: open <url>' },
-    { name: 'snapshot', description: 'Get page accessibility snapshot with element [ref] markers. Usage: snapshot [-d <depth>] [-s <selector>]' },
+    { name: 'snapshot', description: 'Get page accessibility snapshot with element [ref] markers. Use -i to show only interactive elements (buttons, inputs, links). Usage: snapshot [-i] [-d <depth>] [-s <selector>]' },
     { name: 'click', description: 'Click an element by ref or selector. Usage: click <ref|selector>' },
     { name: 'type', description: 'Type text into an element. Usage: type <ref|selector> <text>' },
     { name: 'fill', description: 'Clear and fill a field by ref. Usage: fill <ref|selector> <text>' },
@@ -25,7 +27,7 @@ const BROWSER_COMMANDS = [
     { name: 'check', description: 'Check a checkbox. Usage: check <ref|selector>' },
     { name: 'uncheck', description: 'Uncheck a checkbox. Usage: uncheck <ref|selector>' },
     { name: 'scroll', description: 'Scroll the page. Usage: scroll <up|down|left|right> [px]' },
-    { name: 'screenshot', description: 'Take a screenshot. Usage: screenshot [path] [--full]' },
+    { name: 'screenshot', description: 'Take a screenshot. Usage: screenshot [path] [--full] (use --full to capture the entire page without scrolling)' },
     { name: 'eval', description: 'Evaluate JavaScript on the page. Usage: eval <js>' },
     { name: 'get', description: 'Get element info. Usage: get <text|html|value|attr|title|url|count|box> [ref|selector] [attr]' },
     { name: 'wait', description: 'Wait for element, time, text, URL, or load state. Usage: wait <selector|ms> [--text|--url|--load|--fn]' },
@@ -165,14 +167,28 @@ export const browserTool = {
             // Start a new session on open, clear it on close
             if (commandName === 'open') {
                 currentSession = generateUniqueId('browser');
+                if (BROWSER_HEADED) args.push('--headed'); // Add headed flag if configured
                 logger.debug(`New browser session: ${currentSession}`);
             } else if (commandName === 'close') {
                 currentSession = null;
             }
 
-            // For snapshot commands, always force -i (interactive only)
-            if (commandName === 'snapshot') {
-                if (!args.includes('-i')) args.splice(1, 0, '-i');
+            // For screenshot commands, always save to the screenshots directory
+            if (commandName === 'screenshot') {
+                // Find the filename arg (first arg that doesn't start with -)
+                const filenameIndex = args.findIndex((arg, index) => index > 0 && !arg.startsWith('-'));
+                const filename = filenameIndex !== -1 ? args[filenameIndex] : `${generateUniqueId('screenshot')}.png`;
+
+                // Replace or insert the full path
+                const fullPath = join(SCREENSHOTS_DIR, filename);
+                if (filenameIndex !== -1) {
+                    args[filenameIndex] = fullPath;
+                } else {
+                    args.splice(1, 0, fullPath);
+                }
+
+                // Create screenshots directory if it doesn't exist
+                mkdirSync(SCREENSHOTS_DIR, { recursive: true });
             }
 
             // Execute the CLI command and handle the response

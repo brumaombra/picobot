@@ -41,9 +41,10 @@ export class Llm {
             });
 
             // Get the choice
-            const choice = response.choices[0];
+            const choice = response.choices?.[0];
             if (!choice) {
-                throw new Error('No response from OpenRouter API');
+                const errorMessage = response.error?.message || 'No response from OpenRouter API';
+                throw new Error(errorMessage);
             }
 
             // Create the result object
