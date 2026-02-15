@@ -18,7 +18,8 @@ export const LOGS_DIR = join(CONFIG_DIR, 'logs');
 export const DEFAULT_WORKSPACE_PATH = '~/.picobot/workspace';
 
 /**************** Agent *****************/
-export const MAX_AGENT_ITERATIONS = 15;
+export const AGENT_TIME_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
+export const AGENT_WRAPUP_THRESHOLD_MS = 60 * 1000; // Warn agent to wrap up when this many ms remain
 export const QUEUE_POLL_TIMEOUT_MS = 1000;
 export const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
 

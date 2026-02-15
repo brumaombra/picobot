@@ -107,8 +107,8 @@ export const subagentTool = {
                     session_id: subagentId,
                     message: result.response
                 });
-            } else if (result.reachedMaxIterations) {
-                return handleToolError({ message: `Subagent reached maximum iterations without completing task (session_id: ${subagentId})` });
+            } else if (result.timedOut) {
+                return handleToolError({ message: `Subagent timed out without completing task (session_id: ${subagentId})` });
             } else {
                 return handleToolError({ message: `Subagent completed without producing a response (session_id: ${subagentId})` });
             }

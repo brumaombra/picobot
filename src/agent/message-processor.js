@@ -57,12 +57,12 @@ export class MessageProcessor {
                     sessionKey: message.sessionKey,
                     content: result.response
                 });
-            } else if (result.reachedMaxIterations) {
-                // Send max iteration message back
-                logger.warn(`Max iterations reached for session ${message.sessionKey}`);
+            } else if (result.timedOut) {
+                // Send timeout message back
+                logger.warn(`Time limit reached for session ${message.sessionKey}`);
                 sendOutbound({
                     sessionKey: message.sessionKey,
-                    content: "I've reached my iteration limit. Let me know if you need anything else!"
+                    content: "I've run out of time for this task. Let me know if you'd like me to continue!"
                 });
             }
         } catch (error) {

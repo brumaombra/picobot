@@ -1,7 +1,8 @@
 import { cleanupSessions, getSessionMessages, addMessageToSession } from '../session/manager.js';
 import { logger } from '../utils/logger.js';
+import { formatTime } from '../utils/utils.js';
 import { pullInbound } from '../bus/message-bus.js';
-import { QUEUE_POLL_TIMEOUT_MS, SESSION_CLEANUP_INTERVAL_MS, MAX_AGENT_ITERATIONS } from '../config.js';
+import { QUEUE_POLL_TIMEOUT_MS, SESSION_CLEANUP_INTERVAL_MS, AGENT_TIME_LIMIT_MS, AGENT_WRAPUP_THRESHOLD_MS } from '../config.js';
 import { MessageProcessor } from './message-processor.js';
 import { ToolExecutor } from './tool-executor.js';
 
@@ -37,16 +38,38 @@ export class Agent {
     async run(sessionKey, tools, context, onIntermediateMessage) {
         let iteration = 0;
         let finalResponse = null;
+        let wrapUpInjected = false;
+
+        // Time-based limit
+        const startTime = Date.now();
 
         // Resolve tool definitions and compute allowed tool names
         const toolDefs = Array.isArray(tools) ? tools : [];
         const allowedToolNames = new Set(toolDefs.map(tool => tool?.function?.name).filter(Boolean));
 
         // Main conversation loop
-        while (iteration < MAX_AGENT_ITERATIONS) {
+        while (true) {
+            // Check time limit
+            const elapsed = Date.now() - startTime;
+            if (elapsed >= AGENT_TIME_LIMIT_MS) {
+                logger.warn(`Time limit reached (${formatTime(AGENT_TIME_LIMIT_MS)}) for session ${sessionKey}`);
+                break;
+            }
+
+            // Inject wrap-up warning when approaching time limit
+            const remaining = AGENT_TIME_LIMIT_MS - elapsed;
+            if (!wrapUpInjected && remaining <= AGENT_WRAPUP_THRESHOLD_MS) {
+                wrapUpInjected = true;
+                logger.info(`Injecting wrap-up warning (${formatTime(remaining)} remaining) for session ${sessionKey}`);
+                addMessageToSession(sessionKey, {
+                    role: 'system',
+                    content: `⏰ TIME WARNING: You have approximately ${formatTime(remaining)} remaining before your execution time runs out. Start wrapping up your current work now. Finish what you're doing, and avoid starting any new complex operations.`
+                });
+            }
+
             // Increment iteration
             iteration++;
-            logger.debug(`Conversation iteration ${iteration}/${MAX_AGENT_ITERATIONS}`);
+            logger.debug(`Conversation iteration ${iteration} (${formatTime(elapsed)} / ${formatTime(AGENT_TIME_LIMIT_MS)})`);
 
             // Get current messages
             const messages = getSessionMessages(sessionKey);
@@ -99,9 +122,10 @@ export class Agent {
         }
 
         // Return conversation result
+        const timedOut = !finalResponse && (Date.now() - startTime) >= AGENT_TIME_LIMIT_MS;
         return {
             response: finalResponse,
-            reachedMaxIterations: !finalResponse && iteration >= MAX_AGENT_ITERATIONS
+            timedOut
         };
     }
 
