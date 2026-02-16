@@ -7,8 +7,8 @@ import { generateAgentsListPrompt } from './agents.js';
 import { generateBrowserCommandsPrompt } from '../tools/browser/browser.js';
 import { parseFrontmatter } from '../utils/utils.js';
 
-// Cached main agent metadata (parsed once from AGENTS.md frontmatter)
-let mainAgentMeta = null;
+let mainAgentMeta = null; // Cached main agent metadata (parsed once from AGENTS.md frontmatter)
+const promptCache = new Map(); // Cache for prompt file contents
 
 // Build the system prompt for the main agent (AGENTS.md + SOUL.md + TOOLS.md)
 export const buildSystemPrompt = () => {
@@ -25,9 +25,7 @@ export const buildSystemPrompt = () => {
     mainAgentMeta = metadata;
 
     // Replace {agentsList} placeholder with loaded agents
-    let agentsPrompt = body;
-    agentsPrompt = agentsPrompt.replace('{agentsList}', generateAgentsListPrompt());
-    prompts.push(agentsPrompt);
+    prompts.push(body.replace('{agentsList}', generateAgentsListPrompt()));
 
     // Load SOUL.md
     const soulPrompt = getPromptContent('SOUL.md');
@@ -60,13 +58,8 @@ export const buildSubagentSystemPrompt = agentDef => {
 
     // Add agent-specific instructions from the agent's markdown body
     if (agentDef?.instructions) {
-        // Base instructions on the agent definition, which may contain placeholders for tool commands
-        let instructions = agentDef.instructions;
-
-        // Add any relevant tool command prompts based on the agent's allowed tools
-        instructions = instructions.replace('{browserCommands}', generateBrowserCommandsPrompt());
-
-        // Add the agent's instructions to the prompt
+        // Replace any placeholders in the instructions
+        const instructions = agentDef.instructions.replace('{browserCommands}', generateBrowserCommandsPrompt());
         prompts.push(instructions);
     }
 
@@ -99,22 +92,31 @@ export const getMainAgentAllowedTools = () => {
     return metadata.allowed_tools || [];
 };
 
-// Get prompt content from prompts directory by filename
+// Get prompt content from prompts directory by filename (cached)
 export const getPromptContent = filename => {
+    // Return cached version if available
+    if (promptCache.has(filename)) {
+        return promptCache.get(filename);
+    }
+
+    // Load from file system
     const filePath = join(PROMPTS_DIR, filename);
 
     // Check if file exists
     if (!existsSync(filePath)) {
         logger.debug(`${filename} not found in prompts directory, skipping`);
+        promptCache.set(filename, '');
         return '';
     }
 
     try {
         const content = readFileSync(filePath, 'utf-8');
         logger.debug(`Loaded ${filename}`);
+        promptCache.set(filename, content);
         return content;
     } catch (error) {
         logger.warn(`Failed to load ${filename}: ${error}`);
+        promptCache.set(filename, '');
         return '';
     }
 };
