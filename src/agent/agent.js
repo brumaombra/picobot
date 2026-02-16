@@ -1,15 +1,16 @@
-import { cleanupSessions, getSessionMessages, addMessageToSession } from '../session/manager.js';
+import { cleanupSessions, getOrCreateSession, getSessionMessages, addMessageToSession } from '../session/manager.js';
 import { logger } from '../utils/logger.js';
 import { formatTime } from '../utils/utils.js';
-import { pullInbound } from '../bus/message-bus.js';
+import { pullInbound, sendOutbound } from '../bus/message-bus.js';
 import { QUEUE_POLL_TIMEOUT_MS, SESSION_CLEANUP_INTERVAL_MS, AGENT_TIME_LIMIT_MS, AGENT_WRAPUP_THRESHOLD_MS } from '../config.js';
-import { MessageProcessor } from './message-processor.js';
-import { ToolExecutor } from './tool-executor.js';
+import { getToolsDefinitions } from '../tools/tools.js';
+import { buildSystemPrompt, getMainAgentAllowedTools } from './prompts.js';
+import { executeToolBatch } from './tool-executor.js';
 
 // Agent class — used for both the main agent and subagents
 export class Agent {
     // Create a new agent instance
-    constructor({ llm, model, workspacePath, config, skipMessageProcessor = false } = {}) {
+    constructor({ llm, model, workspacePath, config } = {}) {
         // Validate required dependencies
         if (!llm || !model) {
             throw new Error('LLM and model are required');
@@ -18,16 +19,10 @@ export class Agent {
         // Store core dependencies
         this.llm = llm;
         this.model = model;
-        this.toolExecutor = new ToolExecutor();
 
-        // Initialize the message processor (skip for subagents and cron runners)
-        if (!skipMessageProcessor) {
-            this.messageProcessor = new MessageProcessor({
-                agent: this,
-                workspacePath,
-                config
-            });
-        }
+        // Main agent configuration (only needed for start())
+        this.workspacePath = workspacePath;
+        this.config = config;
 
         // Agent state
         this.running = false;
@@ -100,7 +95,7 @@ export class Agent {
             // Execute tool calls if present
             if (toolCalls.length > 0) {
                 // Execute all tool calls in parallel
-                const toolResults = await this.toolExecutor.executeBatch(toolCalls, context, allowedToolNames);
+                const toolResults = await executeToolBatch(toolCalls, context, allowedToolNames);
 
                 // Process each tool result
                 for (const message of toolResults) {
@@ -128,6 +123,71 @@ export class Agent {
         };
     }
 
+    // Process a single inbound message (main agent only)
+    async processMessage(message) {
+        // Log the message
+        logger.info(`Processing message for session ${message.sessionKey}`);
+
+        try {
+            // Initialize session with system prompt if needed
+            const session = getOrCreateSession(message.sessionKey);
+            if (session.messages.length === 0) {
+                // Add system prompt to new session
+                addMessageToSession(message.sessionKey, {
+                    role: 'system',
+                    content: buildSystemPrompt()
+                });
+            }
+
+            // Add user message to session
+            addMessageToSession(message.sessionKey, {
+                role: 'user',
+                content: message.content
+            });
+
+            // Build execution context for tools
+            const context = {
+                workingDir: this.workspacePath,
+                sessionKey: message.sessionKey,
+                llm: this.llm,
+                model: this.model,
+                config: this.config
+            };
+
+            // Get tool definitions for the main agent
+            const toolDefs = getToolsDefinitions(getMainAgentAllowedTools());
+
+            // Run the conversation loop with callback for intermediate messages
+            const result = await this.run(message.sessionKey, toolDefs, context, content => {
+                // Send intermediate messages immediately as they arrive
+                sendOutbound({ sessionKey: message.sessionKey, content });
+            });
+
+            // Send final response or timeout message
+            if (result.response) {
+                // Send final response back to user
+                sendOutbound({ sessionKey: message.sessionKey, content: result.response });
+            } else if (result.timedOut) {
+                // Send timeout message back
+                logger.warn(`Time limit reached for session ${message.sessionKey}`);
+                sendOutbound({
+                    sessionKey: message.sessionKey,
+                    content: "I've run out of time for this task. Let me know if you'd like me to continue!"
+                });
+            }
+        } catch (error) {
+            // Handle processing error
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            logger.error(`Error processing message: ${errorMessage}`);
+
+            // Send error message back to user
+            sendOutbound({
+                sessionKey: message.sessionKey,
+                content: `Sorry, I encountered an error: ${errorMessage}`
+            });
+        }
+    }
+
     // Start the main agent polling loop
     async start() {
         // Set running flag
@@ -142,10 +202,14 @@ export class Agent {
         // Main loop
         while (this.running) {
             try {
+                // Pull a message from the inbound queue with timeout
                 const message = await pullInbound(QUEUE_POLL_TIMEOUT_MS);
-                if (message) {
-                    await this.messageProcessor.process(message);
+                if (!message) {
+                    continue; // If no message was received, loop again
                 }
+
+                // Process one message at a time in queue order
+                await this.processMessage(message);
             } catch (error) {
                 logger.error(`Agent loop error: ${error}`);
             }

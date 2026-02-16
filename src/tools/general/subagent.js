@@ -5,12 +5,14 @@ import { buildSubagentSystemPrompt } from '../../agent/prompts.js';
 import { getToolsDefinitions } from '../tools.js';
 import { getOrCreateSession, addMessageToSession } from '../../session/manager.js';
 import { getAgent, getAgents, getAgentIds } from '../../agent/agents.js';
+import { registerTask, completeTask, failTask, getTask } from './subagent-registry.js';
+import { pushInbound } from '../../bus/message-bus.js';
 
-// Subagent tool
+// Subagent tool — launches subagents asynchronously and returns immediately
 export const subagentTool = {
     // Tool definition
     name: 'subagent',
-    description: 'Delegate task to a specialized AI subagent for autonomous execution. Each agent has specific expertise and a dedicated set of tools. To continue a previous subagent session (e.g. to answer a clarification request), pass the session_id returned from the previous call.',
+    description: 'Delegate a task to a specialized AI subagent for **asynchronous** execution. The subagent runs in the background and this tool returns immediately with a task_id. Use `check_subagent` to poll for status/results, or wait — you will be notified automatically when the subagent finishes. To resume a previous subagent session (e.g. to answer a clarification request), pass the task_id returned from the previous call.',
     get parameters() {
         return {
             type: 'object',
@@ -24,18 +26,18 @@ export const subagentTool = {
                     type: 'string',
                     description: 'Detailed task description with all context and requirements. When resuming a session, this is your reply to the subagent\'s clarification question.'
                 },
-                session_id: {
+                task_id: {
                     type: 'string',
-                    description: 'Optional. The session_id from a previous subagent call to resume that conversation (e.g. to answer a clarification request).'
+                    description: 'Optional. The task_id from a previous subagent call to resume that conversation (e.g. to answer a clarification request).'
                 }
             },
             required: ['agent', 'task']
         };
     },
 
-    // Main execution function
+    // Main execution function — launches the subagent in the background and returns immediately
     execute: async (args, context) => {
-        const { agent: agentId, task, session_id: existingSessionId } = args;
+        const { agent: agentId, task, task_id: existingTaskId } = args;
 
         // Validate context
         if (!context?.llm || !context?.model) {
@@ -52,17 +54,22 @@ export const subagentTool = {
         // Use the same model as the parent agent
         const selectedModel = context.model;
 
-        // Reuse existing session or generate a new one
-        const subagentId = existingSessionId || generateUniqueId('subagent');
-        const isResuming = !!existingSessionId;
-        logger.info(`${isResuming ? 'Resuming' : 'Spawning'} subagent [${subagentId}]: ${agentDef.name} (model: ${selectedModel})`);
+        // Determine task ID and session ID (resume existing or create new)
+        const existingTask = existingTaskId ? getTask(existingTaskId) : null;
+        if (existingTaskId && !existingTask) {
+            return handleToolError({ message: `Unknown task_id "${existingTaskId}". Use check_subagent to list all tasks.` });
+        }
+        const taskId = existingTaskId || generateUniqueId('task');
+        const subagentId = existingTask?.sessionId || generateUniqueId('subagent');
+        const isResuming = Boolean(existingTaskId);
+
+        logger.info(`${isResuming ? 'Resuming' : 'Spawning'} subagent [${subagentId}] task [${taskId}]: ${agentDef.name} (model: ${selectedModel})`);
 
         try {
             // Create subagent
             const subagent = new Agent({
                 llm: context.llm,
-                model: selectedModel,
-                skipMessageProcessor: true
+                model: selectedModel
             });
 
             // Initialize subagent session with system prompt built from agent definition
@@ -86,7 +93,7 @@ export const subagentTool = {
             // Get tool definitions filtered to the agent's allowed tools only
             const toolDefinitions = getToolsDefinitions(agentDef.allowedTools);
 
-            // Build execution context for subagent
+            // Build execution context for subagent (no abort signal — subagent runs independently)
             const subagentContext = {
                 workingDir: context.workingDir,
                 sessionKey: context.sessionKey,
@@ -95,25 +102,52 @@ export const subagentTool = {
                 config: context.config
             };
 
-            // Run subagent conversation and await its completion
-            const result = await subagent.run(subagentId, toolDefinitions, subagentContext);
+            // Register the task in the registry before launching
+            registerTask(taskId, {
+                agentId,
+                agentName: agentDef.name,
+                sessionId: subagentId,
+                task
+            });
 
-            // Log completion
-            logger.info(`Subagent [${subagentId}] completed: ${agentDef.name}`);
+            // Launch the subagent in the background (fire-and-forget)
+            // The .then/.catch handlers update the registry and notify the main agent when done
+            const parentSessionKey = context.sessionKey;
+            subagent.run(subagentId, toolDefinitions, subagentContext)
+                .then(result => {
+                    logger.info(`Subagent [${subagentId}] task [${taskId}] completed: ${agentDef.name}`);
 
-            // Return subagent's final response to parent agent (structured JSON with session_id and message)
-            if (result.response) {
-                return handleToolResponse({
-                    session_id: subagentId,
-                    message: result.response
+                    const status = result.response ? 'completed' : 'failed';
+                    if (result.response) completeTask(taskId, result.response);
+                    else failTask(taskId, result.timedOut ? 'Subagent timed out without completing the task.' : 'Subagent completed without producing a response.');
+
+                    // Notify the main agent by pushing a synthetic inbound message
+                    pushInbound({
+                        sessionKey: parentSessionKey,
+                        content: `[SYSTEM] Subagent task completed. Task ID: ${taskId} | Agent: ${agentDef.name} | Status: ${status}. Use check_subagent to retrieve the full result.`
+                    });
+                })
+                .catch(error => {
+                    const errorMessage = error instanceof Error ? error.message : String(error);
+                    logger.error(`Subagent [${subagentId}] task [${taskId}] failed: ${errorMessage}`);
+                    failTask(taskId, errorMessage);
+
+                    // Notify the main agent about the failure
+                    pushInbound({
+                        sessionKey: parentSessionKey,
+                        content: `[SYSTEM] Subagent task failed. Task ID: ${taskId} | Agent: ${agentDef.name} | Error: ${errorMessage}. Use check_subagent to see details.`
+                    });
                 });
-            } else if (result.timedOut) {
-                return handleToolError({ message: `Subagent timed out without completing task (session_id: ${subagentId})` });
-            } else {
-                return handleToolError({ message: `Subagent completed without producing a response (session_id: ${subagentId})` });
-            }
+
+            // Return immediately with the task ID — don't wait for the subagent to finish
+            return handleToolResponse({
+                task_id: taskId,
+                agent: agentDef.name,
+                status: 'launched',
+                message: `Subagent "${agentDef.name}" has been launched in the background. You will be notified automatically when it finishes. You can also use check_subagent with task_id "${taskId}" to check progress at any time.`
+            });
         } catch (error) {
-            return handleToolError({ error, message: 'Subagent failed' });
+            return handleToolError({ error, message: 'Failed to launch subagent' });
         }
     }
 };

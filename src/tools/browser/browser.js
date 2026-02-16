@@ -166,6 +166,13 @@ export const browserTool = {
 
             // Start a new session on open, clear it on close
             if (commandName === 'open') {
+                // Close existing session before opening a new one
+                if (currentSession) {
+                    logger.debug(`Closing previous browser session: ${currentSession}`);
+                    try { await runCli(['close']); } catch { /* ignore close errors */ }
+                }
+
+                // Generate a new unique session name for this browser instance
                 currentSession = generateUniqueId('browser');
                 if (BROWSER_HEADED) args.push('--headed'); // Add headed flag if configured
                 logger.debug(`New browser session: ${currentSession}`);

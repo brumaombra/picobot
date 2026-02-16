@@ -71,7 +71,7 @@ export const WEB_ACCEPT_HEADER = 'text/html,application/json,text/plain';
 /**************** Browser tool *****************/
 export const BROWSER_DEFAULT_TIMEOUT_MS = 30000; // 30 seconds
 export const BROWSER_MAX_CONTENT_LENGTH = 15000;
-export const BROWSER_HEADED = false;
+export const BROWSER_HEADED = true;
 export const SCREENSHOTS_DIR = join(WORKSPACE_DIR, 'screenshots');
 
 /**************** Brave Search API *****************/

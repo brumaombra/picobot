@@ -129,8 +129,7 @@ const executeAgentPromptCron = async cronEntry => {
         // Create a temporary agent instance
         const agent = new Agent({
             llm: agentContext.llm,
-            model: agentContext.model,
-            skipMessageProcessor: true
+            model: agentContext.model
         });
 
         // Initialize the isolated session with the main agent's system prompt
