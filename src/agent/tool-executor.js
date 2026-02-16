@@ -2,30 +2,31 @@ import { getTool } from '../tools/tools.js';
 import { logger } from '../utils/logger.js';
 import { stringifyJson } from '../utils/utils.js';
 
+// Helper to build a tool message
+const toolMsg = (toolCallId, content) => {
+    return {
+        role: 'tool',
+        content,
+        tool_call_id: toolCallId
+    };
+};
+
 // Execute a single tool call
 export const executeTool = async (toolCall, context, allowedToolNames) => {
     const toolName = toolCall?.function?.name;
+    const id = toolCall?.id;
 
     // Enforce allowed tools (prevents executing tools that were not exposed to the model)
     if (allowedToolNames && toolName && !allowedToolNames.has(toolName)) {
         logger.warn(`Disallowed tool call attempted: ${toolName}`);
-        return {
-            role: 'tool',
-            content: `Error: Tool "${toolName}" is not available. Only tools listed in your allowed_tools can be used.`,
-            tool_call_id: toolCall?.id
-        };
+        return toolMsg(id, `Error: Tool "${toolName}" is not available. Only tools listed in your allowed_tools can be used.`);
     }
 
     // Find the tool
     const tool = toolName ? getTool(toolName) : null;
     if (!tool) {
-        // Unknown tool — return error message
         logger.warn(`Unknown tool: ${toolName}`);
-        return {
-            role: 'tool',
-            content: `Error: Unknown tool "${toolName}"`,
-            tool_call_id: toolCall?.id
-        };
+        return toolMsg(id, `Error: Unknown tool "${toolName}"`);
     }
 
     try {
@@ -42,11 +43,7 @@ export const executeTool = async (toolCall, context, allowedToolNames) => {
                 } catch (error) {
                     const message = error instanceof Error ? error.message : String(error);
                     logger.warn(`Invalid JSON arguments for tool ${toolName}: ${message}`);
-                    return {
-                        role: 'tool',
-                        content: `Error: Invalid JSON arguments for tool "${toolName}": ${message}`,
-                        tool_call_id: toolCall?.id
-                    };
+                    return toolMsg(id, `Error: Invalid JSON arguments for tool "${toolName}": ${message}`);
                 }
             }
         } else if (rawArgs && typeof rawArgs === 'object') {
@@ -74,22 +71,14 @@ export const executeTool = async (toolCall, context, allowedToolNames) => {
         logger.debug(`Tool ${toolName} executed`);
 
         // Return the tool execution result
-        return {
-            role: 'tool',
-            content,
-            tool_call_id: toolCall?.id
-        };
+        return toolMsg(id, content);
     } catch (error) {
         // Log execution error
         const message = error instanceof Error ? error.message : String(error);
         logger.error(`Tool execution error: ${message}`);
 
         // Return error message
-        return {
-            role: 'tool',
-            content: `Error executing tool: ${message}`,
-            tool_call_id: toolCall?.id
-        };
+        return toolMsg(id, `Error executing tool: ${message}`);
     }
 };
 
@@ -104,10 +93,6 @@ export const executeToolBatch = async (toolCalls, context, allowedToolNames) => 
         if (result.status === 'fulfilled') return result.value;
         const message = result.reason instanceof Error ? result.reason.message : String(result.reason);
         logger.error(`Unexpected tool batch error: ${message}`);
-        return {
-            role: 'tool',
-            content: `Error: ${message}`,
-            tool_call_id: toolCalls?.[i]?.id
-        };
+        return toolMsg(toolCalls?.[i]?.id, `Error: ${message}`);
     });
 };

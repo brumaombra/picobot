@@ -3,7 +3,7 @@ import { Agent } from './agent/agent.js';
 import { initTelegram, startTelegram, stopTelegram } from './channel/telegram.js';
 import { initLogger, logger } from './utils/logger.js';
 import { initSessionManager } from './session/manager.js';
-import { initializeCronManager, setAgentContext } from './crons/manager.js';
+import { initializeCronManager, setCronAgent } from './crons/manager.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google-client.js';
 import { loadAgents } from './agent/agents.js';
@@ -53,13 +53,8 @@ export const startBot = async () => {
         config: config.agent
     });
 
-    // Set agent context for cron manager (enables agent_prompt crons)
-    setAgentContext({
-        llm,
-        model: config.agent?.model,
-        workspacePath: config.workspace,
-        config: config.agent
-    });
+    // Set agent reference for cron manager (enables agent_prompt crons)
+    setCronAgent(agent);
 
     // Initialize Telegram channel
     initTelegram();

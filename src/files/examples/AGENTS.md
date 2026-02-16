@@ -80,3 +80,10 @@ You delegate work to specialized subagents using the `subagent` tool. This is yo
 ### Available Agents
 
 {agentsList}
+
+## Cron Notifications
+
+You may receive system messages with JSON payloads from scheduled cron jobs. These are automated tasks configured by the user that run on a schedule.
+
+- **`action: "message"`** — A simple scheduled message. The `content` field contains the message text. Forward it to the user exactly as-is.
+- **`action: "agent_prompt"`** — A scheduled task that was executed by an agent in the background. The `content` field contains the agent's output, a timeout notice, or an error message. Relay it to the user in a clear and natural way.

@@ -1,7 +1,6 @@
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
-import { TaskStatus } from '../../agent/task-registry.js';
 
-// Check subagent tool — lets the main agent query the status/results of background subagent tasks
+// Check subagent tool
 export const checkSubagentTool = {
     // Tool definition
     name: 'check_subagent',
@@ -21,6 +20,7 @@ export const checkSubagentTool = {
     execute: async (args, context) => {
         const { task_id: taskId } = args;
 
+        // Ensure task registry is available in context
         if (!context?.taskRegistry) {
             return handleToolError({ message: 'Task registry not available in this context' });
         }
@@ -40,21 +40,10 @@ export const checkSubagentTool = {
             return handleToolResponse({ message: 'No subagent tasks found. No subagents have been launched yet.' });
         }
 
-        // Format all tasks into summaries
-        const summaries = allTasks.map(({ taskId: id, ...task }) => context.taskRegistry.format(id, task));
-
-        // Group by status for readability
-        const running = summaries.filter(t => t.status === TaskStatus.RUNNING);
-        const completed = summaries.filter(t => t.status === TaskStatus.COMPLETED);
-        const failed = summaries.filter(t => t.status === TaskStatus.FAILED);
+        // Format all tasks into a flat list
+        const tasks = allTasks.map(({ taskId: id, ...task }) => context.taskRegistry.format(id, task));
 
         // Return the formatted response
-        return handleToolResponse({
-            total: summaries.length,
-            running: running.length,
-            completed: completed.length,
-            failed: failed.length,
-            tasks: summaries
-        });
+        return handleToolResponse({ total: tasks.length, tasks });
     }
 };
