@@ -64,8 +64,8 @@ export const getAgent = id => {
     return agents.get(id);
 };
 
-// Get a list of all loaded agent IDs (for use as enum values)
-export const getAgentIds = () => {
+// Get a list of all loaded agent types (for use as enum values)
+export const getAgentTypes = () => {
     return [...agents.keys()];
 };
 

@@ -1,51 +1,110 @@
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
-import { getAgentIds } from '../../agent/agents.js';
+import { getAgentTypes } from '../../agent/agents.js';
 
-// Subagent tool
-export const subagentTool = {
+// Start subagent tool
+export const subagentStartTool = {
     // Tool definition
-    name: 'subagent',
-    description: 'Delegate a task to a specialized AI subagent for **asynchronous** execution. The subagent runs in the background and this tool returns immediately with a task_id. Use `check_subagent` to poll for status/results, or wait — you will be notified automatically when the subagent finishes. To resume a previous subagent session (e.g. to answer a clarification request), pass the task_id returned from the previous call.',
+    name: 'subagent_start',
+    description: 'Start a new subagent in the background.',
     get parameters() {
         return {
             type: 'object',
             properties: {
-                agent: {
+                type: {
                     type: 'string',
-                    enum: getAgentIds(),
-                    description: 'The ID of the specialized agent to delegate to.'
+                    enum: getAgentTypes(),
+                    description: 'Subagent type to start.'
                 },
-                task: {
+                prompt: {
                     type: 'string',
-                    description: 'Detailed task description with all context and requirements. When resuming a session, this is your reply to the subagent\'s clarification question.'
-                },
-                task_id: {
-                    type: 'string',
-                    description: 'Optional. The task_id from a previous subagent call to resume that conversation (e.g. to answer a clarification request).'
+                    description: 'Natural-language task for the subagent.'
                 }
             },
-            required: ['agent', 'task']
+            required: ['type', 'prompt']
         };
     },
 
     // Main execution function
     execute: async (args, context) => {
-        // Extract parameters
-        const { agent: agentId, task, task_id: existingTaskId } = args;
+        const { type, prompt } = args;
 
         try {
-            // Launch the subagent
-            const { taskId, agentName } = context.launchSubagent(agentId, task, existingTaskId, context.sessionKey);
-
-            // Return the task ID immediately for asynchronous tracking
+            // Launch the subagent and return its initial status
+            const result = context.launchSubagent(type, prompt, context.sessionKey);
             return handleToolResponse({
-                task_id: taskId,
-                agent: agentName,
-                status: 'launched',
-                message: `Subagent "${agentName}" has been launched in the background. You will be notified automatically when it finishes. You can also use check_subagent with task_id "${taskId}" to check progress at any time.`
+                subagent_id: result.subagentId,
+                type: result.type,
+                name: result.name,
+                status: 'running'
             });
         } catch (error) {
-            return handleToolError({ error, message: 'Failed to launch subagent' });
+            return handleToolError({ error, message: 'Failed to start subagent' });
+        }
+    }
+};
+
+// Chat with subagent tool
+export const subagentChatTool = {
+    // Tool definition
+    name: 'subagent_chat',
+    description: 'Send a natural-language message to a running subagent.',
+    parameters: {
+        type: 'object',
+        properties: {
+            subagent_id: {
+                type: 'string',
+                description: 'Running subagent instance identifier.'
+            },
+            prompt: {
+                type: 'string',
+                description: 'Message to send to the running subagent.'
+            }
+        },
+        required: ['subagent_id', 'prompt']
+    },
+
+    // Main execution function
+    execute: async (args, context) => {
+        const { subagent_id, prompt } = args;
+
+        try {
+            // Send a message to the subagent and return its response
+            const result = context.chatSubagent(subagent_id, prompt);
+            return handleToolResponse({
+                subagent_id: result.subagentId,
+                type: result.type,
+                name: result.name,
+                status: result.status,
+                message: result.message
+            });
+        } catch (error) {
+            return handleToolError({ error, message: 'Failed to chat with subagent' });
+        }
+    }
+};
+
+// List active subagents tool
+export const subagentListTool = {
+    // Tool definition
+    name: 'subagent_list',
+    description: 'List all currently active subagents.',
+    parameters: {
+        type: 'object',
+        properties: {},
+        required: []
+    },
+
+    // Main execution function
+    execute: async (_args, context) => {
+        try {
+            // Get the list of active subagents and return it
+            const activeSubagents = context.listActiveSubagents();
+            return handleToolResponse({
+                active_subagents: activeSubagents,
+                count: activeSubagents.length
+            });
+        } catch (error) {
+            return handleToolError({ error, message: 'Failed to list active subagents' });
         }
     }
 };

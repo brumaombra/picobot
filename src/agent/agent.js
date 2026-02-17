@@ -7,7 +7,7 @@ import { getToolsDefinitions } from '../tools/tools.js';
 import { buildSystemPrompt, buildSubagentSystemPrompt, getMainAgentAllowedTools } from './prompts.js';
 import { executeToolBatch } from './tool-executor.js';
 import { getAgent, getAgents } from './agents.js';
-import { TaskRegistry } from './task-registry.js';
+import { SubagentRegistry } from './task-registry.js';
 
 // Agent class — used for both the main agent and subagents
 export class Agent {
@@ -32,8 +32,8 @@ export class Agent {
         // Cached tool definitions (computed on first access)
         this._mainToolDefs = null;
 
-        // Task registry for tracking subagent tasks (only used by main agent)
-        this.taskRegistry = new TaskRegistry();
+        // Registry for tracking subagent instances (only used by main agent)
+        this.subagentRegistry = new SubagentRegistry();
     }
 
     // Cached main agent tool definitions
@@ -54,10 +54,10 @@ export class Agent {
             llm: this.llm,
             model: this.model,
             config: this.config,
-            taskRegistry: this.taskRegistry,
-            launchSubagent: (agentId, task, existingTaskId, sessionKey) => {
-                return this.launchSubagent(agentId, task, existingTaskId, sessionKey);
-            },
+            subagentRegistry: this.subagentRegistry,
+            launchSubagent: this.launchSubagent.bind(this),
+            chatSubagent: this.chatSubagent.bind(this),
+            listActiveSubagents: this.listActiveSubagents.bind(this),
             ...overrides
         };
     }
@@ -212,28 +212,21 @@ export class Agent {
         return this.run(sessionKey, tools, context, onIntermediateMessage);
     }
 
-    // Launch a subagent in the background (fire-and-forget), returns immediately with task ID
-    launchSubagent(agentId, task, existingTaskId, parentSessionKey) {
+    // Launch a subagent in the background (fire-and-forget), returns immediately with subagent ID
+    launchSubagent(type, prompt, parentSessionKey) {
         // Look up agent definition
-        const agentDef = getAgent(agentId);
+        const agentDef = getAgent(type);
         if (!agentDef) {
             const available = [...getAgents().keys()].join(', ');
-            throw new Error(`Unknown agent "${agentId}". Available agents: ${available}`);
+            throw new Error(`Unknown subagent type "${type}". Available types: ${available}`);
         }
 
-        // Determine task ID and session (resume existing or create new)
-        const existingTask = existingTaskId ? this.taskRegistry.get(existingTaskId) : null;
-        if (existingTaskId && !existingTask) {
-            throw new Error(`Unknown task_id "${existingTaskId}". Use check_subagent to list all tasks.`);
-        }
-        const taskId = existingTaskId || generateUniqueId('task');
-        const subagentId = existingTask?.sessionId || generateUniqueId('subagent');
-        const isResuming = Boolean(existingTaskId);
+        // Generate unique subagent ID and log launch
+        const subagentId = generateUniqueId('subagent');
+        logger.info(`Spawning subagent [${subagentId}] type [${type}]: ${agentDef.name} (model: ${this.model})`);
 
-        logger.info(`${isResuming ? 'Resuming' : 'Spawning'} subagent [${subagentId}] task [${taskId}]: ${agentDef.name} (model: ${this.model})`);
-
-        // Register the task before launching
-        this.taskRegistry.register(taskId, { agentId, agentName: agentDef.name, sessionId: subagentId, task });
+        // Register subagent before launching
+        this.subagentRegistry.register(subagentId, { type, name: agentDef.name, sessionId: subagentId, prompt });
 
         // Create subagent and launch in the background
         const subagent = new Agent({ llm: this.llm, model: this.model });
@@ -244,18 +237,19 @@ export class Agent {
         subagent.runTask({
             sessionKey: subagentId,
             systemPromptBuilder: () => buildSubagentSystemPrompt(agentDef),
-            userMessage: task,
+            userMessage: prompt,
             tools: toolDefs,
             context
         }).then(result => {
-            logger.info(`Subagent [${subagentId}] task [${taskId}] completed: ${agentDef.name}`);
-            const status = result.response ? 'completed' : 'failed';
+            logger.info(`Subagent [${subagentId}] completed: ${agentDef.name}`);
+            const status = result.response ? 'done' : 'failed';
+            const response = result.response || null;
 
-            // Update task registry with result
+            // Update subagent registry with result
             if (result.response) {
-                this.taskRegistry.complete(taskId, result.response);
+                this.subagentRegistry.done(subagentId, result.response);
             } else {
-                this.taskRegistry.fail(taskId, result.timedOut ? 'Subagent timed out without completing the task.' : 'Subagent completed without producing a response.');
+                this.subagentRegistry.fail(subagentId, result.timedOut ? 'Subagent timed out without completing the work.' : 'Subagent completed without producing a response.');
             }
 
             // Notify parent session of completion
@@ -264,18 +258,17 @@ export class Agent {
                 role: 'system',
                 content: JSON.stringify({
                     type: 'subagent_notification',
-                    event: 'completed',
-                    task_id: taskId,
-                    agent: agentDef.name,
-                    agent_id: agentId,
-                    status,
-                    message: 'Subagent task completed. Use check_subagent to retrieve the full result.'
+                    subagent_id: subagentId,
+                    name: agentDef.name,
+                    subagent_type: type,
+                    status: status,
+                    response: response
                 })
             });
         }).catch(error => {
             const errorMessage = error instanceof Error ? error.message : String(error);
-            logger.error(`Subagent [${subagentId}] task [${taskId}] failed: ${errorMessage}`);
-            this.taskRegistry.fail(taskId, errorMessage);
+            logger.error(`Subagent [${subagentId}] failed: ${errorMessage}`);
+            this.subagentRegistry.fail(subagentId, errorMessage);
 
             // Notify parent session of failure
             pushInbound({
@@ -283,17 +276,61 @@ export class Agent {
                 role: 'system',
                 content: JSON.stringify({
                     type: 'subagent_notification',
-                    event: 'failed',
-                    task_id: taskId,
-                    agent: agentDef.name,
-                    agent_id: agentId,
-                    error: errorMessage,
-                    message: 'Subagent task failed. Use check_subagent to see details.'
+                    subagent_id: subagentId,
+                    name: agentDef.name,
+                    subagent_type: type,
+                    status: 'failed',
+                    response: errorMessage
                 })
             });
         });
 
-        return { taskId, agentName: agentDef.name };
+        // Return subagent ID immediately
+        return {
+            subagentId,
+            type,
+            name: agentDef.name
+        };
+    }
+
+    // Chat with a running subagent using natural-language messages
+    chatSubagent(subagentId, message) {
+        // Get subagent the subagent
+        const subagent = this.subagentRegistry.get(subagentId);
+        if (!subagent) {
+            throw new Error(`Unknown subagent_id "${subagentId}".`);
+        }
+
+        // Validate message
+        const text = String(message || '').trim();
+        if (!text) {
+            throw new Error('A chat prompt is required.');
+        }
+
+        // Check if subagent is still running before allowing chat
+        if (subagent.status !== 'running') {
+            throw new Error(`Cannot send message to subagent "${subagentId}" because it is ${subagent.status}.`);
+        }
+
+        // Add the message to the subagent's session
+        addMessageToSession(subagent.sessionId, {
+            role: 'user',
+            content: text
+        });
+
+        // Return a response indicating the message was sent
+        return {
+            subagentId,
+            type: subagent.type,
+            name: subagent.name,
+            status: 'running',
+            message: 'Message sent to running subagent.'
+        };
+    }
+
+    // List all active (running) subagents
+    listActiveSubagents() {
+        return this.subagentRegistry.listActive();
     }
 
     // Start the main agent polling loop
