@@ -22,6 +22,16 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Prompts",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/cli/cli.js",
+            "args": [
+                "prompts"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Start",
             "type": "node",
             "request": "launch",

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPTS_DIR, AGENTS_DIR, SESSIONS_DIR, CRONS_DIR, LOGS_DIR } from '../config.js';
+import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPTS_DIR, AGENTS_DIR, SKILLS_DIR, SESSIONS_DIR, CRONS_DIR, LOGS_DIR } from '../config.js';
 import { success, warning, error, newline } from '../utils/print.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -13,12 +13,14 @@ const CONFIG_ITEMS = [
     { path: WORKSPACE_DIR, type: 'directory', name: 'Workspace directory' },
     { path: PROMPTS_DIR, type: 'directory', name: 'Prompts directory' },
     { path: AGENTS_DIR, type: 'directory', name: 'Agents directory' },
+    { path: SKILLS_DIR, type: 'directory', name: 'Skills directory' },
     { path: SESSIONS_DIR, type: 'directory', name: 'Sessions directory' },
     { path: CRONS_DIR, type: 'directory', name: 'Crons directory' },
     { path: LOGS_DIR, type: 'directory', name: 'Logs directory' },
     { path: join(PROMPTS_DIR, 'AGENTS.md'), type: 'file', name: 'AGENTS.md', source: join(__dirname, 'examples/AGENTS.md') },
     { path: join(PROMPTS_DIR, 'SOUL.md'), type: 'file', name: 'SOUL.md', source: join(__dirname, 'examples/SOUL.md') },
     { path: join(PROMPTS_DIR, 'TOOLS.md'), type: 'file', name: 'TOOLS.md', source: join(__dirname, 'examples/TOOLS.md') },
+    { path: join(PROMPTS_DIR, 'SKILLS.md'), type: 'file', name: 'SKILLS.md', source: join(__dirname, 'examples/SKILLS.md') },
     { path: join(PROMPTS_DIR, 'SUBAGENT.md'), type: 'file', name: 'SUBAGENT.md', source: join(__dirname, 'examples/SUBAGENT.md') },
     { path: CONFIG_PATH, type: 'file', name: 'Config file', source: join(__dirname, 'examples/config.json') }
 ];
@@ -62,6 +64,49 @@ export const createConfigFiles = () => {
 
     // Copy example agent files to agents directory
     copyExampleAgents();
+
+    // Copy example skill files to skills directory
+    copyExampleSkills();
+};
+
+// Copy example skill folders from examples/skills/ to the skills directory
+const copyExampleSkills = () => {
+    const examplesDir = join(__dirname, 'examples/skills');
+    if (!existsSync(examplesDir)) return;
+
+    try {
+        // Read all subdirectories in the examples skills directory
+        const entries = readdirSync(examplesDir, { withFileTypes: true });
+
+        // Copy each skill folder to the skills directory if it doesn't already exist
+        for (const entry of entries) {
+            if (!entry.isDirectory()) continue;
+
+            // Construct expected paths
+            const skillId = entry.name;
+            const srcSkillFile = join(examplesDir, skillId, 'SKILL.md');
+            const destSkillDir = join(SKILLS_DIR, skillId);
+            const destSkillFile = join(destSkillDir, 'SKILL.md');
+
+            // Skip if source SKILL.md does not exist
+            if (!existsSync(srcSkillFile)) continue;
+
+            // Create skill folder if needed
+            if (!existsSync(destSkillDir)) {
+                mkdirSync(destSkillDir, { recursive: true });
+            }
+
+            // Copy SKILL.md if destination does not exist
+            if (!existsSync(destSkillFile)) {
+                writeFileSync(destSkillFile, readFileSync(srcSkillFile, 'utf-8'));
+                success(`Created skill: ${skillId}/SKILL.md (${destSkillFile})`);
+            } else {
+                success(`Skill already exists: ${skillId}/SKILL.md (${destSkillFile})`);
+            }
+        }
+    } catch (error) {
+        error(`Failed to copy example skills: ${error}`);
+    }
 };
 
 // Copy example agent markdown files from examples/agents/ to the agents directory
@@ -85,7 +130,7 @@ const copyExampleAgents = () => {
                 success(`Agent file already exists: ${file} (${destPath})`);
             }
         }
-    } catch (err) {
-        error(`Failed to copy example agents: ${err}`);
+    } catch (error) {
+        error(`Failed to copy example agents: ${error}`);
     }
 };

@@ -7,6 +7,7 @@ import { initializeCronManager, setCronAgent } from './crons/manager.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google-client.js';
 import { loadAgents } from './agent/agents.js';
+import { loadSkills } from './agent/skills.js';
 
 let agent = null; // Active agent instance (accessible for commands like /model)
 let stopping = false; // Flag to prevent multiple stop attempts
@@ -36,6 +37,9 @@ export const startBot = async () => {
 
     // Load agent definitions from agents directory
     loadAgents();
+
+    // Load skill definitions from skills directory
+    loadSkills();
 
     // Get config
     const config = getConfig();

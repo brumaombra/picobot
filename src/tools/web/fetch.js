@@ -1,6 +1,6 @@
 import { logger } from '../../utils/logger.js';
 import { extractTextFromHtml, handleToolError, handleToolResponse } from '../../utils/utils.js';
-import { WEB_MAX_CONTENT_LENGTH, WEB_FETCH_TIMEOUT_MS, WEB_USER_AGENT, WEB_ACCEPT_HEADER } from '../../config.js';
+import { WEB_MAX_CONTENT_LENGTH, WEB_FETCH_TIMEOUT_MS, WEB_USER_AGENT, WEB_ACCEPT_HEADER, WEB_ACCEPT_LANGUAGE } from '../../config.js';
 
 // Web fetch tool
 export const webFetchTool = {
@@ -37,8 +37,18 @@ export const webFetchTool = {
             const response = await fetch(url, {
                 headers: {
                     'User-Agent': WEB_USER_AGENT,
-                    Accept: WEB_ACCEPT_HEADER
+                    'Accept': WEB_ACCEPT_HEADER,
+                    'Accept-Language': WEB_ACCEPT_LANGUAGE,
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Cache-Control': 'max-age=0',
+                    'Upgrade-Insecure-Requests': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                    'DNT': '1'
                 },
+                redirect: 'follow',
                 signal: AbortSignal.timeout(WEB_FETCH_TIMEOUT_MS)
             });
 

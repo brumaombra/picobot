@@ -12,6 +12,7 @@ export const CONFIG_PATH = join(CONFIG_DIR, 'config.json');
 export const WORKSPACE_DIR = join(CONFIG_DIR, 'workspace');
 export const PROMPTS_DIR = join(CONFIG_DIR, 'prompts');
 export const AGENTS_DIR = join(CONFIG_DIR, 'agents');
+export const SKILLS_DIR = join(CONFIG_DIR, 'skills');
 export const SESSIONS_DIR = join(CONFIG_DIR, 'sessions');
 export const CRONS_DIR = join(CONFIG_DIR, 'crons');
 export const LOGS_DIR = join(CONFIG_DIR, 'logs');
@@ -65,8 +66,9 @@ export const SHELL_BLOCKED_COMMANDS = ['rm -rf /', 'format', 'mkfs', ':(){:|:&};
 /**************** Web tool *****************/
 export const WEB_MAX_CONTENT_LENGTH = 15000;
 export const WEB_FETCH_TIMEOUT_MS = 30000; // 30 seconds
-export const WEB_USER_AGENT = 'Mozilla/5.0 (compatible; Picobot/1.0)';
-export const WEB_ACCEPT_HEADER = 'text/html,application/json,text/plain';
+export const WEB_USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
+export const WEB_ACCEPT_HEADER = 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7';
+export const WEB_ACCEPT_LANGUAGE = 'en-US,en;q=0.9';
 
 /**************** Browser tool *****************/
 export const BROWSER_DEFAULT_TIMEOUT_MS = 30000; // 30 seconds

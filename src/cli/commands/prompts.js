@@ -1,6 +1,7 @@
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { loadAgents, getAgents } from '../../agent/agents.js';
+import { loadSkills } from '../../agent/skills.js';
 import { buildSystemPrompt, buildSubagentSystemPrompt } from '../../agent/prompts.js';
 import { header, success, basicLog } from '../../utils/print.js';
 import { initLogger } from '../../utils/logger.js';
@@ -19,6 +20,9 @@ export const registerPromptsCommand = ({ program }) => {
 
             // Load agent definitions (required before building prompts)
             loadAgents();
+
+            // Load skill definitions (required before building main agent prompt)
+            loadSkills();
 
             const sections = [];
 

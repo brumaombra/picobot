@@ -4,6 +4,7 @@ import { logger } from '../utils/logger.js';
 import { PROMPTS_DIR } from '../config.js';
 import { generateToolsList } from '../tools/tools.js';
 import { generateAgentsListPrompt } from './agents.js';
+import { generateSkillsListPrompt } from './skills.js';
 import { generateBrowserCommandsPrompt } from '../tools/browser/browser.js';
 import { parseFrontmatter } from '../utils/utils.js';
 
@@ -37,9 +38,15 @@ export const buildSystemPrompt = () => {
     let toolsPrompt = getPromptContent('TOOLS.md');
     if (toolsPrompt) {
         const allowedTools = metadata.allowed_tools || [];
-        const toolsList = generateToolsList(allowedTools);
-        toolsPrompt = toolsPrompt.replace('{toolsList}', toolsList);
+        toolsPrompt = toolsPrompt.replace('{toolsList}', generateToolsList(allowedTools));
         prompts.push(toolsPrompt);
+    }
+
+    // Load SKILLS.md and replace {skillsList} with dynamically loaded skills
+    let skillsPrompt = getPromptContent('SKILLS.md');
+    if (skillsPrompt) {
+        skillsPrompt = skillsPrompt.replace('{skillsList}', generateSkillsListPrompt());
+        prompts.push(skillsPrompt);
     }
 
     // Return the combined prompt

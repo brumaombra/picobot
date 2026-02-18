@@ -50,17 +50,19 @@ Picobot's behavior is fully driven by markdown prompt files that live in `~/.pic
 
 ### Main Agent Prompt
 
-The main agent's system prompt is assembled from three files:
+The main agent's system prompt is assembled from four files:
 
 ```
 AGENTS.md   →  Orchestration instructions + available subagents list
 SOUL.md     →  Personality, tone, and communication style
 TOOLS.md    →  Tool usage guidelines + tools list
+SKILLS.md   →  Available skills list with file paths for on-demand loading
 ```
 
 - **`AGENTS.md`** — Defines the main agent's role as orchestrator, delegation strategy, quality control rules, and lists all available subagents (auto-populated from agent definitions).
 - **`SOUL.md`** — The personality layer. Defines character traits, values, and communication style. Want a pirate? A formal assistant? A chaotic gremlin? Edit this file.
 - **`TOOLS.md`** — Generic tool usage guidelines (parallel execution rules, error handling). The `{toolsList}` placeholder is auto-replaced with the main agent's available tools.
+- **`SKILLS.md`** — Lists all available skills with their names, descriptions, and file paths. The `{skillsList}` placeholder is auto-replaced at startup. The main agent reads a skill file on demand using `read_file` and follows its workflow.
 
 ### Subagent Prompt
 
@@ -75,6 +77,22 @@ TOOLS.md          →  Tool usage guidelines + agent-specific tools list
 - **`SUBAGENT.md`** — Shared instructions for all subagents (focus on task, report results, ask for clarification only when necessary).
 - **`<agent>.md`** — Lives in `~/.picobot/agents/`. Each file defines one subagent via YAML frontmatter (`name`, `description`, `allowed_tools`) and markdown body (detailed instructions).
 - **`TOOLS.md`** — Same template as the main agent, but populated with only the tools that specific subagent is allowed to use.
+
+### Skills
+
+Skills are reusable, pre-defined workflows that guide the main agent through complex, multi-step tasks. Unlike subagents (which execute work), a skill defines *how* to coordinate tools and subagents to complete a broader objective consistently.
+
+Skills follow the same structure as Anthropic skills — one folder per skill, with a `SKILL.md` file inside:
+
+```
+~/.picobot/skills/
+  research-report/
+    SKILL.md   →  Frontmatter (name, description) + step-by-step workflow
+  my-custom-skill/
+    SKILL.md
+```
+
+At startup, all skills are loaded and their metadata (name, description, file path) is injected into the main agent's `SKILLS.md` prompt. When the user's request matches a skill, the main agent uses `read_file` to load that skill's `SKILL.md` on demand, then follows its workflow — delegating steps to the appropriate subagents.
 
 ## 🚀 Quick Start
 
