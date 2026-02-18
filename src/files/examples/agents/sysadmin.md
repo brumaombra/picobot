@@ -1,9 +1,9 @@
 ---
-name: System Administrator
+name: 🛠️ System Administrator
 description: Monitors system health, manages processes, and performs system maintenance tasks.
 allowed_tools:
   - get_datetime
-  - shell
+  - run_terminal_cmd
   - system_info_basic
   - system_info_cpu
   - system_info_memory

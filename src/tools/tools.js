@@ -1,11 +1,11 @@
-import { shellTool } from './general/shell.js';
+import { runTerminalCmdTool } from './general/shell.js';
 import { subagentStartTool, subagentChatTool, subagentListTool } from './general/subagent.js';
 import { getDateTimeTool } from './general/datetime.js';
 import { sendFileTool } from './general/send-file.js';
 import { systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool } from './system/system.js';
 import { webFetchTool } from './web/fetch.js';
 import { webSearchTool } from './web/search.js';
-import { readFileTool, writeFileTool, listDirTool, deleteTool, renameFileTool, copyFileTool, pathExistsTool, fileSearchTool } from './filesystem/filesystem.js';
+import { readFileTool, writeFileTool, listDirectoryTool, pathExistsTool, strReplaceEditTool, grepSearchTool } from './filesystem/filesystem.js';
 import { cronCreateTool, cronListTool, cronGetTool, cronUpdateTool, cronDeleteTool } from './cron/cron.js';
 import { gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool } from './gmail/gmail.js';
 import { calendarListEventsTool, calendarGetEventTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool } from './calendar/calendar.js';
@@ -15,7 +15,7 @@ import { browserTool } from './browser/browser.js';
 // Registry of all available tools (flat map: name → tool)
 const TOOLS = new Map([
     // General tools
-    [shellTool.name, shellTool],
+    [runTerminalCmdTool.name, runTerminalCmdTool],
     [getDateTimeTool.name, getDateTimeTool],
     [sendFileTool.name, sendFileTool],
 
@@ -38,12 +38,10 @@ const TOOLS = new Map([
     // Filesystem tools
     [readFileTool.name, readFileTool],
     [writeFileTool.name, writeFileTool],
-    [listDirTool.name, listDirTool],
-    [deleteTool.name, deleteTool],
-    [renameFileTool.name, renameFileTool],
-    [copyFileTool.name, copyFileTool],
+    [listDirectoryTool.name, listDirectoryTool],
+    [strReplaceEditTool.name, strReplaceEditTool],
+    [grepSearchTool.name, grepSearchTool],
     [pathExistsTool.name, pathExistsTool],
-    [fileSearchTool.name, fileSearchTool],
 
     // Cron tools
     [cronCreateTool.name, cronCreateTool],

@@ -1,5 +1,5 @@
 ---
-name: Calendar Manager
+name: 📅 Calendar Manager
 description: Manages Google Calendar events — creates, updates, lists, and deletes appointments and schedules.
 allowed_tools:
   - get_datetime

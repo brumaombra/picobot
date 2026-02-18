@@ -1,5 +1,5 @@
 ---
-name: Email Manager
+name: 📧 Email Manager
 description: Searches, reads, and sends emails via Gmail. Manages labels and organizes the inbox.
 allowed_tools:
   - get_datetime

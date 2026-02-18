@@ -1,5 +1,5 @@
 ---
-name: Web Navigator
+name: 🧭 Web Navigator
 description: Controls a browser to navigate websites, interact with pages, execute actions, fill forms, and capture dynamic content.
 allowed_tools:
   - get_datetime

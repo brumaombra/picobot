@@ -1,5 +1,5 @@
 ---
-name: Drive Manager
+name: 🗂️ Drive Manager
 description: Manages Google Drive files — lists, reads, creates, updates, deletes, and shares documents.
 allowed_tools:
   - get_datetime

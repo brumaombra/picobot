@@ -1,5 +1,5 @@
 ---
-name: Task Scheduler
+name: ⏰ Task Scheduler
 description: Creates and manages crons for recurring tasks, scheduled messages, and automated agent prompts.
 allowed_tools:
   - get_datetime

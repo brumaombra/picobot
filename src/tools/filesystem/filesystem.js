@@ -1,4 +1,4 @@
-import { readFile, writeFile, mkdir, readdir, stat, access, unlink, rm, rename, copyFile } from 'fs/promises';
+import { readFile, writeFile, mkdir, readdir, stat, access } from 'fs/promises';
 import { dirname, join, resolve, isAbsolute, normalize } from 'path';
 import { checkPathForWrite, handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
@@ -7,13 +7,21 @@ import { logger } from '../../utils/logger.js';
 export const readFileTool = {
     // Tool definition
     name: 'read_file',
-    description: 'Read file contents as string.',
+    description: 'Read the full content of a file. For large files (>10k chars), ALWAYS use line_start and line_end to avoid token waste.',
     parameters: {
         type: 'object',
         properties: {
             path: {
                 type: 'string',
                 description: 'File path (relative or absolute).'
+            },
+            line_start: {
+                type: 'integer',
+                description: '1-based start line (optional).'
+            },
+            line_end: {
+                type: 'integer',
+                description: '1-based end line (optional). Use -1 for end of file.'
             }
         },
         required: ['path']
@@ -22,6 +30,8 @@ export const readFileTool = {
     // Main execution function
     execute: async (args, context) => {
         const path = args.path;
+        const lineStart = args.line_start;
+        const lineEnd = args.line_end;
         const workDir = context?.workingDir || process.cwd();
         const fullPath = normalize(isAbsolute(path) ? path : resolve(workDir, path));
 
@@ -37,8 +47,37 @@ export const readFileTool = {
             const content = await readFile(fullPath, 'utf-8');
             logger.debug(`Read file: ${path} (${content.length} chars)`);
 
-            // Return file content
-            return handleToolResponse(content);
+            // Return full content when no range is requested
+            if (lineStart === undefined && lineEnd === undefined) {
+                return handleToolResponse(content);
+            }
+
+            // Validate line range inputs
+            if (lineStart !== undefined && (!Number.isInteger(lineStart) || lineStart < 1)) {
+                return handleToolError({ message: 'line_start must be an integer >= 1.' });
+            }
+            if (lineEnd !== undefined && (!Number.isInteger(lineEnd) || lineEnd < -1 || lineEnd === 0)) {
+                return handleToolError({ message: 'line_end must be an integer >= 1, or -1 for end of file.' });
+            }
+
+            // Split content into lines and extract the requested range (adjusting for 0-based index)
+            const lines = content.split(/\r?\n/);
+            const start = (lineStart ?? 1) - 1;
+            const endExclusive = lineEnd === -1 || lineEnd === undefined ? lines.length : lineEnd;
+
+            // Validate line range against file length
+            if (start >= lines.length) {
+                return handleToolError({ message: `line_start (${lineStart}) is beyond end of file (${lines.length} lines).` });
+            }
+            if (endExclusive < start + 1) {
+                return handleToolError({ message: 'line_end must be greater than or equal to line_start.' });
+            }
+
+            // Extract the requested line range
+            const sliced = lines.slice(start, Math.min(endExclusive, lines.length)).join('\n');
+
+            // Return ranged content
+            return handleToolResponse(sliced);
         } catch (error) {
             return handleToolError({ error, message: 'Failed to read file' });
         }
@@ -49,7 +88,7 @@ export const readFileTool = {
 export const writeFileTool = {
     // Tool definition
     name: 'write_file',
-    description: 'Write or overwrite file content.',
+    description: 'Create a new file or completely overwrite an existing file with new content. Best for new files or full rewrites.',
     parameters: {
         type: 'object',
         properties: {
@@ -89,306 +128,6 @@ export const writeFileTool = {
             return handleToolResponse(`Successfully wrote ${content.length} characters to ${path}`);
         } catch (error) {
             return handleToolError({ error, message: 'Failed to write file' });
-        }
-    }
-};
-
-// List directory tool
-export const listDirTool = {
-    // Tool definition
-    name: 'list_dir',
-    description: 'List files and directories in a directory.',
-    parameters: {
-        type: 'object',
-        properties: {
-            path: {
-                type: 'string',
-                description: 'Directory path (relative or absolute).'
-            },
-            recursive: {
-                type: 'boolean',
-                description: 'If true, list all files and directories recursively. Default is false.'
-            }
-        },
-        required: ['path']
-    },
-
-    // Main execution function
-    execute: async (args, context) => {
-        const path = args.path || '.';
-        const recursive = args.recursive || false;
-        const workDir = context?.workingDir || process.cwd();
-        const fullPath = normalize(isAbsolute(path) ? path : resolve(workDir, path));
-
-        try {
-            // Check if directory exists using async access
-            try {
-                await access(fullPath);
-            } catch {
-                return handleToolError({ message: `Directory not found: ${path}` });
-            }
-
-            // Helper function to recursively list directories
-            const listRecursive = async (dirPath, basePath = '') => {
-                const entries = await readdir(dirPath);
-                const details = [];
-
-                // Process each entry in the directory
-                for (const entry of entries) {
-                    const entryPath = normalize(join(dirPath, entry));
-                    const relativePath = basePath ? join(basePath, entry) : entry;
-
-                    try {
-                        // Get stats to determine if it's a file or directory
-                        const stats = await stat(entryPath);
-
-                        // Build item details
-                        const item = {
-                            path: relativePath,
-                            name: entry,
-                            type: stats.isDirectory() ? 'directory' : 'file'
-                        };
-
-                        // Include file size if it's a file
-                        if (stats.isFile()) {
-                            item.size = stats.size;
-                        }
-
-                        // Add item to the list
-                        details.push(item);
-
-                        // Recursively process subdirectories
-                        if (stats.isDirectory() && recursive) {
-                            const subDetails = await listRecursive(entryPath, relativePath);
-                            details.push(...subDetails);
-                        }
-                    } catch (statError) {
-                        const errorMsg = statError instanceof Error ? statError.message : String(statError);
-                        logger.warn(`Failed to stat "${entry}" in ${dirPath}: ${errorMsg}`);
-                        details.push({
-                            path: relativePath,
-                            name: entry,
-                            type: 'unknown',
-                            error: 'Could not determine type'
-                        });
-                    }
-                }
-
-                // Return the list
-                return details;
-            };
-
-            // Get directory listing (recursive or not)
-            const details = await listRecursive(fullPath);
-
-            // Log directory listing
-            logger.debug(`Listed directory: ${path} (${details.length} entries, recursive: ${recursive})`);
-
-            // Return empty array message if no entries
-            if (details.length === 0) {
-                return handleToolResponse('No entries found.');
-            }
-
-            // Return directory listing as structured data
-            return handleToolResponse(details);
-        } catch (error) {
-            return handleToolError({ error, message: 'Failed to list directory' });
-        }
-    }
-};
-
-// Delete tool (handles both files and directories)
-export const deleteTool = {
-    // Tool definition
-    name: 'delete',
-    description: 'Delete a file or directory. Automatically detects the type.',
-    parameters: {
-        type: 'object',
-        properties: {
-            path: {
-                type: 'string',
-                description: 'File or directory path (relative to workspace).'
-            },
-            recursive: {
-                type: 'boolean',
-                description: 'If true and path is a directory, delete it and all its contents recursively. Default is false.'
-            }
-        },
-        required: ['path']
-    },
-
-    // Main execution function
-    execute: async (args, context) => {
-        const path = args.path;
-        const recursive = args.recursive || false;
-        const workDir = context?.workingDir || process.cwd();
-        const fullPath = normalize(isAbsolute(path) ? path : resolve(workDir, path));
-
-        // Check if path is allowed for writing
-        if (!checkPathForWrite({ fullPath, workDir })) {
-            return handleToolError({ message: 'Access denied: You can only delete within the workspace directory' });
-        }
-
-        try {
-            // Check if path exists
-            try {
-                await access(fullPath);
-            } catch {
-                return handleToolError({ message: `Path not found: ${path}` });
-            }
-
-            // Check if it's a file or directory
-            const stats = await stat(fullPath);
-            if (stats.isFile()) {
-                // Delete file
-                await unlink(fullPath);
-                logger.debug(`Deleted file: ${path}`);
-
-                // Return success message
-                return handleToolResponse(`Successfully deleted file: ${path}`);
-            } else if (stats.isDirectory()) {
-                // Delete directory
-                await rm(fullPath, { recursive });
-                logger.debug(`Deleted directory: ${path} (recursive: ${recursive})`);
-
-                // Return success message
-                return handleToolResponse(`Successfully deleted directory: ${path}`);
-            } else {
-                return handleToolError({ message: `Path is neither a file nor a directory: ${path}` });
-            }
-        } catch (error) {
-            const message = error instanceof Error ? error.message : String(error);
-
-            // Provide helpful error for non-empty directories
-            if (message.includes('not empty') || message.includes('ENOTEMPTY')) {
-                return handleToolError({ message: `Directory is not empty: ${path}. Set recursive=true to delete non-empty directories.` });
-            }
-
-            // Return generic error message
-            return handleToolError({ error, message: 'Failed to delete' });
-        }
-    }
-};
-
-// Rename/move file tool
-export const renameFileTool = {
-    // Tool definition
-    name: 'rename_file',
-    description: 'Rename or move a file or directory.',
-    parameters: {
-        type: 'object',
-        properties: {
-            oldPath: {
-                type: 'string',
-                description: 'Current file/directory path (relative to workspace).'
-            },
-            newPath: {
-                type: 'string',
-                description: 'New file/directory path (relative to workspace).'
-            }
-        },
-        required: ['oldPath', 'newPath']
-    },
-
-    // Main execution function
-    execute: async (args, context) => {
-        const oldPath = args.oldPath;
-        const newPath = args.newPath;
-        const workDir = context?.workingDir || process.cwd();
-        const fullOldPath = normalize(isAbsolute(oldPath) ? oldPath : resolve(workDir, oldPath));
-        const fullNewPath = normalize(isAbsolute(newPath) ? newPath : resolve(workDir, newPath));
-
-        // Check if the source path is allowed for writing
-        if (!checkPathForWrite({ fullPath: fullOldPath, workDir })) {
-            return handleToolError({ message: 'Access denied: Source path must be in the workspace directory' });
-        }
-
-        // Check if the destination path is allowed for writing
-        if (!checkPathForWrite({ fullPath: fullNewPath, workDir })) {
-            return handleToolError({ message: 'Access denied: Destination path must be in the workspace directory' });
-        }
-
-        try {
-            // Check if source exists
-            try {
-                await access(fullOldPath);
-            } catch {
-                return handleToolError({ message: `Source not found: ${oldPath}` });
-            }
-
-            // Ensure destination directory exists
-            await mkdir(dirname(fullNewPath), { recursive: true });
-
-            // Rename/move the file or directory
-            await rename(fullOldPath, fullNewPath);
-            logger.debug(`Renamed/moved: ${oldPath} -> ${newPath}`);
-
-            // Return success message
-            return handleToolResponse(`Successfully renamed/moved from ${oldPath} to ${newPath}`);
-        } catch (error) {
-            return handleToolError({ error, message: 'Failed to rename/move' });
-        }
-    }
-};
-
-// Copy file tool
-export const copyFileTool = {
-    // Tool definition
-    name: 'copy_file',
-    description: 'Copy a file to a new location.',
-    parameters: {
-        type: 'object',
-        properties: {
-            sourcePath: {
-                type: 'string',
-                description: 'Source file path (relative or absolute).'
-            },
-            destPath: {
-                type: 'string',
-                description: 'Destination file path (relative to workspace).'
-            }
-        },
-        required: ['sourcePath', 'destPath']
-    },
-
-    // Main execution function
-    execute: async (args, context) => {
-        const sourcePath = args.sourcePath;
-        const destPath = args.destPath;
-        const workDir = context?.workingDir || process.cwd();
-        const fullSourcePath = normalize(isAbsolute(sourcePath) ? sourcePath : resolve(workDir, sourcePath));
-        const fullDestPath = normalize(isAbsolute(destPath) ? destPath : resolve(workDir, destPath));
-
-        // Check if destination path is allowed for writing
-        if (!checkPathForWrite({ fullPath: fullDestPath, workDir })) {
-            return handleToolError({ message: 'Access denied: Destination path must be in the workspace directory' });
-        }
-
-        try {
-            // Check if source exists
-            try {
-                await access(fullSourcePath);
-            } catch {
-                return handleToolError({ message: `Source file not found: ${sourcePath}` });
-            }
-
-            // Check if source is a file
-            const stats = await stat(fullSourcePath);
-            if (!stats.isFile()) {
-                return handleToolError({ message: `Source is not a file: ${sourcePath}` });
-            }
-
-            // Ensure destination directory exists
-            await mkdir(dirname(fullDestPath), { recursive: true });
-
-            // Copy the file
-            await copyFile(fullSourcePath, fullDestPath);
-            logger.debug(`Copied file: ${sourcePath} -> ${destPath}`);
-
-            // Return success message
-            return handleToolResponse(`Successfully copied file from ${sourcePath} to ${destPath}`);
-        } catch (error) {
-            return handleToolError({ error, message: 'Failed to copy file' });
         }
     }
 };
@@ -442,40 +181,30 @@ export const pathExistsTool = {
     }
 };
 
-// File search tool
-export const fileSearchTool = {
+// List directory alias tool for coder workflows
+export const listDirectoryTool = {
     // Tool definition
-    name: 'file_search',
-    description: 'Search for files by name pattern in a directory.',
+    name: 'list_directory',
+    description: 'List all files and subdirectories in a path. Always use this first to explore the codebase.',
     parameters: {
         type: 'object',
         properties: {
             path: {
                 type: 'string',
-                description: 'Directory path to search in (relative or absolute).'
-            },
-            pattern: {
-                type: 'string',
-                description: 'Search pattern (supports wildcards: * for any characters, ? for single character).'
+                description: 'Directory path. Use "." for current working directory.'
             },
             recursive: {
                 type: 'boolean',
-                description: 'If true, search recursively in subdirectories. Default is true.'
-            },
-            caseSensitive: {
-                type: 'boolean',
-                description: 'If true, pattern matching is case-sensitive. Default is false.'
+                description: 'If true, list all files and directories recursively. Default is false.'
             }
         },
-        required: ['path', 'pattern']
+        required: ['path']
     },
 
     // Main execution function
     execute: async (args, context) => {
         const path = args.path || '.';
-        const pattern = args.pattern;
-        const recursive = args.recursive !== false; // Default true
-        const caseSensitive = args.caseSensitive || false;
+        const recursive = args.recursive || false;
         const workDir = context?.workingDir || process.cwd();
         const fullPath = normalize(isAbsolute(path) ? path : resolve(workDir, path));
 
@@ -487,19 +216,10 @@ export const fileSearchTool = {
                 return handleToolError({ message: `Directory not found: ${path}` });
             }
 
-            // Convert glob pattern to regex
-            const regexPattern = pattern
-                .replace(/[.+^${}()|[\]\\]/g, '\\$&') // Escape regex special chars
-                .replace(/\*/g, '.*') // * matches any characters
-                .replace(/\?/g, '.'); // ? matches single character
-
-            // Create regex with start and end anchors
-            const regex = new RegExp(`^${regexPattern}$`, caseSensitive ? '' : 'i');
-
-            // Helper function to search recursively
-            const searchRecursive = async (dirPath, basePath = '') => {
+            // Helper function to list directory contents recursively
+            const listRecursive = async (dirPath, basePath = '') => {
                 const entries = await readdir(dirPath);
-                const matches = [];
+                const details = [];
 
                 // Process each entry in the directory
                 for (const entry of entries) {
@@ -507,49 +227,231 @@ export const fileSearchTool = {
                     const relativePath = basePath ? join(basePath, entry) : entry;
 
                     try {
-                        // Get stats to determine if it's a file or directory
+                        // Get stats to determine if it's a file or directory and gather details
                         const stats = await stat(entryPath);
+                        const item = {
+                            path: relativePath,
+                            name: entry,
+                            type: stats.isDirectory() ? 'directory' : 'file'
+                        };
 
-                        // Check if entry name matches pattern
-                        if (regex.test(entry)) {
-                            matches.push({
-                                path: relativePath,
-                                name: entry,
-                                type: stats.isDirectory() ? 'directory' : 'file',
-                                size: stats.isFile() ? stats.size : undefined
-                            });
+                        // Include file size if it's a file
+                        if (stats.isFile()) {
+                            item.size = stats.size;
                         }
 
-                        // Recursively search subdirectories
+                        // Add the item to the details list
+                        details.push(item);
+
+                        // Recursively list subdirectories if requested
                         if (stats.isDirectory() && recursive) {
-                            const subMatches = await searchRecursive(entryPath, relativePath);
-                            matches.push(...subMatches);
+                            const subDetails = await listRecursive(entryPath, relativePath);
+                            details.push(...subDetails);
                         }
                     } catch (statError) {
-                        // Skip entries we can't access
                         const errorMsg = statError instanceof Error ? statError.message : String(statError);
-                        logger.warn(`Skipping "${entry}" in search: ${errorMsg}`);
+                        logger.warn(`Failed to stat "${entry}" in ${dirPath}: ${errorMsg}`);
+                        details.push({
+                            path: relativePath,
+                            name: entry,
+                            type: 'unknown',
+                            error: 'Could not determine type'
+                        });
                     }
                 }
 
-                return matches;
+                // Return the list of directory entries with details
+                return details;
             };
 
-            // Search for matching files
-            const matches = await searchRecursive(fullPath);
+            // List directory contents
+            const details = await listRecursive(fullPath);
+            logger.debug(`Listed directory: ${path} (${details.length} entries, recursive: ${recursive})`);
 
-            // Log search results
-            logger.debug(`File search in ${path}: pattern "${pattern}", found ${matches.length} matches`);
-
-            // Return results
-            if (matches.length === 0) {
-                return handleToolResponse('No files found matching the pattern.');
+            // If empty, return a message instead of an empty list
+            if (details.length === 0) {
+                return handleToolResponse('No entries found.');
             }
 
-            // Return list of matching files
-            return handleToolResponse(matches);
+            // Return the list of entries with details
+            return handleToolResponse(details);
         } catch (error) {
-            return handleToolError({ error, message: 'Failed to search files' });
+            return handleToolError({ error, message: 'Failed to list directory' });
+        }
+    }
+};
+
+// Precise single-occurrence string replacement tool
+export const strReplaceEditTool = {
+    // Tool definition
+    name: 'str_replace_edit',
+    description: 'Make a precise, safe edit by replacing ONE exact occurrence of old_str with new_str. old_str MUST appear exactly once in the file (the model is trained to ensure this). This is the most reliable way to edit code.',
+    parameters: {
+        type: 'object',
+        properties: {
+            path: {
+                type: 'string',
+                description: 'File path (relative or absolute).'
+            },
+            old_str: {
+                type: 'string',
+                description: 'Exact text to find (including whitespace/indentation).'
+            },
+            new_str: {
+                type: 'string',
+                description: 'Replacement text.'
+            }
+        },
+        required: ['path', 'old_str', 'new_str']
+    },
+
+    // Main execution function
+    execute: async (args, context) => {
+        const { path, old_str: oldStr, new_str: newStr } = args;
+        const workDir = context?.workingDir || process.cwd();
+        const fullPath = normalize(isAbsolute(path) ? path : resolve(workDir, path));
+
+        // Check if path is allowed for writing
+        if (!checkPathForWrite({ fullPath, workDir })) {
+            return handleToolError({ message: 'Access denied: You can only edit files within the workspace directory.' });
+        }
+
+        try {
+            // Read file content
+            let content;
+            try {
+                content = await readFile(fullPath, 'utf-8');
+            } catch {
+                return handleToolError({ message: `File not found: ${path}` });
+            }
+
+            // Find the first occurrence of oldStr and ensure it appears exactly once
+            const firstIndex = content.indexOf(oldStr);
+            if (firstIndex === -1) {
+                return handleToolError({ message: 'old_str was not found in file.' });
+            }
+
+            // Check for a second occurrence of oldStr to ensure only one replacement will be made
+            const secondIndex = content.indexOf(oldStr, firstIndex + oldStr.length);
+            if (secondIndex !== -1) {
+                return handleToolError({ message: 'old_str appears more than once in file. Provide a more specific string.' });
+            }
+
+            // Perform the replacement
+            const updated = `${content.slice(0, firstIndex)}${newStr}${content.slice(firstIndex + oldStr.length)}`;
+            await writeFile(fullPath, updated, 'utf-8');
+
+            // Return success message
+            logger.debug(`Applied str_replace_edit to: ${path}`);
+            return handleToolResponse(`Successfully updated ${path}`);
+        } catch (error) {
+            return handleToolError({ error, message: 'Failed to apply str_replace_edit' });
+        }
+    }
+};
+
+// Regex/literal content search across files
+export const grepSearchTool = {
+    // Tool definition
+    name: 'grep_search',
+    description: 'Search for a pattern across files (like ripgrep). Extremely useful for finding where code is used.',
+    parameters: {
+        type: 'object',
+        properties: {
+            pattern: {
+                type: 'string',
+                description: 'Regex or literal string to search for'
+            },
+            path: {
+                type: 'string',
+                description: 'Directory or file to search in (default: ".")'
+            }
+        },
+        required: ['pattern']
+    },
+
+    // Main execution function
+    execute: async (args, context) => {
+        const pattern = args.pattern;
+        const path = args.path || '.';
+        const workDir = context?.workingDir || process.cwd();
+        const fullPath = normalize(isAbsolute(path) ? path : resolve(workDir, path));
+
+        // Convert the search pattern into a regex, treating it as a literal string if it's not a valid regex
+        let regex;
+        try {
+            regex = new RegExp(pattern, 'i');
+        } catch {
+            const escaped = pattern.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            regex = new RegExp(escaped, 'i');
+        }
+
+        const matches = [];
+
+        // Helper function to scan a file for the pattern and record matches with line numbers
+        const scanFile = async (filePath, relativePath) => {
+            try {
+                const content = await readFile(filePath, 'utf-8');
+                const lines = content.split(/\r?\n/);
+                for (let i = 0; i < lines.length; i++) {
+                    if (regex.test(lines[i])) {
+                        matches.push({
+                            path: relativePath,
+                            line: i + 1,
+                            content: lines[i]
+                        });
+                    }
+                }
+            } catch {
+                // Skip non-text/unreadable files silently
+            }
+        };
+
+        // Helper function to recursively scan directories and files
+        const scanPath = async (targetPath, baseRelative = '') => {
+            // Check if the path exists
+            const targetStats = await stat(targetPath);
+
+            // If it's a file, scan it for matches
+            if (targetStats.isFile()) {
+                const relativePath = baseRelative || path;
+                await scanFile(targetPath, relativePath);
+                return;
+            }
+
+            // If it's a directory, read its entries and scan them recursively
+            if (!targetStats.isDirectory()) {
+                return;
+            }
+
+            // Read directory entries
+            const entries = await readdir(targetPath);
+            for (const entry of entries) {
+                const entryPath = normalize(join(targetPath, entry));
+                const relativePath = baseRelative ? join(baseRelative, entry) : entry;
+                await scanPath(entryPath, relativePath);
+            }
+        };
+
+        try {
+            // Check if the initial path exists
+            try {
+                await access(fullPath);
+            } catch {
+                return handleToolError({ message: `Path not found: ${path}` });
+            }
+
+            // Scan the path for matches
+            await scanPath(fullPath);
+            logger.debug(`grep_search in ${path}: pattern "${pattern}", ${matches.length} match(es)`);
+
+            // Return matches
+            return handleToolResponse({
+                count: matches.length,
+                matches
+            });
+        } catch (error) {
+            return handleToolError({ error, message: 'Failed to run grep_search' });
         }
     }
 };

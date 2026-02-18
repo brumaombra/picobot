@@ -1,5 +1,5 @@
 ---
-name: Web Researcher
+name: 🔎 Web Researcher
 description: Searches the web, fetches pages, and synthesizes information to answer questions.
 allowed_tools:
   - get_datetime
