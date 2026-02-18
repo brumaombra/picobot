@@ -35,7 +35,7 @@ export const subagentStartTool = {
                 subagent_id: result.subagentId,
                 type: result.type,
                 name: result.name,
-                status: 'running'
+                status: 'started'
             });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to start subagent' });

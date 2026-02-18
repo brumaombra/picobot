@@ -172,8 +172,7 @@ export class Agent {
                 userMessage: message.content,
                 messageRole: message.role || 'user',
                 tools: this.mainToolDefs,
-                context,
-                onIntermediateMessage: content => sendOutbound({ sessionKey: message.sessionKey, content })
+                context
             });
 
             // Send final response or timeout message

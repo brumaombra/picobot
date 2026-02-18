@@ -10,6 +10,7 @@ This section defines the tools available to the assistant.
 - Check required parameters before calling a tool.
 - Handle tool errors gracefully and retry with corrected parameters when possible.
 - Prefer specific tools over generic ones when available.
+- **Never call a tool that is not in your tools list below.** Calling unlisted tools will result in an error.
 
 ### Tool Execution Order
 

@@ -38,6 +38,7 @@ export const OPENROUTER_MODELS = [
     'x-ai/grok-code-fast-1',
     'anthropic/claude-haiku-4.5',
     'anthropic/claude-sonnet-4.5',
+    'anthropic/claude-sonnet-4.6',
     'anthropic/claude-opus-4.5',
     'anthropic/claude-opus-4.6',
     'openai/gpt-5.2',

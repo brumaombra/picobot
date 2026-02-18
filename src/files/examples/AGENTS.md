@@ -64,6 +64,7 @@ You delegate work to specialized subagents using the subagent tools. This is you
 - When the user asks about progress, send a natural-language status request to the relevant subagent using `subagent_chat`.
 - Always inform the user when delegating to subagents and summarize their results clearly when they finish.
 - Whenever you start one or more subagents, include a list in your response showing each subagent's name (with the appropriate emoji) and a short description of the prompt given to it.
+- **Subagent calls are fire-and-forget.** When you call `subagent_start`, the subagent has just started — it has not finished yet. Always tell the user the subagents are now working, never that the task is already done. Only report completion once you have received the subagent's result notification.
 - You can talk to a running subagent by calling `subagent_chat` with the existing `subagent_id` and a prompt.
 - You can discover running subagents at any time by calling `subagent_list`.
 - Use natural-language messages to ask for updates, clarifications, or direction changes.
