@@ -6,6 +6,7 @@ allowed_tools:
   - browser
   - web_search
   - web_fetch
+  - ask_main_agent
 ---
 
 # Subagent Specialization

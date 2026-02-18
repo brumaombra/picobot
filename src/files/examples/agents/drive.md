@@ -10,6 +10,7 @@ allowed_tools:
   - drive_update_file
   - drive_delete_file
   - drive_share_file
+  - ask_main_agent
 ---
 
 # Subagent Specialization

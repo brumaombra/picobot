@@ -7,6 +7,7 @@ allowed_tools:
   - gmail_read
   - gmail_send
   - gmail_list_labels
+  - ask_main_agent
 ---
 
 # Subagent Specialization

@@ -23,6 +23,7 @@ export const AGENT_TIME_LIMIT_MS = 5 * 60 * 1000; // 5 minutes
 export const AGENT_WRAPUP_THRESHOLD_MS = 60 * 1000; // Warn agent to wrap up when this many ms remain
 export const QUEUE_POLL_TIMEOUT_MS = 1000;
 export const SESSION_CLEANUP_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+export const SUBAGENT_QUESTION_TIMEOUT_MS = 2 * 60 * 1000; // 2 minutes — max wait for main agent to reply
 
 /**************** Session *****************/
 export const MAX_MESSAGES_PER_SESSION = 50;

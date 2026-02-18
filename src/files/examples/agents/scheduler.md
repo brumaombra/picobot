@@ -8,6 +8,7 @@ allowed_tools:
   - cron_get
   - cron_update
   - cron_delete
+  - ask_main_agent
 ---
 
 # Subagent Specialization

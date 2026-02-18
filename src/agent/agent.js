@@ -2,7 +2,7 @@ import { cleanupSessions, getOrCreateSession, getSessionMessages, addMessageToSe
 import { logger } from '../utils/logger.js';
 import { formatTime, generateUniqueId } from '../utils/utils.js';
 import { pullInbound, sendOutbound, pushInbound } from '../bus/message-bus.js';
-import { QUEUE_POLL_TIMEOUT_MS, SESSION_CLEANUP_INTERVAL_MS, AGENT_TIME_LIMIT_MS, AGENT_WRAPUP_THRESHOLD_MS } from '../config.js';
+import { QUEUE_POLL_TIMEOUT_MS, SESSION_CLEANUP_INTERVAL_MS, AGENT_TIME_LIMIT_MS, AGENT_WRAPUP_THRESHOLD_MS, SUBAGENT_QUESTION_TIMEOUT_MS } from '../config.js';
 import { getToolsDefinitions } from '../tools/tools.js';
 import { buildSystemPrompt, buildSubagentSystemPrompt, getMainAgentAllowedTools } from './prompts.js';
 import { executeToolBatch } from './tool-executor.js';
@@ -58,6 +58,7 @@ export class Agent {
             launchSubagent: this.launchSubagent.bind(this),
             chatSubagent: this.chatSubagent.bind(this),
             listActiveSubagents: this.listActiveSubagents.bind(this),
+            askMainAgent: this.askMainAgent.bind(this),
             ...overrides
         };
     }
@@ -225,12 +226,12 @@ export class Agent {
         logger.info(`Spawning subagent [${subagentId}] type [${type}]: ${agentDef.name} (model: ${this.model})`);
 
         // Register subagent before launching
-        this.subagentRegistry.register(subagentId, { type, name: agentDef.name, sessionId: subagentId, prompt });
+        this.subagentRegistry.register(subagentId, { type, name: agentDef.name, sessionId: subagentId, parentSessionKey, prompt });
 
         // Create subagent and launch in the background
         const subagent = new Agent({ llm: this.llm, model: this.model });
         const toolDefs = getToolsDefinitions(agentDef.allowedTools);
-        const context = this.buildContext({ sessionKey: parentSessionKey });
+        const context = this.buildContext({ sessionKey: parentSessionKey, subagentId });
 
         // Run the subagent task without awaiting it, and handle completion/failure in the promise chain
         subagent.runTask({
@@ -292,6 +293,46 @@ export class Agent {
         };
     }
 
+    // Ask the main agent a question from within a subagent — blocks until the main agent replies
+    askMainAgent(subagentId, question, parentSessionKey) {
+        if (!subagentId) {
+            return Promise.reject(new Error('askMainAgent can only be called from within a running subagent.'));
+        }
+
+        // Create a promise that resolves when the main agent sends a reply via subagent_chat
+        return new Promise((resolve, reject) => {
+            // Set up a timeout so the subagent is never blocked forever
+            const timeoutId = setTimeout(() => {
+                this.subagentRegistry.clearQuestion(subagentId);
+                reject(new Error('Main agent did not reply within the time limit.'));
+            }, SUBAGENT_QUESTION_TIMEOUT_MS);
+
+            // Register the pending question — chatSubagent will resolve it
+            this.subagentRegistry.registerQuestion(subagentId,
+                answer => { clearTimeout(timeoutId); this.subagentRegistry.clearQuestion(subagentId); resolve(answer); },
+                error => { clearTimeout(timeoutId); this.subagentRegistry.clearQuestion(subagentId); reject(error); }
+            );
+
+            // Get subagent metadata for the notification payload
+            const subagent = this.subagentRegistry.get(subagentId);
+
+            // Notify the parent session so the main agent can react
+            pushInbound({
+                sessionKey: parentSessionKey,
+                role: 'system',
+                content: JSON.stringify({
+                    type: 'subagent_question',
+                    subagent_id: subagentId,
+                    name: subagent?.name || subagentId,
+                    subagent_type: subagent?.type || 'unknown',
+                    question
+                })
+            });
+
+            logger.info(`Subagent [${subagentId}] is waiting for a reply from the main agent`);
+        });
+    }
+
     // Chat with a running subagent using natural-language messages and return its direct response
     async chatSubagent(subagentId, message) {
         // Get subagent the subagent
@@ -306,9 +347,29 @@ export class Agent {
             throw new Error('A chat prompt is required.');
         }
 
-        // Check if subagent is still running before allowing chat
-        if (subagent.status !== 'running') {
-            throw new Error(`Cannot send message to subagent "${subagentId}" because it is ${subagent.status}.`);
+        // Only hard-block on failed subagents — done subagents can be re-entered (their session is still valid)
+        if (subagent.status === 'failed') {
+            throw new Error(`Cannot send message to subagent "${subagentId}" because it has failed.`);
+        }
+
+        // If the subagent has finished its previous task, resume it so the session can continue
+        if (subagent.status === 'done') {
+            this.subagentRegistry.resume(subagentId);
+        }
+
+        // If the subagent is blocked waiting for a reply, resolve its pending question
+        const pending = this.subagentRegistry.getPendingQuestion(subagentId);
+        if (pending) {
+            logger.info(`Resolving pending question for subagent [${subagentId}]`);
+            pending.resolve(text);
+            return {
+                subagentId,
+                type: subagent.type,
+                name: subagent.name,
+                status: 'running',
+                response: text,
+                timedOut: false
+            };
         }
 
         // Add the message to the subagent's session
@@ -325,7 +386,7 @@ export class Agent {
 
         // Create a new Agent instance to continue the conversation with the subagent
         const toolDefs = getToolsDefinitions(agentDef.allowedTools);
-        const context = this.buildContext({ sessionKey: subagent.sessionId });
+        const context = this.buildContext({ sessionKey: subagent.parentSessionKey, subagentId });
         const result = await this.run(subagent.sessionId, toolDefs, context);
 
         // Return the subagent's response or an error if it failed to produce one

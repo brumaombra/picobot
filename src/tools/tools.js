@@ -1,5 +1,5 @@
 import { runTerminalCmdTool } from './general/shell.js';
-import { subagentStartTool, subagentChatTool, subagentListTool } from './general/subagent.js';
+import { subagentStartTool, subagentChatTool, subagentListTool, askMainAgentTool } from './general/subagent.js';
 import { getDateTimeTool } from './general/datetime.js';
 import { sendFileTool } from './general/send-file.js';
 import { systemInfoBasicTool, systemInfoCpuTool, systemInfoMemoryTool, systemInfoNetworkTool, systemInfoAllTool } from './system/system.js';
@@ -23,6 +23,7 @@ const TOOLS = new Map([
     [subagentStartTool.name, subagentStartTool],
     [subagentChatTool.name, subagentChatTool],
     [subagentListTool.name, subagentListTool],
+    [askMainAgentTool.name, askMainAgentTool],
 
     // System tools
     [systemInfoBasicTool.name, systemInfoBasicTool],

@@ -8,6 +8,7 @@ allowed_tools:
   - calendar_create_event
   - calendar_update_event
   - calendar_delete_event
+  - ask_main_agent
 ---
 
 # Subagent Specialization

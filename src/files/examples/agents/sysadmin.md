@@ -9,6 +9,7 @@ allowed_tools:
   - system_info_memory
   - system_info_network
   - system_info_all
+  - ask_main_agent
 ---
 
 # Subagent Specialization
