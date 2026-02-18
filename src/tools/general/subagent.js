@@ -69,13 +69,14 @@ export const subagentChatTool = {
 
         try {
             // Send a message to the subagent and return its response
-            const result = context.chatSubagent(subagent_id, prompt);
+            const result = await context.chatSubagent(subagent_id, prompt);
             return handleToolResponse({
                 subagent_id: result.subagentId,
                 type: result.type,
                 name: result.name,
                 status: result.status,
-                message: result.message
+                response: result.response,
+                timed_out: result.timedOut
             });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to chat with subagent' });

@@ -293,8 +293,8 @@ export class Agent {
         };
     }
 
-    // Chat with a running subagent using natural-language messages
-    chatSubagent(subagentId, message) {
+    // Chat with a running subagent using natural-language messages and return its direct response
+    async chatSubagent(subagentId, message) {
         // Get subagent the subagent
         const subagent = this.subagentRegistry.get(subagentId);
         if (!subagent) {
@@ -318,13 +318,25 @@ export class Agent {
             content: text
         });
 
-        // Return a response indicating the message was sent
+        // Continue the subagent session and wait for its response
+        const agentDef = getAgent(subagent.type);
+        if (!agentDef) {
+            throw new Error(`Unknown subagent type "${subagent.type}".`);
+        }
+
+        // Create a new Agent instance to continue the conversation with the subagent
+        const toolDefs = getToolsDefinitions(agentDef.allowedTools);
+        const context = this.buildContext({ sessionKey: subagent.sessionId });
+        const result = await this.run(subagent.sessionId, toolDefs, context);
+
+        // Return the subagent's response or an error if it failed to produce one
         return {
             subagentId,
             type: subagent.type,
             name: subagent.name,
             status: 'running',
-            message: 'Message sent to running subagent.'
+            response: result.response || null,
+            timedOut: !!result.timedOut
         };
     }
 
