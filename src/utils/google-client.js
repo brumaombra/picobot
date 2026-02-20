@@ -16,7 +16,8 @@ const SCOPES = [
     'https://www.googleapis.com/auth/calendar',
     'https://www.googleapis.com/auth/calendar.events',
     'https://www.googleapis.com/auth/drive',
-    'https://www.googleapis.com/auth/drive.file'
+    'https://www.googleapis.com/auth/drive.file',
+    'https://www.googleapis.com/auth/presentations'
 ];
 
 // Clients
@@ -24,6 +25,7 @@ let cachedAuth = null;
 let gmailClient = null;
 let calendarClient = null;
 let driveClient = null;
+let slidesClient = null;
 
 // Get authenticated Google client
 const getGoogleAuth = async () => {
@@ -111,6 +113,19 @@ export const getDriveClient = async () => {
 
     // Return the cached Drive client
     return driveClient;
+};
+
+// Get Slides API client
+export const getSlidesClient = async () => {
+    // Create and cache Slides client if not already done
+    if (!slidesClient) {
+        const auth = await getGoogleAuth();
+        slidesClient = google.slides({ version: 'v1', auth });
+        logger.debug('Slides client initialized');
+    }
+
+    // Return the cached Slides client
+    return slidesClient;
 };
 
 // Initialize Google clients (optional pre-warming)

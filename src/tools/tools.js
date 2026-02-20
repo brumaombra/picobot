@@ -10,6 +10,7 @@ import { cronCreateTool, cronListTool, cronGetTool, cronUpdateTool, cronDeleteTo
 import { gmailSearchTool, gmailReadTool, gmailSendTool, gmailLabelsTool } from './gmail/gmail.js';
 import { calendarListEventsTool, calendarGetEventTool, calendarCreateEventTool, calendarUpdateEventTool, calendarDeleteEventTool } from './calendar/calendar.js';
 import { driveListFilesTool, driveGetFileTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool } from './drive/drive.js';
+import { slidesCreateTool, slidesGetTool, slidesAddSlideTool, slidesReplaceTextTool, slidesDeleteSlideTool } from './slides/slides.js';
 import { browserTool } from './browser/browser.js';
 
 // Registry of all available tools (flat map: name → tool)
@@ -72,6 +73,13 @@ const TOOLS = new Map([
     [driveUpdateFileTool.name, driveUpdateFileTool],
     [driveDeleteFileTool.name, driveDeleteFileTool],
     [driveShareFileTool.name, driveShareFileTool],
+
+    // Slides tools
+    [slidesCreateTool.name, slidesCreateTool],
+    [slidesGetTool.name, slidesGetTool],
+    [slidesAddSlideTool.name, slidesAddSlideTool],
+    [slidesReplaceTextTool.name, slidesReplaceTextTool],
+    [slidesDeleteSlideTool.name, slidesDeleteSlideTool],
 
     // Browser tools
     [browserTool.name, browserTool]
