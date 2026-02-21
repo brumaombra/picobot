@@ -35,7 +35,7 @@ Picobot uses an **orchestrator + subagents** architecture. You talk to one main 
 | 📧 **Email Manager** | Search, read, and send Gmail messages |
 | 📅 **Calendar Manager** | Create, update, and manage Google Calendar events |
 | 💾 **Drive Manager** | List, read, create, and share Google Drive files |
-| 📁 **File Manager** | Read, write, search, and organize local files |
+| 🖼️ **Slides Manager** | Create, edit, and manage Google Slides presentations |
 | 💻 **Code Implementer** | Write, refactor, and test code with execution tools |
 | 🌐 **Web Researcher** | Search the web and synthesize information |
 | 🧭 **Web Navigator** | Control a browser to interact with pages and fill forms |
@@ -161,7 +161,7 @@ Everything lives in `~/.picobot/config.json`:
 Want email, calendar, and drive powers?
 
 1. Create a project at [Google Cloud Console](https://console.cloud.google.com)
-2. Enable Gmail, Calendar, and Drive APIs
+2. Enable Gmail, Calendar, Drive, and Slides APIs
 3. Create OAuth 2.0 credentials → Download as `credentials.json`
 4. Drop it in the project root
 5. Start the bot — it'll ask you to authorize
