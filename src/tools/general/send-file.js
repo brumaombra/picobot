@@ -4,21 +4,21 @@ import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { sendOutbound } from '../../bus/message-bus.js';
 import { logger } from '../../utils/logger.js';
 
-// Send file tool - allows agent to send files to the user via Telegram
+// Send file tool - allows agent to send files and images to the user via Telegram
 export const sendFileTool = {
     // Tool definition
     name: 'send_file',
-    description: 'Send a file to the user via Telegram. The file must exist in the workspace.',
+    description: 'Send a file or image to the user via Telegram. Images are sent as photos; all other files are sent as documents.',
     parameters: {
         type: 'object',
         properties: {
             filePath: {
                 type: 'string',
-                description: 'Path to the file to send (relative to workspace or absolute)'
+                description: 'Path to the file or image to send (relative to workspace or absolute)'
             },
             caption: {
                 type: 'string',
-                description: 'Optional caption/description for the file'
+                description: 'Optional caption/description for the file or image'
             }
         },
         required: ['filePath']
@@ -35,7 +35,7 @@ export const sendFileTool = {
                 return handleToolError({ message: `File not found: ${filePath}` });
             }
 
-            // Send the file through the outbound message system
+            // Send through the outbound message system
             sendOutbound({
                 sessionKey: context.sessionKey,
                 content: caption || `📎 Sending file: ${filePath}`,
@@ -45,7 +45,7 @@ export const sendFileTool = {
                 }
             });
 
-            // Log the file sending action
+            // Log the action
             logger.debug(`Sending file: ${fullPath} to ${context.sessionKey}`);
 
             // Return success response

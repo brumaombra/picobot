@@ -3,7 +3,7 @@ import { logger } from '../../utils/logger.js';
 // Authorization middleware
 export const authMiddleware = async (context, next, allowedUsers) => {
     // If no allowed users configured, allow all
-    if (allowedUsers?.length === 0) {
+    if (!allowedUsers?.length) {
         await next();
         return;
     }
@@ -14,31 +14,21 @@ export const authMiddleware = async (context, next, allowedUsers) => {
 
     // If no user ID, deny access
     if (!userId) {
-        logger.warn(`Unauthorized access from user ${context.from?.id}`);
+        logger.warn(`Unauthorized access from unknown user`);
         return;
     }
 
-    // Check against allowed users
-    const allowed = allowedUsers?.some(allowedUser => {
-        // Check by user ID
-        if (allowedUser === userId) {
-            return true;
-        }
-
-        // Check by username (with or without @)
-        if (username) {
-            const normalizedAllowed = allowedUser.replace(/^@/, '');
-            return normalizedAllowed === username;
-        }
-
-        // Not allowed
-        return false;
+    // Check against allowed users (normalize @ prefix once per entry)
+    const allowed = allowedUsers.some(user => {
+        const normalized = user.replace(/^@/, '');
+        return normalized === userId || normalized === username;
     });
 
     // If user is allowed, continue to next handler
     if (allowed) {
         await next();
     } else {
-        logger.warn(`Unauthorized access from user ${context.from?.id}`);
+        logger.warn(`Unauthorized access from user ${userId}`);
+        await context.reply('⛔ You are not authorized to use this bot.');
     }
 };

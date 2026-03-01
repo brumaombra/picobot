@@ -43,35 +43,42 @@ const setupOutboundListener = () => {
         stopTyping(chatId);
 
         try {
-            // If message includes a file, send it
-            if (message.file) {
-                // Send the file with optional caption (use message content as fallback caption)
-                await bot.telegram.sendDocument(chatId, { source: message.file.path }, {
-                    caption: message.file.caption || message.content,
-                    parse_mode: 'HTML',
-                    reply_parameters: message.replyToId ? { message_id: parseInt(message.replyToId, 10) } : undefined
-                });
+            // Send the right type of message
+            if (message.file) { // Send a file
+                // Prepare options for sending the file
+                const replyParams = message.replyToId ? { message_id: parseInt(message.replyToId, 10) } : undefined;
+                const options = { caption: message.file.caption || message.content, parse_mode: 'HTML', reply_parameters: replyParams };
+                const source = { source: message.file.path };
+
+                // Send as photo for images, document for everything else
+                const ext = message.file.path.slice(message.file.path.lastIndexOf('.')).toLowerCase();
+                const isImage = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].includes(ext);
+                if (isImage) {
+                    await bot.telegram.sendPhoto(chatId, source, options);
+                } else {
+                    await bot.telegram.sendDocument(chatId, source, options);
+                }
 
                 // Log successful send and exit
-                logger.debug(`Sent file to ${message.sessionKey}: ${message.file.path}`);
+                logger.debug(`Sent ${isImage ? 'image' : 'file'} to ${message.sessionKey}: ${message.file.path}`);
                 return;
+            } else { // Send a text message
+                // Convert markdown to HTML for Telegram
+                const htmlContent = markdownToTelegramHtml(message.content);
+
+                // Split long messages (Telegram limit is 4096 characters)
+                const chunks = splitMessageIntoChunks(htmlContent, TELEGRAM_MAX_MESSAGE_LENGTH);
+                for (const chunk of chunks) {
+                    // Send each chunk
+                    await bot.telegram.sendMessage(chatId, chunk, {
+                        parse_mode: 'HTML',
+                        reply_parameters: message.replyToId ? { message_id: parseInt(message.replyToId, 10) } : undefined,
+                    });
+                }
+
+                // Log successful send
+                logger.debug(`Sent message to ${message.sessionKey}`);
             }
-
-            // Convert markdown to HTML for Telegram
-            const htmlContent = markdownToTelegramHtml(message.content);
-
-            // Split long messages (Telegram limit is 4096 characters)
-            const chunks = splitMessageIntoChunks(htmlContent, TELEGRAM_MAX_MESSAGE_LENGTH);
-            for (const chunk of chunks) {
-                // Send each chunk
-                await bot.telegram.sendMessage(chatId, chunk, {
-                    parse_mode: 'HTML',
-                    reply_parameters: message.replyToId ? { message_id: parseInt(message.replyToId, 10) } : undefined,
-                });
-            }
-
-            // Log successful send
-            logger.debug(`Sent message to ${message.sessionKey}`);
         } catch (error) {
             // Log the error
             logger.error(`Failed to send telegram message: ${error}`);
