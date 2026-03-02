@@ -22,11 +22,19 @@ export const AgentConfigSchema = z.object({
     model: z.enum(OPENROUTER_MODELS).default(OPENROUTER_MODELS[0])
 });
 
+// Reolink NVR configuration (optional)
+export const NvrConfigSchema = z.object({
+    host: z.string().min(1, 'NVR host is required'),
+    username: z.string().min(1, 'NVR username is required'),
+    password: z.string().min(1, 'NVR password is required')
+});
+
 // Root configuration
 export const ConfigSchema = z.object({
     telegram: TelegramConfigSchema,
     openRouter: OpenRouterConfigSchema,
     brave: BraveConfigSchema.optional(),
     agent: AgentConfigSchema.default({}),
+    nvr: NvrConfigSchema.optional(),
     workspace: z.string().default(DEFAULT_WORKSPACE_PATH)
 });

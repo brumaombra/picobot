@@ -12,6 +12,7 @@ import { calendarListEventsTool, calendarGetEventTool, calendarCreateEventTool, 
 import { driveListFilesTool, driveGetFileTool, driveReadFileTool, driveCreateFileTool, driveUpdateFileTool, driveDeleteFileTool, driveShareFileTool } from './drive/drive.js';
 import { slidesCreateTool, slidesGetTool, slidesAddSlideTool, slidesReplaceTextTool, slidesDeleteSlideTool } from './slides/slides.js';
 import { browserTool } from './browser/browser.js';
+import { cameraGetInfoTool, cameraSnapshotTool, cameraGetStreamUrlTool, cameraAiStateTool, cameraMotionStateTool, cameraSearchRecordingsTool } from './camera/camera.js';
 
 // Registry of all available tools (flat map: name → tool)
 const TOOLS = new Map([
@@ -82,7 +83,15 @@ const TOOLS = new Map([
     [slidesDeleteSlideTool.name, slidesDeleteSlideTool],
 
     // Browser tools
-    [browserTool.name, browserTool]
+    [browserTool.name, browserTool],
+
+    // Camera / NVR tools
+    [cameraGetInfoTool.name, cameraGetInfoTool],
+    [cameraSnapshotTool.name, cameraSnapshotTool],
+    [cameraGetStreamUrlTool.name, cameraGetStreamUrlTool],
+    [cameraAiStateTool.name, cameraAiStateTool],
+    [cameraMotionStateTool.name, cameraMotionStateTool],
+    [cameraSearchRecordingsTool.name, cameraSearchRecordingsTool]
 ]);
 
 // Get a tool by name

@@ -14,7 +14,7 @@ Picobot is a **Node.js Telegram bot** that acts as a personal AI orchestrator. T
 |---|---|
 | `channel/` | Telegram integration — receives messages, dispatches commands, handles auth |
 | `agent/` | Core orchestration logic — agent loop, prompt assembly, tool execution, task registry |
-| `tools/` | All tool implementations grouped by domain (gmail, calendar, drive, browser, shell, etc.) |
+| `tools/` | All tool implementations grouped by domain (gmail, calendar, drive, browser, shell, camera, etc.) |
 | `llm/` | LLM abstraction layer over OpenRouter |
 | `session/` | In-memory + persistent conversation session management |
 | `crons/` | Persistent cron job management for scheduled tasks |
