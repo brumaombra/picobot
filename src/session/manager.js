@@ -89,9 +89,6 @@ export const cleanupSessions = () => {
 
     // Iterate through sessions and remove expired ones
     for (const [key, session] of sessions.entries()) {
-        // Only expire temporary sessions (subagents and crons), keep main chat sessions forever
-        if (!key.startsWith('subagent_') && !key.startsWith('cron_')) continue;
-
         // Check if session is expired
         if (now - session.lastActive.getTime() > SESSION_TTL_MS) {
             sessions.delete(key); // Remove session from memory
