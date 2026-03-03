@@ -1,6 +1,6 @@
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
-import { withCameraClient } from '../../utils/camera-client.js';
+import { createCameraClient } from '../../utils/camera-client.js';
 
 export const cameraMotionStateTool = {
     // Tool definition
@@ -24,16 +24,19 @@ export const cameraMotionStateTool = {
         // Log the action
         logger.debug(`Camera: getting motion state for channel ${channel}`);
 
-        try {
-            return await withCameraClient(async client => {
-                // Fetch the motion detection state
-                const state = await client.api('GetMdState', { channel, action: 0 });
+        // Create the camera client
+        const client = await createCameraClient();
 
-                // Return the motion detection state
-                return handleToolResponse({ channel, motionState: state });
-            });
+        try {
+            // Fetch the motion detection state
+            const state = await client.api('GetMdState', { channel, action: 0 });
+
+            // Return the motion detection state
+            return handleToolResponse({ channel, motionState: state });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to get motion detection state' });
+        } finally {
+            await client.close();
         }
     }
 };

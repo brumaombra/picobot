@@ -1,6 +1,6 @@
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
-import { withCameraClient } from '../../utils/camera-client.js';
+import { createCameraClient } from '../../utils/camera-client.js';
 
 export const cameraSearchRecordingsTool = {
     // Tool definition
@@ -37,42 +37,45 @@ export const cameraSearchRecordingsTool = {
         // Log the action
         logger.debug(`Camera: searching recordings on channel ${channel} from ${startTime} to ${endTime}`);
 
+        // Create the camera client
+        const client = await createCameraClient();
+
         try {
-            return await withCameraClient(async client => {
-                // Parse the time range
-                const start = new Date(startTime);
-                const end = new Date(endTime);
+            // Parse the time range
+            const start = new Date(startTime);
+            const end = new Date(endTime);
 
-                // Build the search payload
-                const payload = {
-                    channel,
-                    streamType,
-                    StartTime: {
-                        year: start.getUTCFullYear(),
-                        mon: start.getUTCMonth() + 1,
-                        day: start.getUTCDate(),
-                        hour: start.getUTCHours(),
-                        min: start.getUTCMinutes(),
-                        sec: start.getUTCSeconds()
-                    },
-                    EndTime: {
-                        year: end.getUTCFullYear(),
-                        mon: end.getUTCMonth() + 1,
-                        day: end.getUTCDate(),
-                        hour: end.getUTCHours(),
-                        min: end.getUTCMinutes(),
-                        sec: end.getUTCSeconds()
-                    }
-                };
+            // Build the search payload
+            const payload = {
+                channel,
+                streamType,
+                StartTime: {
+                    year: start.getUTCFullYear(),
+                    mon: start.getUTCMonth() + 1,
+                    day: start.getUTCDate(),
+                    hour: start.getUTCHours(),
+                    min: start.getUTCMinutes(),
+                    sec: start.getUTCSeconds()
+                },
+                EndTime: {
+                    year: end.getUTCFullYear(),
+                    mon: end.getUTCMonth() + 1,
+                    day: end.getUTCDate(),
+                    hour: end.getUTCHours(),
+                    min: end.getUTCMinutes(),
+                    sec: end.getUTCSeconds()
+                }
+            };
 
-                // Execute the search
-                const results = await client.api('Search', payload);
+            // Execute the search
+            const results = await client.api('Search', payload);
 
-                // Return the recordings list
-                return handleToolResponse({ channel, startTime, endTime, recordings: results });
-            });
+            // Return the recordings list
+            return handleToolResponse({ channel, startTime, endTime, recordings: results });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to search recordings' });
+        } finally {
+            await client.close();
         }
     }
 };

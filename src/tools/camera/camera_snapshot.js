@@ -3,7 +3,7 @@ import { writeFileSync } from 'fs';
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { WORKSPACE_DIR } from '../../config.js';
-import { withCameraClient } from '../../utils/camera-client.js';
+import { createCameraClient } from '../../utils/camera-client.js';
 
 export const cameraSnapshotTool = {
     // Tool definition
@@ -27,22 +27,25 @@ export const cameraSnapshotTool = {
         // Log the action
         logger.debug(`Camera: taking snapshot on channel ${channel}`);
 
+        // Create the camera client
+        const client = await createCameraClient();
+
         try {
-            return await withCameraClient(async client => {
-                // Capture the snapshot as a buffer
-                const buffer = await client.snapshotToBuffer(channel);
+            // Capture the snapshot as a buffer
+            const buffer = await client.snapshotToBuffer(channel);
 
-                // Save the snapshot to the workspace
-                const filename = `snapshot_ch${channel}_${Date.now()}.jpg`;
-                const filePath = join(WORKSPACE_DIR, filename);
-                writeFileSync(filePath, buffer);
-                logger.debug(`Camera: snapshot saved to ${filePath}`);
+            // Save the snapshot to the workspace
+            const filename = `snapshot_ch${channel}_${Date.now()}.jpg`;
+            const filePath = join(WORKSPACE_DIR, filename);
+            writeFileSync(filePath, buffer);
+            logger.debug(`Camera: snapshot saved to ${filePath}`);
 
-                // Return the file path for the agent to send
-                return handleToolResponse({ filePath, filename, channel });
-            });
+            // Return the file path for the agent to send
+            return handleToolResponse({ filePath, filename, channel });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to capture snapshot' });
+        } finally {
+            await client.close();
         }
     }
 };

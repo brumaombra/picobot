@@ -1,4 +1,5 @@
 {
+    "workspace": "~/.picobot/workspace",
     "telegram": {
         "token": "",
         "allowedUsers": []
@@ -6,11 +7,15 @@
     "openRouter": {
         "apiKey": ""
     },
-    "brave": {
-        "apiKey": ""
-    },
     "agent": {
         "model": ""
     },
-    "workspace": "~/.picobot/workspace"
+    "brave": {
+        "apiKey": ""
+    },
+    "nvr": {
+        "host": "",
+        "username": "",
+        "password": ""
+    }
 }

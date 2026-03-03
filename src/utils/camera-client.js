@@ -28,14 +28,3 @@ export const createCameraClient = async () => {
     logger.debug('Reolink camera client authenticated');
     return client;
 };
-
-// Execute a camera operation and automatically close the client afterward
-export const withCameraClient = async functionToExecute => {
-    const client = await createCameraClient(); // Create a new client for this operation
-
-    try {
-        return await functionToExecute(client); // Execute the provided function with the authenticated client
-    } finally {
-        await client.close(); // Ensure the client is closed after the operation, even if an error occurs
-    }
-};

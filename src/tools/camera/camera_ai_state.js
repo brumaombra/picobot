@@ -1,6 +1,6 @@
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
-import { withCameraClient } from '../../utils/camera-client.js';
+import { createCameraClient } from '../../utils/camera-client.js';
 
 export const cameraAiStateTool = {
     // Tool definition
@@ -24,16 +24,19 @@ export const cameraAiStateTool = {
         // Log the action
         logger.debug(`Camera: getting AI state for channel ${channel}`);
 
-        try {
-            return await withCameraClient(async client => {
-                // Fetch the AI detection state
-                const state = await client.api('GetAiState', { channel, action: 0 });
+        // Create the camera client
+        const client = await createCameraClient();
 
-                // Return the AI detection state
-                return handleToolResponse({ channel, aiState: state });
-            });
+        try {
+            // Fetch the AI detection state
+            const state = await client.api('GetAiState', { channel, action: 0 });
+
+            // Return the AI detection state
+            return handleToolResponse({ channel, aiState: state });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to get AI detection state' });
+        } finally {
+            await client.close();
         }
     }
 };
