@@ -35,6 +35,7 @@ export const loadAgents = () => {
                 name: metadata.name || basename(file, '.md'),
                 description: metadata.description || '',
                 allowedTools: metadata.allowed_tools || [],
+                model: metadata.model || null,
                 instructions: body.trim()
             };
 

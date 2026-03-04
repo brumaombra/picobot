@@ -223,13 +223,14 @@ export class Agent {
 
         // Generate unique subagent ID and log launch
         const subagentId = generateUniqueId('subagent');
-        logger.info(`Spawning subagent [${subagentId}] type [${type}]: ${agentDef.name} (model: ${this.model})`);
+        const subagentModel = agentDef.model || this.model;
+        logger.info(`Spawning subagent [${subagentId}] type [${type}]: ${agentDef.name} (model: ${subagentModel})`);
 
         // Register subagent before launching
         this.subagentRegistry.register(subagentId, { type, name: agentDef.name, sessionId: subagentId, parentSessionKey, prompt });
 
         // Create subagent and launch in the background
-        const subagent = new Agent({ llm: this.llm, model: this.model });
+        const subagent = new Agent({ llm: this.llm, model: subagentModel });
         const toolDefs = getToolsDefinitions(agentDef.allowedTools);
         const context = this.buildContext({ sessionKey: parentSessionKey, subagentId });
 

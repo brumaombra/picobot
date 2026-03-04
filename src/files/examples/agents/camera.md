@@ -1,6 +1,7 @@
 ---
 name: 📷 Security Camera Manager
 description: Manages the NVR system. Can list cameras, take snapshots, check motion and AI detection states, search recorded footage, and download recordings to disk.
+model: google/gemini-3.1-flash-lite-preview
 allowed_tools:
   - get_datetime
   - camera_get_info
