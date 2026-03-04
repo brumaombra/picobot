@@ -8,7 +8,7 @@ import { createCameraClient } from '../../utils/camera-client.js';
 export const cameraSnapshotTool = {
     // Tool definition
     name: 'camera_snapshot',
-    description: 'Capture a snapshot (JPEG image) from a camera channel. Saves it to the workspace and returns the file path so it can be sent to the user with the send_file tool.',
+    description: 'Capture a snapshot (JPEG image) from a camera channel. Saves it to the workspace and returns the file path.',
     parameters: {
         type: 'object',
         properties: {

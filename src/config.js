@@ -46,7 +46,7 @@ export const OPENROUTER_MODELS = [
     'openai/gpt-5',
     'openai/gpt-5-nano',
     'openai/gpt-5-mini',
-    'google/gemini-3-flash-preview',
+    'google/gemini-3.1-flash-lite-preview',
     'moonshotai/kimi-k2.5',
     'deepseek/deepseek-v3.2',
     'qwen/qwen3-coder-next',
