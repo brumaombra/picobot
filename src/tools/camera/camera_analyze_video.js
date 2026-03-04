@@ -12,13 +12,13 @@ const MAX_POLL_ATTEMPTS = 24; // Wait up to 2 minutes (24 attempts * 5 seconds)
 export const cameraAnalyzeVideoTool = {
     // Tool definition
     name: 'camera_analyze_video',
-    description: 'Analyze a local video file using Gemini\'s video understanding capabilities. Upload the video to the Google File API, wait for processing, then run a natural-language analysis prompt against it. Use camera_download_recording first to get the local file.',
+    description: 'Analyze a local video file using AI video understanding capabilities by running a natural-language analysis prompt against it.',
     parameters: {
         type: 'object',
         properties: {
             filePath: {
                 type: 'string',
-                description: 'Absolute local path to the video file to analyze (e.g. as returned by camera_download_recording).'
+                description: 'Absolute local path to the video file to analyze.'
             },
             prompt: {
                 type: 'string',

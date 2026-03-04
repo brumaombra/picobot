@@ -11,13 +11,13 @@ import { createCameraClient } from '../../utils/camera-client.js';
 export const cameraDownloadRecordingTool = {
     // Tool definition
     name: 'camera_download_recording',
-    description: 'Download a recorded video file from the NVR to a local path. Use camera_search_recordings first to get the file name.',
+    description: 'Download a recorded video file from the NVR to a local path.',
     parameters: {
         type: 'object',
         properties: {
             fileName: {
                 type: 'string',
-                description: 'The file name of the recording to download, as returned by camera_search_recordings.'
+                description: 'The file name of the recording to download.'
             },
             outputPath: {
                 type: 'string',
@@ -26,11 +26,6 @@ export const cameraDownloadRecordingTool = {
             channel: {
                 type: 'number',
                 description: 'Camera channel number (0-based). Default is 0.'
-            },
-            streamType: {
-                type: 'string',
-                enum: ['main', 'sub'],
-                description: 'Stream type of the recording. Default is "main".'
             }
         },
         required: ['fileName', 'outputPath']
@@ -38,8 +33,7 @@ export const cameraDownloadRecordingTool = {
 
     // Main execution function
     execute: async args => {
-        const { fileName, outputPath, channel = 0, streamType = 'main' } = args;
-        const streamTypeNum = streamType === 'sub' ? 1 : 0;
+        const { fileName, outputPath, channel = 0 } = args;
 
         // Log the action
         logger.debug(`Camera: downloading recording "${fileName}" on channel ${channel} to ${outputPath}`);
@@ -62,10 +56,10 @@ export const cameraDownloadRecordingTool = {
             if (mode === 'short') {
                 const user = encodeURIComponent(client.getUsername());
                 const pass = encodeURIComponent(client.getPassword());
-                queryParams = `cmd=Download&channel=${channel}&streamType=${streamTypeNum}&fileName=${encodeURIComponent(fileName)}&user=${user}&password=${pass}`;
+                queryParams = `cmd=Download&channel=${channel}&streamType=0&fileName=${encodeURIComponent(fileName)}&user=${user}&password=${pass}`;
             } else {
                 const token = client.getToken();
-                queryParams = `cmd=Download&channel=${channel}&streamType=${streamTypeNum}&fileName=${encodeURIComponent(fileName)}&token=${token}`;
+                queryParams = `cmd=Download&channel=${channel}&streamType=0&fileName=${encodeURIComponent(fileName)}&token=${token}`;
             }
 
             // Final download URL
@@ -99,7 +93,7 @@ export const cameraDownloadRecordingTool = {
             logger.debug(`Camera: recording saved to ${outputPath}`);
 
             // Return the saved file path so the agent can reference or send it
-            return handleToolResponse({ outputPath, fileName, channel, streamType });
+            return handleToolResponse({ outputPath, fileName, channel });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to download recording' });
         } finally {
