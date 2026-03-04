@@ -51,6 +51,7 @@ import { cameraAiStateTool } from './camera/camera_ai_state.js';
 import { cameraMotionStateTool } from './camera/camera_motion_state.js';
 import { cameraSearchRecordingsTool } from './camera/camera_search_recordings.js';
 import { cameraDownloadRecordingTool } from './camera/camera_download_recording.js';
+import { cameraAnalyzeVideoTool } from './camera/camera_analyze_video.js';
 
 // Registry of all available tools (flat map: name → tool)
 const TOOLS = new Map([
@@ -129,7 +130,8 @@ const TOOLS = new Map([
     [cameraAiStateTool.name, cameraAiStateTool],
     [cameraMotionStateTool.name, cameraMotionStateTool],
     [cameraSearchRecordingsTool.name, cameraSearchRecordingsTool],
-    [cameraDownloadRecordingTool.name, cameraDownloadRecordingTool]
+    [cameraDownloadRecordingTool.name, cameraDownloadRecordingTool],
+    [cameraAnalyzeVideoTool.name, cameraAnalyzeVideoTool]
 ]);
 
 // Get a tool by name

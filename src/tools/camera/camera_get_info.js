@@ -2,6 +2,7 @@ import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { createCameraClient } from '../../utils/camera-client.js';
 
+// Camera information retrieval tool
 export const cameraGetInfoTool = {
     // Tool definition
     name: 'camera_get_info',

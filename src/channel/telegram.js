@@ -49,19 +49,44 @@ const setupOutboundListener = () => {
                 const replyParams = message.replyToId ? { message_id: parseInt(message.replyToId, 10) } : undefined;
                 const options = { caption: message.file.caption || message.content, parse_mode: 'HTML', reply_parameters: replyParams };
                 const source = { source: message.file.path };
+                const extension = message.file.path.slice(message.file.path.lastIndexOf('.')).toLowerCase();
 
-                // Send as photo for images, document for everything else
-                const ext = message.file.path.slice(message.file.path.lastIndexOf('.')).toLowerCase();
-                const isImage = ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp'].includes(ext);
-                if (isImage) {
-                    await bot.telegram.sendPhoto(chatId, source, options);
-                } else {
-                    await bot.telegram.sendDocument(chatId, source, options);
-                }
+                // Map file extensions to Telegram send method and log label
+                const FILE_TYPE_MAP = {
+                    // Image formats
+                    '.jpg': ['sendPhoto', 'image'],
+                    '.jpeg': ['sendPhoto', 'image'],
+                    '.png': ['sendPhoto', 'image'],
+                    '.webp': ['sendPhoto', 'image'],
+                    '.bmp': ['sendPhoto', 'image'],
 
-                // Log successful send and exit
-                logger.debug(`Sent ${isImage ? 'image' : 'file'} to ${message.sessionKey}: ${message.file.path}`);
-                return;
+                    // Animation formats
+                    '.gif': ['sendAnimation', 'animation'],
+
+                    // Video formats
+                    '.mp4': ['sendVideo', 'video'],
+                    '.mov': ['sendVideo', 'video'],
+                    '.avi': ['sendVideo', 'video'],
+                    '.mkv': ['sendVideo', 'video'],
+                    '.webm': ['sendVideo', 'video'],
+
+                    // Voice formats
+                    '.ogg': ['sendVoice', 'voice'],
+
+                    // Audio formats
+                    '.mp3': ['sendAudio', 'audio'],
+                    '.wav': ['sendAudio', 'audio'],
+                    '.m4a': ['sendAudio', 'audio'],
+                    '.flac': ['sendAudio', 'audio'],
+                    '.aac': ['sendAudio', 'audio']
+                };
+
+                // Get the appropriate send method and file type label based on the extension
+                const [sendMethod, fileType] = FILE_TYPE_MAP[extension] ?? ['sendDocument', 'file'];
+
+                // Send the file using the determined method
+                await bot.telegram[sendMethod](chatId, source, options);
+                logger.debug(`Sent ${fileType} to ${message.sessionKey}: ${message.file.path}`);
             } else { // Send a text message
                 // Convert markdown to HTML for Telegram
                 const htmlContent = markdownToTelegramHtml(message.content);

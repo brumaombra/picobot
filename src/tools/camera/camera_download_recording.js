@@ -7,6 +7,7 @@ import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { createCameraClient } from '../../utils/camera-client.js';
 
+// Camera recording download tool
 export const cameraDownloadRecordingTool = {
     // Tool definition
     name: 'camera_download_recording',

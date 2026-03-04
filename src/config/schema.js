@@ -29,12 +29,18 @@ export const NvrConfigSchema = z.object({
     password: z.string().min(1, 'NVR password is required')
 });
 
+// Google AI configuration (optional — required for video analysis)
+export const GoogleAiConfigSchema = z.object({
+    apiKey: z.string().min(1, 'Google AI API key is required')
+});
+
 // Root configuration
-export const ConfigSchema = z.object({
+export const configSchema = z.object({
+    workspace: z.string().default(DEFAULT_WORKSPACE_PATH),
     telegram: TelegramConfigSchema,
     openRouter: OpenRouterConfigSchema,
-    brave: BraveConfigSchema.optional(),
     agent: AgentConfigSchema.default({}),
-    nvr: NvrConfigSchema.optional(),
-    workspace: z.string().default(DEFAULT_WORKSPACE_PATH)
+    brave: BraveConfigSchema.optional(),
+    googleAi: GoogleAiConfigSchema.optional(),
+    nvr: NvrConfigSchema.optional()
 });

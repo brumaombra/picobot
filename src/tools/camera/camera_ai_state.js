@@ -2,6 +2,7 @@ import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { createCameraClient } from '../../utils/camera-client.js';
 
+// Camera AI detection state tool
 export const cameraAiStateTool = {
     // Tool definition
     name: 'camera_ai_state',

@@ -13,6 +13,9 @@
     "brave": {
         "apiKey": ""
     },
+    "googleAi": {
+        "apiKey": ""
+    },
     "nvr": {
         "host": "",
         "username": "",

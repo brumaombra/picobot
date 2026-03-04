@@ -1,5 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import { ConfigSchema } from './schema.js';
+import { configSchema } from './schema.js';
 import { error, suggestion, listItem, newline } from '../utils/print.js';
 import { expandPath } from '../utils/utils.js';
 import { CONFIG_PATH } from '../config.js';
@@ -63,7 +63,7 @@ export const writeConfig = config => {
 // Validate configuration (both structure and required values)
 export const validateConfig = ({ config }) => {
     // Structural and value validation using Zod
-    const validation = ConfigSchema.safeParse(config);
+    const validation = configSchema.safeParse(config);
     if (!validation.success) {
         // Print validation error
         error('Configuration validation failed:');

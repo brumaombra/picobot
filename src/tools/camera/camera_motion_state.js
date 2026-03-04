@@ -2,6 +2,7 @@ import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { createCameraClient } from '../../utils/camera-client.js';
 
+// Camera motion detection state tool
 export const cameraMotionStateTool = {
     // Tool definition
     name: 'camera_motion_state',

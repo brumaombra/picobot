@@ -5,6 +5,7 @@ import { logger } from '../../utils/logger.js';
 import { WORKSPACE_DIR } from '../../config.js';
 import { createCameraClient } from '../../utils/camera-client.js';
 
+// Camera snapshot tool
 export const cameraSnapshotTool = {
     // Tool definition
     name: 'camera_snapshot',
