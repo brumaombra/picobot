@@ -1,9 +1,9 @@
 import { join } from 'path';
-import { writeFileSync } from 'fs';
+import { mkdirSync, writeFileSync } from 'fs';
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { WORKSPACE_DIR } from '../../config.js';
-import { createCameraClient } from '../../utils/camera-client.js';
+import { getCameraClient } from '../../utils/camera-client.js';
 
 // Camera snapshot tool
 export const cameraSnapshotTool = {
@@ -28,16 +28,18 @@ export const cameraSnapshotTool = {
         // Log the action
         logger.debug(`Camera: taking snapshot on channel ${channel}`);
 
-        // Create the camera client
-        const client = await createCameraClient();
-
         try {
+            // Get the camera client
+            const client = await getCameraClient();
+
             // Capture the snapshot as a buffer
             const buffer = await client.snapshotToBuffer(channel);
 
-            // Save the snapshot to the workspace
+            // Save the snapshot to the camera folder in the workspace
             const filename = `snapshot_ch${channel}_${Date.now()}.jpg`;
-            const filePath = join(WORKSPACE_DIR, filename);
+            const cameraDir = join(WORKSPACE_DIR, 'camera');
+            mkdirSync(cameraDir, { recursive: true });
+            const filePath = join(cameraDir, filename);
             writeFileSync(filePath, buffer);
             logger.debug(`Camera: snapshot saved to ${filePath}`);
 
@@ -45,8 +47,6 @@ export const cameraSnapshotTool = {
             return handleToolResponse({ filePath, filename, channel });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to capture snapshot' });
-        } finally {
-            await client.close();
         }
     }
 };

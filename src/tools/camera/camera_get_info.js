@@ -1,6 +1,6 @@
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
-import { createCameraClient } from '../../utils/camera-client.js';
+import { getCameraClient } from '../../utils/camera-client.js';
 
 // Camera information retrieval tool
 export const cameraGetInfoTool = {
@@ -17,10 +17,10 @@ export const cameraGetInfoTool = {
         // Log the action
         logger.debug('Camera: fetching device info');
 
-        // Create the camera client
-        const client = await createCameraClient();
-
         try {
+            // Get the camera client
+            const client = await getCameraClient();
+
             // Fetch device info and channel status
             const devInfo = await client.api('GetDevInfo', {});
             const channelInfo = await client.api('GetChannelstatus', {}).catch(() => null);
@@ -29,8 +29,6 @@ export const cameraGetInfoTool = {
             return handleToolResponse({ device: devInfo, channels: channelInfo });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to get NVR device info' });
-        } finally {
-            await client.close();
         }
     }
 };

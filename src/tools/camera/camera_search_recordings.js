@@ -1,6 +1,6 @@
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
-import { createCameraClient } from '../../utils/camera-client.js';
+import { getCameraClient } from '../../utils/camera-client.js';
 
 // Camera recording search tool
 export const cameraSearchRecordingsTool = {
@@ -42,30 +42,16 @@ export const cameraSearchRecordingsTool = {
         // Get the validated dates
         const { start, end } = validation;
 
-        // Create the camera client
-        const client = await createCameraClient();
-
         try {
-            // Build the search payload
+            // Get the camera client
+            const client = await getCameraClient();
+
+            // Build the search payload using Unix timestamps as required by the API
             const payload = {
                 channel,
-                streamType: 'main',
-                StartTime: {
-                    year: start.getUTCFullYear(),
-                    mon: start.getUTCMonth() + 1,
-                    day: start.getUTCDate(),
-                    hour: start.getUTCHours(),
-                    min: start.getUTCMinutes(),
-                    sec: start.getUTCSeconds()
-                },
-                EndTime: {
-                    year: end.getUTCFullYear(),
-                    mon: end.getUTCMonth() + 1,
-                    day: end.getUTCDate(),
-                    hour: end.getUTCHours(),
-                    min: end.getUTCMinutes(),
-                    sec: end.getUTCSeconds()
-                }
+                streamType: 0,
+                startTime: Math.floor(start.getTime() / 1000),
+                endTime: Math.floor(end.getTime() / 1000)
             };
 
             // Execute the search
@@ -75,8 +61,6 @@ export const cameraSearchRecordingsTool = {
             return handleToolResponse({ channel, startTime, endTime, recordings: results });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to search recordings' });
-        } finally {
-            await client.close();
         }
     }
 };

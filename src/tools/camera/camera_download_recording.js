@@ -1,17 +1,19 @@
-import { createWriteStream } from 'fs';
+import { join } from 'path';
+import { createWriteStream, mkdirSync } from 'fs';
 import { pipeline } from 'stream/promises';
 import { Readable } from 'stream';
 import https from 'https';
 import { fetch as undiciFetch, Agent as UndiciAgent } from 'undici';
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
-import { createCameraClient } from '../../utils/camera-client.js';
+import { WORKSPACE_DIR } from '../../config.js';
+import { getCameraClient } from '../../utils/camera-client.js';
 
 // Camera recording download tool
 export const cameraDownloadRecordingTool = {
     // Tool definition
     name: 'camera_download_recording',
-    description: 'Download a recorded video file from the NVR to a local path.',
+    description: 'Download a recorded video file from the NVR. Saves it to the camera folder in the workspace and returns the local file path.',
     parameters: {
         type: 'object',
         properties: {
@@ -19,29 +21,30 @@ export const cameraDownloadRecordingTool = {
                 type: 'string',
                 description: 'The file name of the recording to download.'
             },
-            outputPath: {
-                type: 'string',
-                description: 'Absolute local file path where the recording should be saved (e.g. "/tmp/recording.mp4").'
-            },
             channel: {
                 type: 'number',
                 description: 'Camera channel number (0-based). Default is 0.'
             }
         },
-        required: ['fileName', 'outputPath']
+        required: ['fileName']
     },
 
     // Main execution function
     execute: async args => {
-        const { fileName, outputPath, channel = 0 } = args;
+        const { fileName, channel = 0 } = args;
+
+        // Build the output path in the camera folder of the workspace
+        const cameraDir = join(WORKSPACE_DIR, 'camera');
+        mkdirSync(cameraDir, { recursive: true });
+        const outputPath = join(cameraDir, fileName.split(/[\/]/).pop());
 
         // Log the action
         logger.debug(`Camera: downloading recording "${fileName}" on channel ${channel} to ${outputPath}`);
 
-        // Create the camera client to authenticate and get connection details
-        const client = await createCameraClient();
-
         try {
+            // Get the camera client
+            const client = await getCameraClient();
+
             // Extract connection details from the client
             const host = client.getHost();
             const mode = client.getMode();
@@ -96,8 +99,6 @@ export const cameraDownloadRecordingTool = {
             return handleToolResponse({ outputPath, fileName, channel });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to download recording' });
-        } finally {
-            await client.close();
         }
     }
 };
