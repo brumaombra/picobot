@@ -1,4 +1,4 @@
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse, formatReolinkDate, formatReolinkTime, formatTime } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { getCameraClient } from '../../utils/camera-client.js';
 
@@ -16,11 +16,11 @@ export const cameraSearchRecordingsTool = {
             },
             startTime: {
                 type: 'string',
-                description: 'Start of search window as an ISO 8601 datetime string (e.g. "2025-01-15T08:00:00Z").'
+                description: 'Start of search window as a local datetime string (e.g. "2025-01-15T08:00:00"). Do NOT use UTC (no Z suffix) — the NVR operates in local time.'
             },
             endTime: {
                 type: 'string',
-                description: 'End of search window as an ISO 8601 datetime string (e.g. "2025-01-15T20:00:00Z").'
+                description: 'End of search window as a local datetime string (e.g. "2025-01-15T20:00:00"). Do NOT use UTC (no Z suffix) — the NVR operates in local time.'
             }
         },
         required: ['startTime', 'endTime']
@@ -46,19 +46,51 @@ export const cameraSearchRecordingsTool = {
             // Get the camera client
             const client = await getCameraClient();
 
-            // Build the search payload using Unix timestamps as required by the API
+            // Create the payload for the Search API call
             const payload = {
-                channel,
-                streamType: 0,
-                startTime: Math.floor(start.getTime() / 1000),
-                endTime: Math.floor(end.getTime() / 1000)
+                Search: {
+                    channel,
+                    onlyStatus: 0,
+                    streamType: 'main',
+                    StartTime: formatReolinkDate(start),
+                    EndTime: formatReolinkDate(end)
+                }
             };
 
             // Execute the search
             const results = await client.api('Search', payload);
 
-            // Return the recordings list
-            return handleToolResponse({ channel, startTime, endTime, recordings: results });
+            // Parse the file list from the nested SearchResult
+            const files = results?.SearchResult?.File ?? [];
+
+            // Format the recordings for the response
+            const recordings = files.map(file => {
+                // Calculate duration and size for each recording
+                const startTimeVideo = file.StartTime;
+                const endTimeVideo = file.EndTime;
+                const startDateVideo = new Date(startTimeVideo.year, startTimeVideo.mon - 1, startTimeVideo.day, startTimeVideo.hour, startTimeVideo.min, startTimeVideo.sec);
+                const endDateVideo = new Date(endTimeVideo.year, endTimeVideo.mon - 1, endTimeVideo.day, endTimeVideo.hour, endTimeVideo.min, endTimeVideo.sec);
+                const durationSec = (endDateVideo - startDateVideo) / 1000;
+                const sizeMB = (parseInt(file.size, 10) / 1024 / 1024).toFixed(1);
+
+                // Return the formatted recording info
+                return {
+                    start: formatReolinkTime(startTimeVideo),
+                    end: formatReolinkTime(endTimeVideo),
+                    duration: formatTime(durationSec * 1000),
+                    size: `${sizeMB} MB`,
+                    type: file.type
+                };
+            });
+
+            // Return the search results
+            return handleToolResponse({
+                channel,
+                searchFrom: startTime,
+                searchTo: endTime,
+                count: recordings.length,
+                recordings
+            });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to search recordings' });
         }

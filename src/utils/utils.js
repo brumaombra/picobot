@@ -344,6 +344,24 @@ export const formatLocalDateTimeString = date => {
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
 };
 
+// Format a Reolink NVR time object { year, mon, day, hour, min, sec } as a readable string (e.g. "2026-03-05 06:45:48")
+export const formatReolinkTime = t => {
+    const pad = n => String(n).padStart(2, '0');
+    return `${t.year}-${pad(t.mon)}-${pad(t.day)} ${pad(t.hour)}:${pad(t.min)}:${pad(t.sec)}`;
+};
+
+// Convert a JS Date to a Reolink NVR time object { year, mon, day, hour, min, sec }
+export const formatReolinkDate = date => {
+    return {
+        year: date.getFullYear(),
+        mon: date.getMonth() + 1,
+        day: date.getDate(),
+        hour: date.getHours(),
+        min: date.getMinutes(),
+        sec: date.getSeconds()
+    };
+};
+
 // Handle tool execution errors with standardized format
 export const handleToolError = ({ error, message }) => {
     // Construct a detailed error message

@@ -256,7 +256,7 @@ export class Agent {
             // Notify parent session of completion
             pushInbound({
                 sessionKey: parentSessionKey,
-                role: 'system',
+                role: 'user',
                 content: JSON.stringify({
                     type: 'subagent_notification',
                     subagent_id: subagentId,
@@ -274,7 +274,7 @@ export class Agent {
             // Notify parent session of failure
             pushInbound({
                 sessionKey: parentSessionKey,
-                role: 'system',
+                role: 'user',
                 content: JSON.stringify({
                     type: 'subagent_notification',
                     subagent_id: subagentId,
@@ -320,7 +320,7 @@ export class Agent {
             // Notify the parent session so the main agent can react
             pushInbound({
                 sessionKey: parentSessionKey,
-                role: 'system',
+                role: 'user',
                 content: JSON.stringify({
                     type: 'subagent_question',
                     subagent_id: subagentId,
