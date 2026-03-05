@@ -1,18 +1,26 @@
-import { ReolinkClient } from 'reolink-nvr-api';
+﻿import { ReolinkClient } from 'reolink-nvr-api';
 import { getConfigValue } from '../config/config.js';
 import { logger } from './logger.js';
 
-// Singleton session — reused across all camera tool calls
-let sharedClient = null;
+// Reolink camera client
+let reolinkClient = null;
 
-// Close the shared session — called on process exit signals
+// Close the shared session on process exit to free the NVR slot
 const closeSharedSession = async () => {
-    if (!sharedClient) return;
-    logger.debug('Camera: closing shared session before exit');
+    // Exit early if the client was never initialized
+    if (!reolinkClient) {
+        return;
+    }
+
     try {
-        await sharedClient.close();
-    } catch { /* ignore errors during cleanup */ }
-    sharedClient = null;
+        await reolinkClient.close(); // Close the session to free up the NVR slot
+        logger.debug('Reolink camera client session closed');
+    } catch {
+        // Ignore errors during cleanup
+    }
+
+    // Reset the client variable
+    reolinkClient = null;
 };
 
 // Register signal handlers once to ensure cleanup on unexpected exits
@@ -23,8 +31,8 @@ for (const signal of ['SIGINT', 'SIGTERM', 'SIGBREAK']) {
     });
 }
 
-// Create and authenticate a new Reolink client from config
-const createNewClient = async () => {
+// Init the camera client
+const initCameraClient = async () => {
     // Read NVR credentials from config
     const host = getConfigValue('nvr.host');
     const username = getConfigValue('nvr.username');
@@ -35,46 +43,40 @@ const createNewClient = async () => {
         throw new Error('NVR not configured. Please add nvr.host, nvr.username, and nvr.password to your config.');
     }
 
-    // Create the client
-    const client = new ReolinkClient({
+    // Create the client (long mode = token-based auth, auto-refreshed)
+    reolinkClient = new ReolinkClient({
         host,
         username,
-        password,
-        mode: 'short',
-        https: true
+        password
     });
 
     try {
-        await client.login(); // Authenticate the client
+        await reolinkClient.login(); // Authenticate immediately to verify credentials and catch errors early
     } catch (error) {
-        // Catch specific error for maximum sessions reached
+        reolinkClient = null; // Reset so the next call retries
+
+        // Handle the specific cases
         if (error?.rspCode === -5) {
-            throw new Error('NVR rejected login: maximum sessions reached (-5). Previous sessions may still be open. Wait a few minutes for them to expire, or reboot the NVR.');
+            throw new Error('NVR rejected login: maximum sessions reached (-5). Wait a few minutes for stale sessions to expire, or reboot the NVR.');
         }
 
-        // For other errors, rethrow with a generic message
+        // Rethrow other errors
         throw error;
     }
 
     // Log successful authentication
     logger.debug('Reolink camera client authenticated');
-    return client;
+    return reolinkClient;
 };
 
-// Return the shared session, creating or reconnecting if needed
+// Return the shared session, creating it on first call
 export const getCameraClient = async () => {
-    if (!sharedClient) {
-        sharedClient = await createNewClient();
+    // Check if the client is already initialized
+    if (reolinkClient) {
+        return reolinkClient;
     }
-    return sharedClient;
-};
 
-// Call this if the session appears expired — forces a fresh login on next getCameraClient()
-export const resetCameraSession = async () => {
-    if (!sharedClient) return;
-    try {
-        await sharedClient.close();
-    } catch { /* ignore */ }
-    sharedClient = null;
-    logger.debug('Camera: session reset, will reconnect on next request');
+    // Create the client if it doesn't exist
+    const client = await initCameraClient();
+    return client;
 };
