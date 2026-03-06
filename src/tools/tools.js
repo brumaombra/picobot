@@ -1,6 +1,6 @@
 import { runTerminalCmdTool } from './general/shell.js';
 import { getDateTimeTool } from './general/datetime.js';
-import { sendFileTool } from './general/send-file.js';
+import { sendFileTool } from './general/send_file.js';
 import { subagentStartTool } from './general/subagent_start.js';
 import { subagentChatTool } from './general/subagent_chat.js';
 import { subagentListTool } from './general/subagent_list.js';

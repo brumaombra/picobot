@@ -1,6 +1,6 @@
 import { existsSync } from 'fs';
 import { resolve } from 'path';
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { sendOutbound } from '../../bus/message-bus.js';
 import { logger } from '../../utils/logger.js';
 
@@ -29,6 +29,11 @@ export const sendFileTool = {
         try {
             // Resolve the file path (handle both relative and absolute paths)
             const fullPath = resolve(context.workingDir, filePath);
+
+            // Block sending sensitive files containing secrets
+            if (!isSensitivePath({ fullPath, workDir: context.workingDir, action: 'read' })) {
+                return handleToolError({ message: 'Access denied: This file is marked as sensitive.' });
+            }
 
             // Check if file exists
             if (!existsSync(fullPath)) {

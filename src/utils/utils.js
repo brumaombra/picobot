@@ -1,6 +1,6 @@
-import { isAbsolute, relative, resolve, join } from 'path';
+import { isAbsolute, relative, resolve, join, normalize, basename } from 'path';
 import { homedir } from 'os';
-import { SHELL_BLOCKED_COMMANDS } from '../config.js';
+import { SHELL_BLOCKED_COMMANDS, CONFIG_PATH, SENSITIVE_FILE_NAMES, SENSITIVE_SUBSTRINGS } from '../config.js';
 import { logger } from './logger.js';
 
 // Expand ~ in paths and resolve relative paths
@@ -107,8 +107,38 @@ export const extractTextFromHtml = html => {
     return text;
 };
 
-// Check if a path is within the workspace directory
-export const checkPathForWrite = ({ fullPath, workDir }) => {
+// Centralized path access check for read/write operations
+export const isSensitivePath = ({ fullPath, workDir, action = 'write' }) => {
+    // If no path provided, treat as sensitive by default
+    if (!fullPath) {
+        return false;
+    }
+
+    // Normalize and check against known sensitive files and patterns
+    const normalizedPath = normalize(fullPath).toLowerCase();
+    const fileName = basename(normalizedPath);
+    const normalizedConfigPath = normalize(CONFIG_PATH).toLowerCase();
+
+    // Block access to sensitive files regardless of action
+    if (normalizedPath === normalizedConfigPath || SENSITIVE_FILE_NAMES.includes(fileName) || fileName.startsWith('.env')) {
+        return false;
+    }
+
+    // Read access only performs sensitive-path protection
+    if (action === 'read') {
+        return true;
+    }
+
+    // Unknown action types are denied by default
+    if (action !== 'write') {
+        return false;
+    }
+
+    // Write access requires a workspace path to enforce scope checks
+    if (!workDir) {
+        return false;
+    }
+
     // Resolve the relative path from the working directory
     const relativePath = relative(workDir, fullPath);
 
@@ -117,18 +147,93 @@ export const checkPathForWrite = ({ fullPath, workDir }) => {
         return false;
     }
 
-    // Allow all paths within workspace
+    // Allow all writable paths within workspace
     return true;
 };
 
 // Check if a shell command is safe to execute
 export const checkShellCommand = ({ command, workDir }) => {
+    // Normalize the command for consistent checking
+    const normalizedCommand = String(command).toLowerCase();
+
     // Check for blocked dangerous commands
-    if (SHELL_BLOCKED_COMMANDS.some(item => command.toLowerCase().includes(item))) {
+    if (SHELL_BLOCKED_COMMANDS.some(item => normalizedCommand.includes(item))) {
         return {
             safe: false,
             reason: 'Command blocked for safety reasons'
         };
+    }
+
+    // Block obvious secret exfiltration attempts from shell commands
+    if (SENSITIVE_SUBSTRINGS.some(item => normalizedCommand.includes(item))) {
+        return {
+            safe: false,
+            reason: 'Command blocked: access to sensitive secrets/config is not allowed'
+        };
+    }
+
+    // Block common environment variable dump patterns
+    if (/(^|[;&|]\s*)(?:printenv|env)(?:\s|$)|\b(?:get-childitem|gci|dir)\s+env:|\$env:/i.test(command)) {
+        return {
+            safe: false,
+            reason: 'Command blocked: environment variable dump is not allowed'
+        };
+    }
+
+    // Treat values as file paths when they look path-like or common secret file names
+    const isLikelyPath = value => {
+        const candidate = String(value || '').trim().replace(/^['"]|['"]$/g, '');
+        if (!candidate) return false;
+        return candidate.includes('/') || candidate.includes('\\') || candidate.startsWith('.') || candidate.endsWith('.json') || candidate.startsWith('.env');
+    };
+
+    // Scan all command tokens for sensitive path access attempts
+    const tokens = String(command).match(/"[^"]+"|'[^']+'|\S+/g) || [];
+    for (const token of tokens) {
+        // Clean token of surrounding quotes and trailing semicolons/pipes, then check if it looks like a path
+        const candidate = token.replace(/[;|]+$/, '').trim().replace(/^['"]|['"]$/g, '');
+        if (!isLikelyPath(candidate) || candidate.startsWith('-')) {
+            continue;
+        }
+
+        // Resolve the full path and check if it's sensitive
+        const fullPath = resolve(workDir, candidate);
+        if (!isSensitivePath({ fullPath, workDir, action: 'read' })) {
+            return {
+                safe: false,
+                reason: `Command attempts to access sensitive path: ${candidate}`
+            };
+        }
+    }
+
+    // Check for read/exfiltration commands that target files
+    const readPatterns = [
+        /(?:^|[;&|]\s*)(?:cat|type|more|less|head|tail)\s+([^;&|\r\n]+)/gi,
+        /(?:^|[;&|]\s*)(?:get-content|gc)\s+(?:-path\s+)?([^;&|\r\n]+)/gi
+    ];
+
+    // Block reading of sensitive files through shell commands
+    for (const pattern of readPatterns) {
+        let match;
+
+        // Use a loop to find all matches for the current pattern
+        while ((match = pattern.exec(command)) !== null) {
+            const filePath = match[1].trim();
+
+            // Skip obvious flags/options and non-path-like values
+            if (filePath.startsWith('-') || !isLikelyPath(filePath)) {
+                continue;
+            }
+
+            // Resolve the full path and check if it's sensitive
+            const fullPath = resolve(workDir, filePath.replace(/^['"]|['"]$/g, ''));
+            if (!isSensitivePath({ fullPath, workDir, action: 'read' })) {
+                return {
+                    safe: false,
+                    reason: `Command attempts to read sensitive path: ${filePath}`
+                };
+            }
+        }
     }
 
     // Check for unauthorized file writes
@@ -157,8 +262,16 @@ export const checkShellCommand = ({ command, workDir }) => {
             // Resolve the full path
             const fullPath = resolve(workDir, filePath);
 
+            // Block access to known sensitive paths
+            if (!isSensitivePath({ fullPath, workDir, action: 'read' })) {
+                return {
+                    safe: false,
+                    reason: `Command attempts to access sensitive path: ${filePath}`
+                };
+            }
+
             // Check if this path is allowed for writing
-            if (!checkPathForWrite({ fullPath, workDir })) {
+            if (!isSensitivePath({ fullPath, workDir, action: 'write' })) {
                 return {
                     safe: false,
                     reason: `Command attempts to write to unauthorized path: ${filePath}`
@@ -176,7 +289,7 @@ export const generateUniqueId = (prefix = 'msg') => {
     return `${prefix}_${Date.now()}`;
 };
 
-// Pause execution for the given number of milliseconds.
+// Pause execution for the given number of milliseconds
 export const delay = ms => {
     return new Promise(resolve => setTimeout(resolve, ms));
 };
@@ -374,8 +487,9 @@ export const reolinkDateToTimestampString = reolinkDate => {
     return `${reolinkDate.year}-${pad(reolinkDate.mon)}-${pad(reolinkDate.day)}T${pad(reolinkDate.hour)}:${pad(reolinkDate.min)}:${pad(reolinkDate.sec)}`;
 };
 
-// Validate a start/end datetime range using ISO-like local datetime strings.
+// Validate a start/end datetime range using ISO-like local datetime strings
 export const validateCameraInputDates = ({ startTime, endTime }) => {
+    // Convert input strings to Date objects
     const start = new Date(startTime);
     const end = new Date(endTime);
 
@@ -394,6 +508,7 @@ export const validateCameraInputDates = ({ startTime, endTime }) => {
         return { success: false, message: 'startTime must be before endTime.' };
     }
 
+    // Return success with parsed Date objects
     return { success: true, start, end };
 };
 

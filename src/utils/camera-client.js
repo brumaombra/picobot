@@ -1,4 +1,4 @@
-﻿import { ReolinkClient } from 'reolink-nvr-api';
+import { ReolinkClient } from 'reolink-nvr-api';
 import { getConfigValue } from '../config/config.js';
 import { logger } from './logger.js';
 import { timestampStringToReolinkDate, reolinkDateToTimestampString, formatTime } from './utils.js';
@@ -27,7 +27,7 @@ export const getCameraClient = async () => {
         throw new Error('NVR not configured. Please add nvr.host, nvr.username, and nvr.password to your config.');
     }
 
-    // Short mode: credentials go in the query string on every request.
+    // Short mode: credentials go in the query string on every request
     reolinkClient = new ReolinkClient({ host, username, password, mode: 'short' });
     logger.debug('Reolink camera client created (short mode)');
 
@@ -124,7 +124,7 @@ export const downloadNvrRecordingToPath = async ({ channel = 0, startTime, endTi
     const outputParam = encodeURIComponent(outputName);
     const downloadUrl = `https://${client.host}/cgi-bin/api.cgi?cmd=Download&source=${sourceParam}&output=${outputParam}&user=${user}&password=${pass}`;
 
-    // Track end-to-end file transfer time for user-facing diagnostics.
+    // Track end-to-end file transfer time for user-facing diagnostics
     const downloadStartedAt = Date.now();
 
     // Download the file using undici

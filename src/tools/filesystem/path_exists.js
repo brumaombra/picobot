@@ -1,6 +1,6 @@
 import { stat, access } from 'fs/promises';
 import { resolve, isAbsolute, normalize } from 'path';
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 
 // Path exists tool
@@ -24,6 +24,11 @@ export const pathExistsTool = {
         const path = args.path;
         const workDir = context?.workingDir || process.cwd();
         const fullPath = normalize(isAbsolute(path) ? path : resolve(workDir, path));
+
+        // Block probing sensitive files
+        if (!isSensitivePath({ fullPath, workDir, action: 'read' })) {
+            return handleToolError({ message: 'Access denied: This path is marked as sensitive.' });
+        }
 
         try {
             // Try to access the path

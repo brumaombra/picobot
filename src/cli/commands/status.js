@@ -37,6 +37,14 @@ export const registerStatusCommand = ({ program }) => {
                 brave: {
                     ...config.brave,
                     apiKey: config.brave?.apiKey ? '***' : '(not set)'
+                },
+                googleAi: {
+                    ...config.googleAi,
+                    apiKey: config.googleAi?.apiKey ? '***' : '(not set)'
+                },
+                nvr: {
+                    ...config.nvr,
+                    password: config.nvr?.password ? '***' : '(not set)'
                 }
             };
 

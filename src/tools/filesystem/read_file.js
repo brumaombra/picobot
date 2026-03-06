@@ -1,7 +1,7 @@
 import { readFile } from 'fs/promises';
 import { resolve, isAbsolute, normalize } from 'path';
 import { access } from 'fs/promises';
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 
 // Read file tool
@@ -35,6 +35,11 @@ export const readFileTool = {
         const lineEnd = args.line_end;
         const workDir = context?.workingDir || process.cwd();
         const fullPath = normalize(isAbsolute(path) ? path : resolve(workDir, path));
+
+        // Block read access to sensitive files containing secrets
+        if (!isSensitivePath({ fullPath, workDir, action: 'read' })) {
+            return handleToolError({ message: 'Access denied: This file is marked as sensitive.' });
+        }
 
         try {
             // Check if file exists using async access instead of sync existsSync

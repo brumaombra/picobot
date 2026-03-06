@@ -147,30 +147,46 @@ Everything lives in `~/.picobot/config.json`:
 {
   "workspace": "~/.picobot/workspace",
   "telegram": {
-    "token": "your-bot-token",
+    "token": "",
     "allowedUsers": []
   },
   "openRouter": {
-    "apiKey": "sk-or-..."
+    "apiKey": ""
   },
   "agent": {
     "model": "x-ai/grok-4.1-fast"
   },
   "brave": {
-    "apiKey": "BSA..."
+    "apiKey": ""
   },
   "googleAi": {
-    "apiKey": "AIza..."
+    "apiKey": ""
   },
   "nvr": {
-    "host": "192.168.1.100",
-    "username": "admin",
-    "password": "your-nvr-password"
+    "host": "",
+    "username": "",
+    "password": ""
   }
 }
 ```
 
 > 💡 **Tip:** Leave `allowedUsers` empty to let anyone use your bot. Add user IDs to restrict access.
+
+### 🔒 Secret Overrides (Recommended)
+
+You can keep secrets out of `config.json` and provide them through environment variables:
+
+```powershell
+$env:TELEGRAM_BOT_TOKEN="..."
+$env:OPENROUTER_API_KEY="..."
+$env:BRAVE_API_KEY="..."
+$env:GOOGLE_AI_API_KEY="..."
+$env:NVR_HOST="..."
+$env:NVR_USERNAME="..."
+$env:NVR_PASSWORD="..."
+```
+
+When an env var is present, it overrides the corresponding value in `config.json`.
 
 ### 🔐 Google Setup (Optional)
 

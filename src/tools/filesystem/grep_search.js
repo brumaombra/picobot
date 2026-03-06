@@ -1,6 +1,6 @@
 import { readFile, readdir, stat, access } from 'fs/promises';
 import { join, resolve, isAbsolute, normalize } from 'path';
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 
 // Regex/literal content search across files
@@ -29,6 +29,11 @@ export const grepSearchTool = {
         const path = args.path || '.';
         const workDir = context?.workingDir || process.cwd();
         const fullPath = normalize(isAbsolute(path) ? path : resolve(workDir, path));
+
+        // Block searching directly inside sensitive files
+        if (!isSensitivePath({ fullPath, workDir, action: 'read' })) {
+            return handleToolError({ message: 'Access denied: This path is marked as sensitive.' });
+        }
 
         // Convert the search pattern into a regex, treating it as a literal string if it's not a valid regex
         let regex;
@@ -62,6 +67,11 @@ export const grepSearchTool = {
 
         // Helper function to recursively scan directories and files
         const scanPath = async (targetPath, baseRelative = '') => {
+            // Skip sensitive files/directories to prevent accidental secret disclosure
+            if (!isSensitivePath({ fullPath: targetPath, workDir, action: 'read' })) {
+                return;
+            }
+
             // Check if the path exists
             const targetStats = await stat(targetPath);
 

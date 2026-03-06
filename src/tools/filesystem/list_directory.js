@@ -1,6 +1,6 @@
 import { readdir, stat, access } from 'fs/promises';
 import { join, resolve, isAbsolute, normalize } from 'path';
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 
 // List directory tool
@@ -30,6 +30,11 @@ export const listDirectoryTool = {
         const workDir = context?.workingDir || process.cwd();
         const fullPath = normalize(isAbsolute(path) ? path : resolve(workDir, path));
 
+        // Block listing sensitive directories/files directly
+        if (!isSensitivePath({ fullPath, workDir, action: 'read' })) {
+            return handleToolError({ message: 'Access denied: This path is marked as sensitive.' });
+        }
+
         try {
             // Check if directory exists
             try {
@@ -47,6 +52,11 @@ export const listDirectoryTool = {
                 for (const entry of entries) {
                     const entryPath = normalize(join(dirPath, entry));
                     const relativePath = basePath ? join(basePath, entry) : entry;
+
+                    // Hide sensitive entries from directory listings
+                    if (!isSensitivePath({ fullPath: entryPath, workDir, action: 'read' })) {
+                        continue;
+                    }
 
                     try {
                         // Get stats to determine if it's a file or directory and gather details

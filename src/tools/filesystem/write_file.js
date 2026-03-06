@@ -1,6 +1,6 @@
 import { writeFile, mkdir } from 'fs/promises';
 import { dirname, resolve, isAbsolute, normalize } from 'path';
-import { checkPathForWrite, handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 
 // Write file tool
@@ -31,7 +31,7 @@ export const writeFileTool = {
         const fullPath = normalize(isAbsolute(path) ? path : resolve(workDir, path));
 
         // Check if path is allowed for writing
-        if (!checkPathForWrite({ fullPath, workDir })) {
+        if (!isSensitivePath({ fullPath, workDir, action: 'write' })) {
             return handleToolError({ message: 'Access denied: You can only write to the workspace directory' });
         }
 
