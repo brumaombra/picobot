@@ -344,14 +344,15 @@ export const formatLocalDateTimeString = date => {
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${milliseconds}`;
 };
 
-// Format a Reolink NVR time object { year, mon, day, hour, min, sec } as a readable string (e.g. "2026-03-05 06:45:48")
-export const formatReolinkTime = t => {
-    const pad = n => String(n).padStart(2, '0');
-    return `${t.year}-${pad(t.mon)}-${pad(t.day)} ${pad(t.hour)}:${pad(t.min)}:${pad(t.sec)}`;
-};
+// Convert a local timestamp string (e.g. "2026-03-05 06:45:48" or "2026-03-05T06:45:48") to Reolink date object
+export const timestampStringToReolinkDate = timestamp => {
+    // Parse the timestamp string into a Date object
+    const date = new Date(String(timestamp).replace(' ', 'T'));
+    if (isNaN(date.getTime())) {
+        throw new Error(`Invalid timestamp string: "${timestamp}"`);
+    }
 
-// Convert a JS Date to a Reolink NVR time object { year, mon, day, hour, min, sec }
-export const formatReolinkDate = date => {
+    // Convert the Date object into Reolink's date format
     return {
         year: date.getFullYear(),
         mon: date.getMonth() + 1,
@@ -360,6 +361,35 @@ export const formatReolinkDate = date => {
         min: date.getMinutes(),
         sec: date.getSeconds()
     };
+};
+
+// Convert a Reolink date object { year, mon, day, hour, min, sec } to local timestamp string (e.g. "2025-01-15T20:00:00")
+export const reolinkDateToTimestampString = reolinkDate => {
+    const pad = number => String(number).padStart(2, '0');
+    return `${reolinkDate.year}-${pad(reolinkDate.mon)}-${pad(reolinkDate.day)}T${pad(reolinkDate.hour)}:${pad(reolinkDate.min)}:${pad(reolinkDate.sec)}`;
+};
+
+// Validate a start/end datetime range using ISO-like local datetime strings.
+export const validateCameraInputDates = ({ startTime, endTime }) => {
+    const start = new Date(startTime);
+    const end = new Date(endTime);
+
+    // Validate the start time
+    if (isNaN(start.getTime())) {
+        return { success: false, message: `Invalid startTime: "${startTime}". Must be a valid ISO 8601 datetime string.` };
+    }
+
+    // Validate the end time
+    if (isNaN(end.getTime())) {
+        return { success: false, message: `Invalid endTime: "${endTime}". Must be a valid ISO 8601 datetime string.` };
+    }
+
+    // Ensure start time is before end time
+    if (start >= end) {
+        return { success: false, message: 'startTime must be before endTime.' };
+    }
+
+    return { success: true, start, end };
 };
 
 // Handle tool execution errors with standardized format
