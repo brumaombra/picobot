@@ -38,3 +38,4 @@ Agent behavior is **entirely driven by markdown prompt files** — no behavior i
 1. Always follow the project conventions defined in the available skills — do not invent new patterns.
 2. **Before executing any action that matches the intent of an available skill, ALWAYS read that skill file in full first.** Do not rely on memory or assumptions — read the file every time, even for tasks that seem familiar.
 3. Never break the security non-negotiables (auth checks, Zod validation, ownership verification, no direct Knex in API handlers).
+4. NEVER DELETE ANY ALREADY EXISTING COMMENTS.

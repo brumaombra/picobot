@@ -22,7 +22,10 @@ export const cameraGetInfoTool = {
             const { device, channels } = await getNvrDeviceInfo();
 
             // Return device and channel information
-            return handleToolResponse({ device, channels });
+            return handleToolResponse({
+                device,
+                channels
+            });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to get NVR device info' });
         }

@@ -176,6 +176,11 @@ export const generateUniqueId = (prefix = 'msg') => {
     return `${prefix}_${Date.now()}`;
 };
 
+// Pause execution for the given number of milliseconds.
+export const delay = ms => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
+
 // Parse a session key into its channel and chatId components
 export const parseSessionKey = sessionKey => {
     const separatorIndex = sessionKey.indexOf('_');
