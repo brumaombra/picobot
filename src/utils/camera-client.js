@@ -42,7 +42,7 @@ export const resetCameraSession = async () => {
 };
 
 // Search recordings on the NVR with Reolink Search payload format
-export const searchNvrRecordings = async ({ channel = 0, startTime, endTime, streamType = 'main', onlyStatus = 0 }) => {
+export const searchNvrRecordings = async ({ channel = 0, startTime, endTime, streamType = 'sub', onlyStatus = 0 }) => {
     const client = await getCameraClient();
     const startReolinkTime = timestampStringToReolinkDate(startTime);
     const endReolinkTime = timestampStringToReolinkDate(endTime);
@@ -87,7 +87,7 @@ export const searchNvrRecordings = async ({ channel = 0, startTime, endTime, str
 };
 
 // Download an NVR recording to disk by time window (prepare + binary download)
-export const downloadNvrRecordingToPath = async ({ channel = 0, startTime, endTime, streamType = 'main', iLogicChannel = 0, outputName, outputPath }) => {
+export const downloadNvrRecordingToPath = async ({ channel = 0, startTime, endTime, streamType = 'sub', iLogicChannel = 0, outputName, outputPath }) => {
     const client = await getCameraClient();
     const startReolinkTime = timestampStringToReolinkDate(startTime);
     const endReolinkTime = timestampStringToReolinkDate(endTime);
@@ -124,6 +124,9 @@ export const downloadNvrRecordingToPath = async ({ channel = 0, startTime, endTi
     const outputParam = encodeURIComponent(outputName);
     const downloadUrl = `https://${client.host}/cgi-bin/api.cgi?cmd=Download&source=${sourceParam}&output=${outputParam}&user=${user}&password=${pass}`;
 
+    // Track end-to-end file transfer time for user-facing diagnostics.
+    const downloadStartedAt = Date.now();
+
     // Download the file using undici
     const dispatcher = new UndiciAgent({ connect: { rejectUnauthorized: false } });
     const response = await undiciFetch(downloadUrl, { method: 'GET', dispatcher });
@@ -136,9 +139,14 @@ export const downloadNvrRecordingToPath = async ({ channel = 0, startTime, endTi
     // Stream the response body to the output file
     await pipeline(Readable.fromWeb(response.body), createWriteStream(outputPath));
 
+    // Calculate the total download time
+    const downloadTimeMs = Date.now() - downloadStartedAt;
+
     // Return the path to the saved file and some debug info
     return {
         outputPath,
+        downloadTimeMs,
+        downloadTime: formatTime(downloadTimeMs),
         downloadUrl,
         nvrFileName,
         nvrResult,

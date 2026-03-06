@@ -51,7 +51,7 @@ export const cameraDownloadRecordingTool = {
             const outputPath = join(cameraDir, outputName);
 
             // Prepare and download the NVR recording in one helper call
-            const { nvrFileName } = await downloadNvrRecordingToPath({
+            const { nvrFileName, downloadTime } = await downloadNvrRecordingToPath({
                 channel,
                 startTime,
                 endTime,
@@ -60,8 +60,15 @@ export const cameraDownloadRecordingTool = {
                 outputPath
             });
 
+            // Log the saved file
             logger.debug(`Camera: recording saved to ${outputPath}`);
-            return handleToolResponse({ outputPath, nvrFileName, channel });
+
+            // Return the file path and some debug info for the agent to send
+            return handleToolResponse({
+                outputPath,
+                nvrFileName,
+                downloadTime
+            });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to download recording' });
         }
