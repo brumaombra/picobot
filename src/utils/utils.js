@@ -1,6 +1,6 @@
 import { isAbsolute, relative, resolve, join, normalize, basename } from 'path';
 import { homedir } from 'os';
-import { SHELL_BLOCKED_COMMANDS, CONFIG_PATH, SENSITIVE_FILE_NAMES, SENSITIVE_SUBSTRINGS } from '../config.js';
+import { CONFIG_PATH, SENSITIVE_FILE_NAMES } from '../config.js';
 import { logger } from './logger.js';
 
 // Expand ~ in paths and resolve relative paths
@@ -151,139 +151,6 @@ export const isSensitivePath = ({ fullPath, workDir, action = 'write' }) => {
     return true;
 };
 
-// Check if a shell command is safe to execute
-export const checkShellCommand = ({ command, workDir }) => {
-    // Normalize the command for consistent checking
-    const normalizedCommand = String(command).toLowerCase();
-
-    // Check for blocked dangerous commands
-    if (SHELL_BLOCKED_COMMANDS.some(item => normalizedCommand.includes(item))) {
-        return {
-            safe: false,
-            reason: 'Command blocked for safety reasons'
-        };
-    }
-
-    // Block obvious secret exfiltration attempts from shell commands
-    if (SENSITIVE_SUBSTRINGS.some(item => normalizedCommand.includes(item))) {
-        return {
-            safe: false,
-            reason: 'Command blocked: access to sensitive secrets/config is not allowed'
-        };
-    }
-
-    // Block common environment variable dump patterns
-    if (/(^|[;&|]\s*)(?:printenv|env)(?:\s|$)|\b(?:get-childitem|gci|dir)\s+env:|\$env:/i.test(command)) {
-        return {
-            safe: false,
-            reason: 'Command blocked: environment variable dump is not allowed'
-        };
-    }
-
-    // Treat values as file paths when they look path-like or common secret file names
-    const isLikelyPath = value => {
-        const candidate = String(value || '').trim().replace(/^['"]|['"]$/g, '');
-        if (!candidate) return false;
-        return candidate.includes('/') || candidate.includes('\\') || candidate.startsWith('.') || candidate.endsWith('.json') || candidate.startsWith('.env');
-    };
-
-    // Scan all command tokens for sensitive path access attempts
-    const tokens = String(command).match(/"[^"]+"|'[^']+'|\S+/g) || [];
-    for (const token of tokens) {
-        // Clean token of surrounding quotes and trailing semicolons/pipes, then check if it looks like a path
-        const candidate = token.replace(/[;|]+$/, '').trim().replace(/^['"]|['"]$/g, '');
-        if (!isLikelyPath(candidate) || candidate.startsWith('-')) {
-            continue;
-        }
-
-        // Resolve the full path and check if it's sensitive
-        const fullPath = resolve(workDir, candidate);
-        if (!isSensitivePath({ fullPath, workDir, action: 'read' })) {
-            return {
-                safe: false,
-                reason: `Command attempts to access sensitive path: ${candidate}`
-            };
-        }
-    }
-
-    // Check for read/exfiltration commands that target files
-    const readPatterns = [
-        /(?:^|[;&|]\s*)(?:cat|type|more|less|head|tail)\s+([^;&|\r\n]+)/gi,
-        /(?:^|[;&|]\s*)(?:get-content|gc)\s+(?:-path\s+)?([^;&|\r\n]+)/gi
-    ];
-
-    // Block reading of sensitive files through shell commands
-    for (const pattern of readPatterns) {
-        let match;
-
-        // Use a loop to find all matches for the current pattern
-        while ((match = pattern.exec(command)) !== null) {
-            const filePath = match[1].trim();
-
-            // Skip obvious flags/options and non-path-like values
-            if (filePath.startsWith('-') || !isLikelyPath(filePath)) {
-                continue;
-            }
-
-            // Resolve the full path and check if it's sensitive
-            const fullPath = resolve(workDir, filePath.replace(/^['"]|['"]$/g, ''));
-            if (!isSensitivePath({ fullPath, workDir, action: 'read' })) {
-                return {
-                    safe: false,
-                    reason: `Command attempts to read sensitive path: ${filePath}`
-                };
-            }
-        }
-    }
-
-    // Check for unauthorized file writes
-    const writePatterns = [
-        /(?:^|[;&|]\s*)(?:\w+\s+)*([^\s>]+)\s*[>&]*>/g, // Redirections: >, >>, 2>, &>
-        /(?:^|[;&|]\s*)(mkdir|touch|cp|mv|ln)\s+([^;&|]+)/g, // mkdir, touch, cp, mv, ln
-        /(?:^|[;&|]\s*)(echo|cat|printf)\s+([^;&|]*)\s*[>&]*>/g, // echo/cat with redirection
-        /(?:^|[;&|]\s*)dd\s+.*of=([^;&|\s]+)/g, // dd command
-        /(?:^|[;&|]\s*)tee\s+([^;&|]+)/g // tee command
-    ];
-
-    // Check each pattern for potential file writes
-    for (const pattern of writePatterns) {
-        let match;
-
-        // Use a loop to find all matches for the current pattern
-        while ((match = pattern.exec(command)) !== null) {
-            // Extract the file path (usually the last capture group)
-            const filePath = match[match.length - 1].trim();
-
-            // Skip if it's not a file path (e.g., a flag or option)
-            if (filePath.startsWith('-') || (!filePath.includes('/') && !filePath.includes('\\'))) {
-                continue;
-            }
-
-            // Resolve the full path
-            const fullPath = resolve(workDir, filePath);
-
-            // Block access to known sensitive paths
-            if (!isSensitivePath({ fullPath, workDir, action: 'read' })) {
-                return {
-                    safe: false,
-                    reason: `Command attempts to access sensitive path: ${filePath}`
-                };
-            }
-
-            // Check if this path is allowed for writing
-            if (!isSensitivePath({ fullPath, workDir, action: 'write' })) {
-                return {
-                    safe: false,
-                    reason: `Command attempts to write to unauthorized path: ${filePath}`
-                };
-            }
-        }
-    }
-
-    // If no issues found, command is considered safe
-    return { safe: true };
-};
-
 // Generate a unique ID
 export const generateUniqueId = (prefix = 'msg') => {
     return `${prefix}_${Date.now()}`;
@@ -381,6 +248,56 @@ export const decodeHtmlEntities = text => {
         .replace(/&quot;/g, '"')
         .replace(/&#39;/g, "'")
         .replace(/&nbsp;/g, ' ');
+};
+
+// Tokenize an argument string while preserving quoted segments
+export const tokenizeArgs = text => {
+    const input = String(text || '');
+    const tokens = [];
+    let current = '';
+    let quote = null;
+
+    // Scan each character and split on unquoted whitespace
+    for (let i = 0; i < input.length; i++) {
+        const ch = input[i];
+
+        // Enter quote mode when encountering opening quotes
+        if (!quote && (ch === '"' || ch === '\'')) {
+            quote = ch;
+            continue;
+        }
+
+        // Exit quote mode when the same quote type closes
+        if (quote && ch === quote) {
+            quote = null;
+            continue;
+        }
+
+        // Whitespace outside quotes delimits tokens
+        if (!quote && /\s/.test(ch)) {
+            if (current) {
+                tokens.push(current);
+                current = '';
+            }
+            continue;
+        }
+
+        // Accumulate characters into the current token
+        current += ch;
+    }
+
+    // Reject malformed input with unclosed quotes
+    if (quote) {
+        throw new Error('Invalid args: unclosed quote.');
+    }
+
+    // Push the trailing token if present
+    if (current) {
+        tokens.push(current);
+    }
+
+    // Return the array of tokens
+    return tokens;
 };
 
 // Parse YAML-like frontmatter from markdown content

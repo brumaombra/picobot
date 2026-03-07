@@ -63,9 +63,7 @@ export const TELEGRAM_WELCOME_MESSAGE = '👋 Hello! I\'m Picobot, your AI assis
 export const SHELL_MAX_OUTPUT_LENGTH = 10000;
 export const SHELL_DEFAULT_TIMEOUT_MS = 60000; // 60 seconds
 export const SHELL_MAX_BUFFER = 1024 * 1024; // 1 MB
-export const SHELL_BLOCKED_COMMANDS = ['rm -rf /', 'format', 'mkfs', ':(){:|:&};:'];
 export const SENSITIVE_FILE_NAMES = ['config.json', 'credentials.json', 'token.json'];
-export const SENSITIVE_SUBSTRINGS = ['.env', 'openrouter_api_key', 'google_ai_api_key', 'nvr_password'];
 
 /**************** Secret env overrides *****************/
 export const SECRET_ENV_OVERRIDES = {

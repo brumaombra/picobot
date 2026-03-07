@@ -16,8 +16,14 @@ export const executeTool = async (toolCall, context, allowedToolNames) => {
     const toolName = toolCall?.function?.name;
     const id = toolCall?.id;
 
+    // Fail closed when tool authorization context is missing or malformed
+    if (!(allowedToolNames instanceof Set)) {
+        logger.error(`Tool authorization context missing while attempting tool call: ${toolName || '(unknown)'}`);
+        return toolMsg(id, 'Error: Tool execution is not authorized in this context.');
+    }
+
     // Enforce allowed tools (prevents executing tools that were not exposed to the model)
-    if (allowedToolNames && toolName && !allowedToolNames.has(toolName)) {
+    if (toolName && !allowedToolNames.has(toolName)) {
         logger.warn(`Disallowed tool call attempted: ${toolName}`);
         return toolMsg(id, `Error: Tool "${toolName}" is not available. Only tools listed in your allowed_tools can be used.`);
     }
