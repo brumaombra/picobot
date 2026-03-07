@@ -50,6 +50,7 @@ import { cameraSnapshotTool } from './camera/camera_snapshot.js';
 import { cameraSearchRecordingsTool } from './camera/camera_search_recordings.js';
 import { cameraDownloadRecordingTool } from './camera/camera_download_recording.js';
 import { cameraAnalyzeVideoTool } from './camera/camera_analyze_video.js';
+import { cameraAnalyzeImageTool } from './camera/camera_analyze_image.js';
 
 // Registry of all available tools (flat map: name → tool)
 const TOOLS = new Map([
@@ -127,7 +128,8 @@ const TOOLS = new Map([
     [cameraSnapshotTool.name, cameraSnapshotTool],
     [cameraSearchRecordingsTool.name, cameraSearchRecordingsTool],
     [cameraDownloadRecordingTool.name, cameraDownloadRecordingTool],
-    [cameraAnalyzeVideoTool.name, cameraAnalyzeVideoTool]
+    [cameraAnalyzeVideoTool.name, cameraAnalyzeVideoTool],
+    [cameraAnalyzeImageTool.name, cameraAnalyzeImageTool]
 ]);
 
 // Get a tool by name

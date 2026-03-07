@@ -300,6 +300,25 @@ export const tokenizeArgs = text => {
     return tokens;
 };
 
+// Resolve a basic image MIME type from local file extension
+export const getImageMimeTypeFromPath = filePath => {
+    const lower = String(filePath || '').toLowerCase();
+
+    // Check common image extensions
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
+        return 'image/jpeg';
+    } else if (lower.endsWith('.png')) {
+        return 'image/png';
+    } else if (lower.endsWith('.webp')) {
+        return 'image/webp';
+    } else if (lower.endsWith('.gif')) {
+        return 'image/gif';
+    }
+
+    // Unsupported image type
+    throw new Error('Unsupported image type. Supported extensions: .jpg, .jpeg, .png, .webp, .gif');
+};
+
 // Parse YAML-like frontmatter from markdown content
 export const parseFrontmatter = content => {
     // Match frontmatter block at the start of the content

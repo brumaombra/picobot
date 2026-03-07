@@ -25,7 +25,7 @@ Think of it as a tiny manager with a staff of specialists, running on whichever 
 - 🧠 **Multi-Model** — Swap between AI models on the fly via OpenRouter
 - 🤖 **Subagent Architecture** — Specialized agents for every task, orchestrated by a central brain
 - 📷 **NVR Camera Ops** — Get camera/NVR status, take snapshots, search recordings, and download clips
-- 🎥 **AI Video Analysis** — Analyze downloaded camera footage with Google AI using natural-language prompts
+- 🎥🖼️ **AI Video/Image Analysis** — Analyze downloaded camera footage and local/snapshot images with Google AI using natural-language prompts
 - 🎭 **Fully Customizable** — Personality, behavior, and prompts are all yours to tweak
 - ✨ **And much more!** — Picobot includes many additional capabilities across email, Drive, calendar, coding, web automation, and custom skill workflows!
 
@@ -39,7 +39,7 @@ Picobot uses an **orchestrator + subagents** architecture. You talk to one main 
 | 📅 **Calendar Manager** | Create, update, and manage Google Calendar events |
 | 💾 **Drive Manager** | List, read, create, and share Google Drive files |
 | 🖼️ **Slides Manager** | Create, edit, and manage Google Slides presentations |
-| 📷 **Security Camera Manager** | Get Reolink NVR info, capture snapshots, search/download recordings, and analyze footage |
+| 📷 **Security Camera Manager** | Get Reolink NVR info, capture snapshots, search/download recordings, and analyze video/image content |
 | 💻 **Code Implementer** | Write, refactor, and test code with execution tools |
 | 🌐 **Web Researcher** | Search the web and synthesize information |
 | 🧭 **Web Navigator** | Control a browser to interact with pages and fill forms |
@@ -121,7 +121,7 @@ The onboarding wizard will walk you through everything. It's friendly, we promis
 | Telegram Bot Token | [@BotFather](https://t.me/BotFather) |
 | OpenRouter API Key | [openrouter.ai](https://openrouter.ai) |
 | Google credentials | [Cloud Console](https://console.cloud.google.com) *(optional)* |
-| Google AI API Key | [Google AI Studio](https://aistudio.google.com/app/apikey) *(optional, for video analysis)* |
+| Google AI API Key | [Google AI Studio](https://aistudio.google.com/app/apikey) *(optional, for video/image analysis)* |
 | Brave Search API | [brave.com/search/api](https://brave.com/search/api) *(optional)* |
 | Reolink NVR host + credentials | Your NVR admin settings *(optional, for camera tools)* |
 

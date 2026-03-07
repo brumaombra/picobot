@@ -1,10 +1,11 @@
 import { GoogleAIFileManager } from '@google/generative-ai/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { readFile } from 'fs/promises';
 import { getConfigValue } from '../config/config.js';
 import { logger } from './logger.js';
-import { delay } from './utils.js';
+import { delay, getImageMimeTypeFromPath } from './utils.js';
 
-const VIDEO_MODEL = 'gemini-3.1-flash-lite-preview'; // Model used
+const AI_MODEL = 'gemini-3.1-flash-lite-preview'; // Model used
 const POLL_INTERVAL_MS = 5000; // Check status every 5 seconds
 const MAX_POLL_ATTEMPTS = 24; // Wait up to 2 minutes (24 attempts * 5 seconds)
 
@@ -65,11 +66,11 @@ export const uploadVideoToGoogleAi = async ({ filePath, apiKey }) => {
 // Run Gemini analysis against an already-uploaded Google File API video
 export const analyzeUploadedGoogleAiVideo = async ({ uploadedFile, prompt, apiKey }) => {
     // Log the successful processing
-    logger.debug(`Camera: video is ACTIVE, running analysis with model "${VIDEO_MODEL}"`);
+    logger.debug(`Camera: video is ACTIVE, running analysis with model "${AI_MODEL}"`);
 
     // Step 3: Run Gemini analysis with the uploaded file reference
     const genAI = new GoogleGenerativeAI(apiKey);
-    const gemini = genAI.getGenerativeModel({ model: VIDEO_MODEL });
+    const gemini = genAI.getGenerativeModel({ model: AI_MODEL });
 
     // Run the analysis prompt against the uploaded video file
     const result = await gemini.generateContent([{
@@ -86,7 +87,7 @@ export const analyzeUploadedGoogleAiVideo = async ({ uploadedFile, prompt, apiKe
     logger.debug(`Camera: video analysis complete (${analysis.length} chars)`);
 
     // Return model output payload
-    return { analysis, model: VIDEO_MODEL };
+    return analysis;
 };
 
 // Best-effort cleanup for uploaded temporary file
@@ -120,14 +121,48 @@ export const analyzeVideoWithGoogleAi = async ({ filePath, prompt }) => {
         uploadedFile = upload.uploadedFile;
 
         // Analyze the processed uploaded file with Gemini
-        const analysisResult = await analyzeUploadedGoogleAiVideo({ uploadedFile, prompt, apiKey });
+        const analysis = await analyzeUploadedGoogleAiVideo({ uploadedFile, prompt, apiKey });
 
         // Return analysis plus local source file path
         return {
-            ...analysisResult,
+            analysis,
             filePath
         };
     } finally {
         await deleteUploadedGoogleAiFile({ fileManager, uploadedFile }); // Always attempt to clean up remote uploaded file
     }
+};
+
+// Analyze a local image file with Google AI and return the model output
+export const analyzeImageWithGoogleAi = async ({ filePath, prompt }) => {
+    // Validate API key before starting any remote operation
+    const apiKey = getGoogleAiApiKey();
+
+    // Read the image file and infer its MIME type
+    const imageBytes = await readFile(filePath);
+    const mimeType = getImageMimeTypeFromPath(filePath);
+
+    // Create the Google Generative AI client
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const gemini = genAI.getGenerativeModel({ model: AI_MODEL });
+
+    // Run the analysis prompt against the image file (base64-encoded inline data)
+    const result = await gemini.generateContent([{
+        inlineData: {
+            mimeType,
+            data: imageBytes.toString('base64')
+        }
+    }, {
+        text: prompt
+    }]);
+
+    // Extract the analysis text from the response
+    const analysis = result.response.text();
+    logger.debug(`Camera: image analysis complete (${analysis.length} chars)`);
+
+    // Return model output payload
+    return {
+        analysis,
+        filePath
+    };
 };
