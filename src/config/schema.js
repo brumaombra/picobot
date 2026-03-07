@@ -4,7 +4,7 @@ import { OPENROUTER_MODELS, DEFAULT_WORKSPACE_PATH } from '../config.js';
 // Telegram configuration
 export const TelegramConfigSchema = z.object({
     token: z.string().min(1, 'Telegram bot token is required'),
-    allowedUsers: z.array(z.string()).default([])
+    allowedUsers: z.array(z.string().trim().min(1, 'Allowed user entries cannot be empty')).min(1, 'At least one Telegram allowed user is required')
 });
 
 // OpenRouter provider configuration

@@ -2,9 +2,10 @@ import { logger } from '../../utils/logger.js';
 
 // Authorization middleware
 export const authMiddleware = async (context, next, allowedUsers) => {
-    // If no allowed users configured, allow all
+    // If allowlist is missing or empty, fail closed
     if (!allowedUsers?.length) {
-        await next();
+        logger.error('Telegram allowlist is empty. Access denied until at least one allowed user is configured.');
+        await context.reply('⛔ Bot is not configured correctly. An admin must set at least one allowed Telegram user.');
         return;
     }
 

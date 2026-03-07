@@ -170,7 +170,7 @@ Everything lives in `~/.picobot/config.json`:
 }
 ```
 
-> 💡 **Tip:** Leave `allowedUsers` empty to let anyone use your bot. Add user IDs to restrict access.
+> 🔐 **Security:** `allowedUsers` is required and must include at least one Telegram user ID or `@username`.
 
 ### 🔒 Secret Overrides (Recommended)
 

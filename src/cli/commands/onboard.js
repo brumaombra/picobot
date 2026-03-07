@@ -84,14 +84,24 @@ export const registerOnboardCommand = ({ program }) => {
 
 				/************** Prompt for allowed users **************/
 
-				const allowedUsersInput = await question('\nEnter allowed Telegram user IDs (comma-separated, or leave empty for none): ');
-				if (allowedUsersInput.trim()) {
-					const allowedUsers = allowedUsersInput.split(',');
-					config.telegram.allowedUsers = allowedUsers;
-					success(`Allowed users set: [${allowedUsers.join(', ')}]`);
-				} else {
-					success('No allowed users set (bot will be open to all users)');
+				let allowedUsers = [];
+				while (allowedUsers.length === 0) {
+					// Prompt for allowed users (comma-separated)
+					const allowedUsersInput = await question('\nEnter allowed Telegram user IDs or @usernames (comma-separated, at least one required): ');
+					allowedUsers = allowedUsersInput
+						.split(',')
+						.map(user => user.trim())
+						.filter(Boolean);
+
+					// If no valid users entered, show warning and prompt again
+					if (allowedUsers.length === 0) {
+						warning('At least one allowed user is required. Please enter at least one Telegram user ID or @username.');
+					}
 				}
+
+				// Set allowed users in config
+				config.telegram.allowedUsers = allowedUsers;
+				success(`Allowed users set: [${allowedUsers.join(', ')}]`);
 
 				/************** Prompt for Brave Search API key (optional) **************/
 
