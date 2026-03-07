@@ -176,6 +176,8 @@ Everything lives in `~/.picobot/config.json`:
 
 You can keep secrets out of `config.json` and provide them through environment variables:
 
+Use `.env.example` as the template for supported secret names.
+
 ```powershell
 $env:TELEGRAM_BOT_TOKEN="..."
 $env:OPENROUTER_API_KEY="..."
@@ -187,6 +189,8 @@ $env:NVR_PASSWORD="..."
 ```
 
 When an env var is present, it overrides the corresponding value in `config.json`.
+
+Tip: if you use a process manager or shell profile, load the values before running `npm start`.
 
 ### 🔐 Google Setup (Optional)
 
