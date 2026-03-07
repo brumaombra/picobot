@@ -8,6 +8,7 @@ import { BROWSER_DEFAULT_TIMEOUT_MS, BROWSER_MAX_CONTENT_LENGTH, BROWSER_HEADED,
 
 // Promisified version of execFile for async/await usage
 const execFileAsync = promisify(execFile);
+const NPX_BIN = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 
 // Current browser session name (unique per open/close cycle)
 let currentSession = null;
@@ -71,10 +72,10 @@ const runCli = async (args, timeoutMs = BROWSER_DEFAULT_TIMEOUT_MS) => {
 
     try {
         // Execute the command
-        const { stdout } = await execFileAsync('npx', ['agent-browser', ...args], {
+        const { stdout } = await execFileAsync(NPX_BIN, ['agent-browser', ...args], {
             timeout: timeoutMs,
             maxBuffer: 1024 * 1024,
-            shell: true,
+            windowsHide: true,
             env: cleanEnv()
         });
 
