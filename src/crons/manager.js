@@ -4,7 +4,7 @@ import { loadCronsFromFiles } from './persistent.js';
 import { pushInbound } from '../bus/message-bus.js';
 import { Agent } from '../agent/agent.js';
 import { buildSystemPrompt } from '../agent/prompts.js';
-import { generateUniqueId } from '../utils/utils.js';
+import { generateUniqueId } from '../utils/common/utils.js';
 
 // In-memory storage for scheduled crons
 export const crons = new Map();

@@ -1,6 +1,6 @@
 import { readdir, stat, access } from 'fs/promises';
 import { join, resolve, isAbsolute, normalize } from 'path';
-import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 import { logger } from '../../utils/logger.js';
 
 // List directory tool

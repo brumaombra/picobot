@@ -1,6 +1,6 @@
 import { Telegraf } from 'telegraf';
 import { logger } from '../utils/logger.js';
-import { markdownToTelegramHtml, splitMessageIntoChunks, parseSessionKey } from '../utils/utils.js';
+import { markdownToTelegramHtml, splitMessageIntoChunks, parseSessionKey } from '../utils/common/utils.js';
 import { onOutbound } from '../bus/message-bus.js';
 import { getConfigValue } from '../config/config.js';
 import { registerStartCommand } from './commands/start.js';

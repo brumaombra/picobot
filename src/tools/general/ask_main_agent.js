@@ -1,4 +1,4 @@
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 
 // Ask main agent tool — lets a subagent pause and ask the main agent a question mid-task
 export const askMainAgentTool = {

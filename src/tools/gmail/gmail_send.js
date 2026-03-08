@@ -2,7 +2,7 @@ import { readFile } from 'fs/promises';
 import { basename, isAbsolute } from 'path';
 import { logger } from '../../utils/logger.js';
 import { getGmailClient } from '../../utils/google/google-client.js';
-import { chunkBase64, decodeHtmlEntities, getMimeTypeFromFileName, handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { chunkBase64, decodeHtmlEntities, getMimeTypeFromFileName, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 
 // Gmail send tool
 export const gmailSendTool = {

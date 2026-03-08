@@ -1,4 +1,4 @@
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 import { castUrlToChromecast } from '../../utils/google/chromecast.js';
 import { getCameraLiveRelay, startCameraLiveRelay, stopCameraLiveRelay } from '../../utils/camera/camera-live-stream.js';
 

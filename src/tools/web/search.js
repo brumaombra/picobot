@@ -1,7 +1,7 @@
 import { logger } from '../../utils/logger.js';
 import { getConfigValue } from '../../config/config.js';
 import { BRAVE_SEARCH_TIMEOUT_MS } from '../../config.js';
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 
 // Web search tool using Brave Search API
 export const webSearchTool = {

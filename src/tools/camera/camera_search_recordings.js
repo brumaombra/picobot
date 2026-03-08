@@ -1,4 +1,4 @@
-import { handleToolError, handleToolResponse, validateCameraInputDates } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse, validateCameraInputDates } from '../../utils/common/utils.js';
 import { logger } from '../../utils/logger.js';
 import { searchNvrRecordings } from '../../utils/camera/camera-client.js';
 

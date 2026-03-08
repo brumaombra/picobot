@@ -6,7 +6,7 @@ import { generateToolsList } from '../tools/tools.js';
 import { generateAgentsListPrompt } from './agents.js';
 import { generateSkillsListPrompt } from './skills.js';
 import { generateBrowserCommandsPrompt } from '../tools/browser/browser.js';
-import { parseFrontmatter } from '../utils/utils.js';
+import { parseFrontmatter } from '../utils/common/utils.js';
 
 let mainAgentMeta = null; // Cached main agent metadata (parsed once from AGENTS.md frontmatter)
 const promptCache = new Map(); // Cache for prompt file contents

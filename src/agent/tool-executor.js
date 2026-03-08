@@ -1,6 +1,6 @@
 import { getTool } from '../tools/tools.js';
 import { logger } from '../utils/logger.js';
-import { stringifyJson } from '../utils/utils.js';
+import { stringifyJson } from '../utils/common/utils.js';
 
 // Helper to build a tool message
 const toolMsg = (toolCallId, content) => {

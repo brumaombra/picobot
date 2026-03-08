@@ -1,4 +1,4 @@
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 
 // List active subagents tool
 export const subagentListTool = {

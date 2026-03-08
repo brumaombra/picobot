@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join } from 'path';
 import { SKILLS_DIR } from '../config.js';
 import { logger } from '../utils/logger.js';
-import { parseFrontmatter } from '../utils/utils.js';
+import { parseFrontmatter } from '../utils/common/utils.js';
 
 // In-memory map of loaded skill definitions
 let skills = new Map();

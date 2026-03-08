@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'fs';
 import { configSchema } from './schema.js';
 import { error, suggestion, listItem, newline } from '../utils/print.js';
-import { expandPath } from '../utils/utils.js';
+import { expandPath } from '../utils/common/utils.js';
 import { CONFIG_PATH, SECRET_ENV_OVERRIDES } from '../config.js';
 
 // In-memory configuration store

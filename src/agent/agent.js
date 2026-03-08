@@ -1,6 +1,6 @@
 import { cleanupSessions, getOrCreateSession, getSessionMessages, addMessageToSession } from '../session/manager.js';
 import { logger } from '../utils/logger.js';
-import { formatTime, generateUniqueId } from '../utils/utils.js';
+import { formatTime, generateUniqueId } from '../utils/common/utils.js';
 import { pullInbound, sendOutbound, pushInbound } from '../bus/message-bus.js';
 import { QUEUE_POLL_TIMEOUT_MS, SESSION_CLEANUP_INTERVAL_MS, AGENT_TIME_LIMIT_MS, AGENT_WRAPUP_THRESHOLD_MS, SUBAGENT_QUESTION_TIMEOUT_MS } from '../config.js';
 import { getToolsDefinitions } from '../tools/tools.js';

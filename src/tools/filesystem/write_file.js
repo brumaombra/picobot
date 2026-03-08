@@ -1,6 +1,6 @@
 import { writeFile, mkdir } from 'fs/promises';
 import { dirname, resolve, isAbsolute, normalize } from 'path';
-import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 import { logger } from '../../utils/logger.js';
 
 // Write file tool

@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, existsSync } from 'fs';
 import { join, basename } from 'path';
 import { AGENTS_DIR } from '../config.js';
 import { logger } from '../utils/logger.js';
-import { parseFrontmatter } from '../utils/utils.js';
+import { parseFrontmatter } from '../utils/common/utils.js';
 
 // In-memory map of loaded agent definitions
 let agents = new Map();

@@ -1,6 +1,6 @@
 import { logger } from '../../utils/logger.js';
 import { getGmailClient } from '../../utils/google/google-client.js';
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 
 // Gmail read tool
 export const gmailReadTool = {

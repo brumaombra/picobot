@@ -1,6 +1,6 @@
 import { existsSync } from 'fs';
 import { resolve } from 'path';
-import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 import { sendOutbound } from '../../bus/message-bus.js';
 import { logger } from '../../utils/logger.js';
 

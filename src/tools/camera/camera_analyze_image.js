@@ -1,4 +1,4 @@
-import { handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 import { analyzeImageWithGoogleAi } from '../../utils/google/google-ai.js';
 
 // Camera image analysis tool
