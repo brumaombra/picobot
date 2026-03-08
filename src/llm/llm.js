@@ -1,5 +1,5 @@
 import OpenAI from 'openai';
-import { logger } from '../utils/logger.js';
+import { logger } from '../utils/common/logger.js';
 import { OPENROUTER_MAX_TOKENS, OPENROUTER_TEMPERATURE, OPENROUTER_TOOL_CHOICE, OPENROUTER_REQUEST_TIMEOUT_MS } from '../config.js';
 
 // LLM provider class

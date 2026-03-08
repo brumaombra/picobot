@@ -1,5 +1,5 @@
 import { Telegraf } from 'telegraf';
-import { logger } from '../utils/logger.js';
+import { logger } from '../utils/common/logger.js';
 import { markdownToTelegramHtml, splitMessageIntoChunks, parseSessionKey } from '../utils/common/utils.js';
 import { onOutbound } from '../bus/message-bus.js';
 import { getConfigValue } from '../config/config.js';

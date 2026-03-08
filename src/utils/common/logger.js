@@ -1,5 +1,5 @@
 import winston from 'winston';
-import { DEFAULT_LOG_LEVEL, LOG_TIMESTAMP_FORMAT, LOG_FILENAME, LOG_MAX_SIZE, ERROR_LOG_FILENAME, ERROR_LOG_MAX_SIZE } from '../config.js';
+import { DEFAULT_LOG_LEVEL, LOG_TIMESTAMP_FORMAT, LOG_FILENAME, LOG_MAX_SIZE, ERROR_LOG_FILENAME, ERROR_LOG_MAX_SIZE } from '../../config.js';
 
 // Destructure format components
 const { combine, timestamp, printf, colorize } = winston.format;

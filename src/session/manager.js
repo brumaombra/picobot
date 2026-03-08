@@ -1,4 +1,4 @@
-import { logger } from '../utils/logger.js';
+import { logger } from '../utils/common/logger.js';
 import { saveSessionToFiles, deleteSessionFile, loadSessionsFromFiles } from './persistent.js';
 import { MAX_MESSAGES_PER_SESSION, SESSION_TTL_MS } from '../config.js';
 

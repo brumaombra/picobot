@@ -2,7 +2,7 @@ import { readFile } from 'fs/promises';
 import { resolve, isAbsolute, normalize } from 'path';
 import { access } from 'fs/promises';
 import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 
 // Read file tool
 export const readFileTool = {

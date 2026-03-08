@@ -1,6 +1,6 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 import { SHELL_MAX_OUTPUT_LENGTH, SHELL_MAX_BUFFER, SHELL_DEFAULT_TIMEOUT_MS } from '../../config.js';
 import { handleToolError, handleToolResponse, tokenizeArgs } from '../../utils/common/utils.js';
 

@@ -2,7 +2,7 @@ import { GoogleAIFileManager } from '@google/generative-ai/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { readFile } from 'fs/promises';
 import { getConfigValue } from '../../config/config.js';
-import { logger } from '../logger.js';
+import { logger } from '../common/logger.js';
 import { delay, getMimeTypeFromFileName } from '../common/utils.js';
 
 const AI_MODEL = 'gemini-3.1-flash-lite-preview'; // Model used

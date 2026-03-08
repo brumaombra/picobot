@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, writeFileSync, mkdirSync, readdirSync, unlinkSync } from 'fs';
 import { join } from 'path';
-import { logger } from '../utils/logger.js';
+import { logger } from '../utils/common/logger.js';
 import { SESSIONS_DIR } from '../config.js';
 
 // Get session file path

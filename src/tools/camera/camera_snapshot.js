@@ -1,7 +1,7 @@
 import { join } from 'path';
 import { mkdirSync } from 'fs';
 import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 import { WORKSPACE_DIR } from '../../config.js';
 import { captureSnapshotToPath } from '../../utils/camera/camera-client.js';
 

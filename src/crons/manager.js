@@ -1,5 +1,5 @@
 import cron from 'node-cron';
-import { logger } from '../utils/logger.js';
+import { logger } from '../utils/common/logger.js';
 import { loadCronsFromFiles } from './persistent.js';
 import { pushInbound } from '../bus/message-bus.js';
 import { Agent } from '../agent/agent.js';

@@ -1,5 +1,5 @@
 import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 import { getNvrDeviceInfo } from '../../utils/camera/camera-client.js';
 
 // Camera information retrieval tool

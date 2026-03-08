@@ -2,7 +2,7 @@ import 'dotenv/config';
 import { Llm } from './llm/llm.js';
 import { Agent } from './agent/agent.js';
 import { initTelegram, startTelegram, stopTelegram } from './channel/telegram.js';
-import { initLogger, logger } from './utils/logger.js';
+import { initLogger, logger } from './utils/common/logger.js';
 import { initSessionManager } from './session/manager.js';
 import { initializeCronManager, setCronAgent } from './crons/manager.js';
 import { getConfig } from './config/config.js';

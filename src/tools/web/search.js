@@ -1,4 +1,4 @@
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 import { getConfigValue } from '../../config/config.js';
 import { BRAVE_SEARCH_TIMEOUT_MS } from '../../config.js';
 import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';

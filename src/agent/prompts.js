@@ -1,6 +1,6 @@
 import { readFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { logger } from '../utils/logger.js';
+import { logger } from '../utils/common/logger.js';
 import { PROMPTS_DIR } from '../config.js';
 import { generateToolsList } from '../tools/tools.js';
 import { generateAgentsListPrompt } from './agents.js';

@@ -1,6 +1,6 @@
 import { ReolinkClient } from 'reolink-nvr-api';
 import { getConfigValue } from '../../config/config.js';
-import { logger } from '../logger.js';
+import { logger } from '../common/logger.js';
 import { timestampStringToReolinkDate, reolinkDateToTimestampString, formatTime } from '../common/utils.js';
 import { createWriteStream, writeFileSync } from 'fs';
 import { pipeline } from 'stream/promises';

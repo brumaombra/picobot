@@ -1,5 +1,5 @@
 import { clearSession } from '../../session/manager.js';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 
 // Register the /new command handler
 export const registerNewCommand = bot => {

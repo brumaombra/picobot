@@ -6,7 +6,7 @@ import { networkInterfaces } from 'os';
 import { WORKSPACE_DIR } from '../../config.js';
 import { getConfigValue } from '../../config/config.js';
 import { rtspUrl } from 'reolink-nvr-api/stream';
-import { logger } from '../logger.js';
+import { logger } from '../common/logger.js';
 
 const LIVE_STREAM_BASE_DIR = join(WORKSPACE_DIR, 'camera', 'live');
 const DEFAULT_STREAM_PORT = 48761;

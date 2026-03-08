@@ -1,5 +1,5 @@
 import { message } from 'telegraf/filters';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 import { pushInbound } from '../../bus/message-bus.js';
 import { startTyping } from '../helpers/typing.js';
 

@@ -2,7 +2,7 @@ import { execFile } from 'child_process';
 import { promisify } from 'util';
 import { join } from 'path';
 import { mkdirSync } from 'fs';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 import { handleToolError, handleToolResponse, generateUniqueId } from '../../utils/common/utils.js';
 import { BROWSER_DEFAULT_TIMEOUT_MS, BROWSER_MAX_CONTENT_LENGTH, BROWSER_HEADED, SCREENSHOTS_DIR } from '../../config.js';
 

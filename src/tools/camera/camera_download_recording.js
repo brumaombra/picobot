@@ -1,7 +1,7 @@
 import { mkdirSync } from 'fs';
 import { join } from 'path';
 import { handleToolError, handleToolResponse, validateCameraInputDates } from '../../utils/common/utils.js';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 import { WORKSPACE_DIR } from '../../config.js';
 import { downloadNvrRecordingToPath } from '../../utils/camera/camera-client.js';
 

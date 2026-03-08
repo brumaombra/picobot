@@ -1,6 +1,6 @@
 import { readFile } from 'fs/promises';
 import { basename, isAbsolute } from 'path';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 import { getGmailClient } from '../../utils/google/google-client.js';
 import { chunkBase64, decodeHtmlEntities, getMimeTypeFromFileName, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 

@@ -2,7 +2,7 @@ import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { isSensitivePath, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 import { sendOutbound } from '../../bus/message-bus.js';
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 
 // Send file tool - allows agent to send files and images to the user via Telegram
 export const sendFileTool = {

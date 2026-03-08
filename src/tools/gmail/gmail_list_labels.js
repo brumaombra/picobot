@@ -1,4 +1,4 @@
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 import { getGmailClient } from '../../utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 

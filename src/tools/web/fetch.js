@@ -1,4 +1,4 @@
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 import { extractTextFromHtml, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 import { WEB_MAX_CONTENT_LENGTH, WEB_FETCH_TIMEOUT_MS, WEB_USER_AGENT, WEB_ACCEPT_HEADER, WEB_ACCEPT_LANGUAGE } from '../../config.js';
 

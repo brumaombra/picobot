@@ -1,4 +1,4 @@
-import { logger } from '../../utils/logger.js';
+import { logger } from '../../utils/common/logger.js';
 
 // Authorization middleware
 export const authMiddleware = async (context, next, allowedUsers) => {
