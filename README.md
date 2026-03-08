@@ -182,6 +182,7 @@ Use `.env.example` as the template for supported secret names.
 
 ```powershell
 $env:TELEGRAM_BOT_TOKEN="..."
+$env:TELEGRAM_ALLOWED_USERS="@username,123456789"
 $env:OPENROUTER_API_KEY="..."
 $env:BRAVE_API_KEY="..."
 $env:GOOGLE_AI_API_KEY="..."
@@ -189,6 +190,8 @@ $env:NVR_HOST="..."
 $env:NVR_USERNAME="..."
 $env:NVR_PASSWORD="..."
 ```
+
+`TELEGRAM_ALLOWED_USERS` must be a comma-separated list of Telegram user IDs and/or `@usernames`.
 
 When an env var is present, it overrides the corresponding value in `config.json`.
 

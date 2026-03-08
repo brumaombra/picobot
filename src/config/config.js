@@ -31,7 +31,16 @@ const applySecretEnvOverrides = ({ config }) => {
     for (const [path, envVar] of Object.entries(SECRET_ENV_OVERRIDES)) {
         const envValue = process.env[envVar];
         if (typeof envValue === 'string' && envValue.trim()) {
-            setByPath({ target: config, path, value: envValue.trim() });
+            // Parse allowed users as a comma-separated list
+            if (path === 'telegram.allowedUsers') {
+                const allowedUsers = envValue
+                    .split(',')
+                    .map(user => user.trim())
+                    .filter(Boolean);
+                setByPath({ target: config, path, value: allowedUsers });
+            } else {
+                setByPath({ target: config, path, value: envValue.trim() });
+            }
         }
     }
 

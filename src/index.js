@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Llm } from './llm/llm.js';
 import { Agent } from './agent/agent.js';
 import { initTelegram, startTelegram, stopTelegram } from './channel/telegram.js';

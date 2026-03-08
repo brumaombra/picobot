@@ -68,6 +68,7 @@ export const SENSITIVE_FILE_NAMES = ['config.json', 'credentials.json', 'token.j
 /**************** Secret env overrides *****************/
 export const SECRET_ENV_OVERRIDES = {
     'telegram.token': 'TELEGRAM_BOT_TOKEN',
+    'telegram.allowedUsers': 'TELEGRAM_ALLOWED_USERS',
     'openRouter.apiKey': 'OPENROUTER_API_KEY',
     'brave.apiKey': 'BRAVE_API_KEY',
     'googleAi.apiKey': 'GOOGLE_AI_API_KEY',
