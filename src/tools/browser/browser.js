@@ -13,42 +13,29 @@ const NPX_BIN = process.platform === 'win32' ? 'npx.cmd' : 'npx';
 // Current browser session name (unique per open/close cycle)
 let currentSession = null;
 
-/******************************** Available Commands ********************************/
-
-// List of supported browser commands (core set — use `eval` for advanced/niche operations)
+// List of supported browser commands
 const BROWSER_COMMANDS = [
-    { name: 'open', description: 'Navigate/open browser (optionally to a URL). Usage: open <url>' },
-    { name: 'snapshot', description: 'Get page accessibility snapshot with element [ref] markers. Use -i to show only interactive elements (buttons, inputs, links). Usage: snapshot [-i] [-d <depth>] [-s <selector>]' },
-    { name: 'click', description: 'Click an element by ref or selector. Usage: click <ref|selector>' },
-    { name: 'type', description: 'Type text into an element. Usage: type <ref|selector> <text>' },
-    { name: 'fill', description: 'Clear and fill a field by ref. Usage: fill <ref|selector> <text>' },
-    { name: 'press', description: 'Press a key (Enter, Tab, Escape, Control+a, etc.). Usage: press <key>' },
-    { name: 'hover', description: 'Hover over an element. Usage: hover <ref|selector>' },
-    { name: 'select', description: 'Select a dropdown option. Usage: select <ref|selector> <value>' },
-    { name: 'check', description: 'Check a checkbox. Usage: check <ref|selector>' },
-    { name: 'uncheck', description: 'Uncheck a checkbox. Usage: uncheck <ref|selector>' },
-    { name: 'scroll', description: 'Scroll the page. Usage: scroll <up|down|left|right> [px]' },
-    { name: 'screenshot', description: 'Take a screenshot. Usage: screenshot [path] [--full] (use --full to capture the entire page without scrolling)' },
-    { name: 'eval', description: 'Evaluate JavaScript on the page. Usage: eval <js>' },
-    { name: 'get', description: 'Get element info. Usage: get <text|html|value|attr|title|url|count|box> [ref|selector] [attr]' },
-    { name: 'wait', description: 'Wait for element, time, text, URL, or load state. Usage: wait <selector|ms> [--text|--url|--load|--fn]' },
-    { name: 'back', description: 'Navigate back in browser history.' },
-    { name: 'forward', description: 'Navigate forward in browser history.' },
-    { name: 'reload', description: 'Reload the current page.' },
-    { name: 'close', description: 'Close the browser.' },
-    { name: 'tab', description: 'List, open, switch, or close tabs. Usage: tab [new [url] | <n> | close [n]]' }
+    'open',
+    'snapshot',
+    'click',
+    'type',
+    'fill',
+    'press',
+    'hover',
+    'select',
+    'check',
+    'uncheck',
+    'scroll',
+    'screenshot',
+    'eval',
+    'get',
+    'wait',
+    'back',
+    'forward',
+    'reload',
+    'close',
+    'tab'
 ];
-
-// Returns the list of available command names
-export const getBrowserCommands = () => {
-    return BROWSER_COMMANDS.map(command => command.name);
-};
-
-// Generates a formatted prompt section describing all browser commands
-export const generateBrowserCommandsPrompt = () => {
-    const lines = BROWSER_COMMANDS.map(command => `\`${command.name}\` - ${command.description}`);
-    return lines.join('\n');
-};
 
 /******************************** Agent Browser CLI Runner ********************************/
 
@@ -157,8 +144,8 @@ export const browserTool = {
         const commandName = args[0];
 
         // Validate command against the known list
-        if (!getBrowserCommands().includes(commandName)) {
-            return handleToolError({ message: `Unknown browser command "${commandName}". Available commands: ${getBrowserCommands().join(', ')}` });
+        if (!BROWSER_COMMANDS.includes(commandName)) {
+            return handleToolError({ message: `Unknown browser command "${commandName}". Available commands: ${BROWSER_COMMANDS.join(', ')}` });
         }
 
         try {

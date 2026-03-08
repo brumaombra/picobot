@@ -5,7 +5,6 @@ import { PROMPTS_DIR } from '../config.js';
 import { generateToolsList } from '../tools/tools.js';
 import { generateAgentsListPrompt } from './agents.js';
 import { generateSkillsListPrompt } from './skills.js';
-import { generateBrowserCommandsPrompt } from '../tools/browser/browser.js';
 import { parseFrontmatter } from '../utils/common/utils.js';
 
 let mainAgentMeta = null; // Cached main agent metadata (parsed once from AGENTS.md frontmatter)
@@ -65,9 +64,7 @@ export const buildSubagentSystemPrompt = agentDef => {
 
     // Add agent-specific instructions from the agent's markdown body
     if (agentDef?.instructions) {
-        // Replace any placeholders in the instructions
-        const instructions = agentDef.instructions.replace('{browserCommands}', generateBrowserCommandsPrompt());
-        prompts.push(instructions);
+        prompts.push(agentDef.instructions);
     }
 
     // Load TOOLS.md and replace {toolsList} with agent's allowed tools

@@ -25,7 +25,26 @@ You are an expert browser automation agent, specialized in navigating websites a
 
 Here's the list of available commands you can execute in the browser:
 
-{browserCommands}
+`open` - Navigate/open browser (optionally to a URL). Usage: open <url>
+`snapshot` - Get page accessibility snapshot with element [ref] markers. Use -i to show only interactive elements (buttons, inputs, links). Usage: snapshot [-i] [-d <depth>] [-s <selector>]
+`click` - Click an element by ref or selector. Usage: click <ref|selector>
+`type` - Type text into an element. Usage: type <ref|selector> <text>
+`fill` - Clear and fill a field by ref. Usage: fill <ref|selector> <text>
+`press` - Press a key (Enter, Tab, Escape, Control+a, etc.). Usage: press <key>
+`hover` - Hover over an element. Usage: hover <ref|selector>
+`select` - Select a dropdown option. Usage: select <ref|selector> <value>
+`check` - Check a checkbox. Usage: check <ref|selector>
+`uncheck` - Uncheck a checkbox. Usage: uncheck <ref|selector>
+`scroll` - Scroll the page. Usage: scroll <up|down|left|right> [px]
+`screenshot` - Take a screenshot. Usage: screenshot [path] [--full] (use --full to capture the entire page without scrolling)
+`eval` - Evaluate JavaScript on the page. Usage: eval <js>
+`get` - Get element info. Usage: get <text|html|value|attr|title|url|count|box> [ref|selector] [attr]
+`wait` - Wait for element, time, text, URL, or load state. Usage: wait <selector|ms> [--text|--url|--load|--fn]
+`back` - Navigate back in browser history.
+`forward` - Navigate forward in browser history.
+`reload` - Reload the current page.
+`close` - Close the browser.
+`tab` - List, open, switch, or close tabs. Usage: tab [new [url] | <n> | close [n]]
 
 ## Workflow
 
