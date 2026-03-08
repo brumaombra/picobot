@@ -1,12 +1,14 @@
+import { readFile } from 'fs/promises';
+import { basename, isAbsolute } from 'path';
 import { logger } from '../../utils/logger.js';
 import { getGmailClient } from '../../utils/google/google-client.js';
-import { decodeHtmlEntities, handleToolError, handleToolResponse } from '../../utils/utils.js';
+import { chunkBase64, decodeHtmlEntities, getMimeTypeFromFileName, handleToolError, handleToolResponse } from '../../utils/utils.js';
 
 // Gmail send tool
 export const gmailSendTool = {
     // Tool definition
     name: 'gmail_send',
-    description: 'Send email via Gmail (supports plain text and HTML).',
+    description: 'Send email via Gmail.',
     parameters: {
         type: 'object',
         properties: {
@@ -33,6 +35,14 @@ export const gmailSendTool = {
             bcc: {
                 type: 'string',
                 description: 'BCC recipients.'
+            },
+            attachments: {
+                type: 'array',
+                description: 'Optional local absolute file attachment paths.',
+                items: {
+                    type: 'string',
+                    description: 'Local absolute file path to attach.'
+                }
             }
         },
         required: ['to', 'subject', 'body']
@@ -40,7 +50,7 @@ export const gmailSendTool = {
 
     // Main execution function
     execute: async args => {
-        const { to, subject, body, html = false, cc, bcc } = args;
+        const { to, subject, body, html = false, cc, bcc, attachments = [] } = args;
 
         // Log send attempt
         logger.debug(`Sending Gmail to ${to}: ${subject}`);
@@ -57,22 +67,16 @@ export const gmailSendTool = {
                 safeBody = decodeHtmlEntities(safeBody);
             }
 
-            // Build headers
-            const headers = [
-                `From: me`,
-                `To: ${to}`,
-                cc ? `Cc: ${cc}` : null,
-                bcc ? `Bcc: ${bcc}` : null,
-                `Subject: ${subject}`,
-                `MIME-Version: 1.0`,
-                `Content-Type: ${html ? 'text/html' : 'text/plain'}; charset=UTF-8`
-            ].filter(Boolean);
-
-            // Build full raw message (CRITICAL: blank line between headers and body)
-            const rawMessage =
-                headers.join('\r\n') +
-                '\r\n\r\n' +
-                safeBody;
+            // Create the raw email message with attachments if provided
+            const rawMessage = await createEmailBody({
+                to,
+                subject,
+                safeBody,
+                html,
+                cc,
+                bcc,
+                attachments
+            });
 
             // Encode to base64url (Gmail API requirement)
             const encodedMessage = Buffer.from(rawMessage, 'utf-8')
@@ -90,9 +94,92 @@ export const gmailSendTool = {
             });
 
             // Return success with sent message ID
-            return handleToolResponse(`Email sent successfully. Message ID: ${response.data.id}`);
+            return handleToolResponse({
+                message: 'Email sent successfully',
+                messageId: response.data.id,
+                attachmentsSent: attachments.length
+            });
         } catch (error) {
             return handleToolError({ error, message: 'Gmail send failed' });
         }
+    }
+};
+
+// Build a raw MIME email message body (single-part or multipart with attachments)
+const createEmailBody = async ({ to, subject, safeBody, html, cc, bcc, attachments }) => {
+    // Build multipart MIME when attachments are included
+    if (attachments.length > 0) {
+        // Generate a unique boundary string for separating parts
+        const boundary = `picobot_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
+
+        // Build the email headers and the first part with the email body
+        const headers = [
+            `From: me`,
+            `To: ${to}`,
+            cc ? `Cc: ${cc}` : null,
+            bcc ? `Bcc: ${bcc}` : null,
+            `Subject: ${subject}`,
+            `MIME-Version: 1.0`,
+            `Content-Type: multipart/mixed; boundary="${boundary}"`
+        ].filter(Boolean);
+
+        // Start with the email body as the first part
+        const parts = [
+            `--${boundary}`,
+            `Content-Type: ${html ? 'text/html' : 'text/plain'}; charset=UTF-8`,
+            `Content-Transfer-Encoding: 7bit`,
+            '',
+            safeBody
+        ];
+
+        // Process each attachment and add as a new part
+        for (const attachmentPath of attachments) {
+            // Validate attachment path
+            const filePath = String(attachmentPath || '').trim();
+            if (!filePath) {
+                throw new Error('All attachments must be non-empty file paths.');
+            }
+
+            // Ensure the file path is absolute to prevent accidental access to unintended files
+            if (!isAbsolute(filePath)) {
+                throw new Error(`Attachment path must be absolute: ${filePath}`);
+            }
+
+            // Read the file, determine its MIME type, and encode it in base64 for inclusion
+            const fileBuffer = await readFile(filePath);
+            const fileName = String(basename(filePath)).replace(/"/g, '');
+            const mimeType = getMimeTypeFromFileName(fileName);
+            const base64Data = chunkBase64(fileBuffer.toString('base64'));
+
+            // Add the attachment part with appropriate headers for Gmail to recognize it
+            parts.push(
+                `--${boundary}`,
+                `Content-Type: ${mimeType}; name="${fileName}"`,
+                `Content-Disposition: attachment; filename="${fileName}"`,
+                `Content-Transfer-Encoding: base64`,
+                '',
+                base64Data
+            );
+        }
+
+        // End the multipart message with the closing boundary
+        parts.push(`--${boundary}--`, '');
+
+        // Return the full raw email message with headers and multipart body
+        return headers.join('\r\n') + '\r\n\r\n' + parts.join('\r\n');
+    } else {
+        // Build single-part message when no attachments are provided
+        const headers = [
+            `From: me`,
+            `To: ${to}`,
+            cc ? `Cc: ${cc}` : null,
+            bcc ? `Bcc: ${bcc}` : null,
+            `Subject: ${subject}`,
+            `MIME-Version: 1.0`,
+            `Content-Type: ${html ? 'text/html' : 'text/plain'}; charset=UTF-8`
+        ].filter(Boolean);
+
+        // Return headers plus body for simple email
+        return headers.join('\r\n') + '\r\n\r\n' + safeBody;
     }
 };

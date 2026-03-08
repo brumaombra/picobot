@@ -250,6 +250,36 @@ export const decodeHtmlEntities = text => {
         .replace(/&nbsp;/g, ' ');
 };
 
+// Guess a MIME type from a file extension for common attachment types
+export const getMimeTypeFromFileName = fileName => {
+    const lower = String(fileName || '').toLowerCase();
+
+    // Basic mapping of common file extensions to MIME types
+    if (lower.endsWith('.pdf')) return 'application/pdf';
+    if (lower.endsWith('.txt')) return 'text/plain';
+    if (lower.endsWith('.csv')) return 'text/csv';
+    if (lower.endsWith('.json')) return 'application/json';
+    if (lower.endsWith('.zip')) return 'application/zip';
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.gif')) return 'image/gif';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.doc')) return 'application/msword';
+    if (lower.endsWith('.docx')) return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+    if (lower.endsWith('.xls')) return 'application/vnd.ms-excel';
+    if (lower.endsWith('.xlsx')) return 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+    if (lower.endsWith('.ppt')) return 'application/vnd.ms-powerpoint';
+    if (lower.endsWith('.pptx')) return 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
+
+    // Default MIME type for unknown extensions
+    return 'application/octet-stream';
+};
+
+// Split long base64 payloads into MIME-safe line lengths
+export const chunkBase64 = value => {
+    return value.match(/.{1,76}/g)?.join('\r\n') || '';
+};
+
 // Tokenize an argument string while preserving quoted segments
 export const tokenizeArgs = text => {
     const input = String(text || '');
@@ -298,25 +328,6 @@ export const tokenizeArgs = text => {
 
     // Return the array of tokens
     return tokens;
-};
-
-// Resolve a basic image MIME type from local file extension
-export const getImageMimeTypeFromPath = filePath => {
-    const lower = String(filePath || '').toLowerCase();
-
-    // Check common image extensions
-    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) {
-        return 'image/jpeg';
-    } else if (lower.endsWith('.png')) {
-        return 'image/png';
-    } else if (lower.endsWith('.webp')) {
-        return 'image/webp';
-    } else if (lower.endsWith('.gif')) {
-        return 'image/gif';
-    }
-
-    // Unsupported image type
-    throw new Error('Unsupported image type. Supported extensions: .jpg, .jpeg, .png, .webp, .gif');
 };
 
 // Parse YAML-like frontmatter from markdown content

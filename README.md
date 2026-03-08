@@ -36,7 +36,7 @@ Picobot uses an **orchestrator + subagents** architecture. You talk to one main 
 
 | Agent | What It Does |
 |-------|-------------|
-| 📧 **Email Manager** | Search, read, and send Gmail messages |
+| 📧 **Email Manager** | Search, read, and send Gmail messages (with attachments) |
 | 📅 **Calendar Manager** | Create, update, and manage Google Calendar events |
 | 💾 **Drive Manager** | List, read, create, and share Google Drive files |
 | 🖼️ **Slides Manager** | Create, edit, and manage Google Slides presentations |

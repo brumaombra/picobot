@@ -3,7 +3,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 import { readFile } from 'fs/promises';
 import { getConfigValue } from '../../config/config.js';
 import { logger } from '../logger.js';
-import { delay, getImageMimeTypeFromPath } from '../utils.js';
+import { delay, getMimeTypeFromFileName } from '../utils.js';
 
 const AI_MODEL = 'gemini-3.1-flash-lite-preview'; // Model used
 const POLL_INTERVAL_MS = 5000; // Check status every 5 seconds
@@ -140,7 +140,12 @@ export const analyzeImageWithGoogleAi = async ({ filePath, prompt }) => {
 
     // Read the image file and infer its MIME type
     const imageBytes = await readFile(filePath);
-    const mimeType = getImageMimeTypeFromPath(filePath);
+    const mimeType = getMimeTypeFromFileName(filePath);
+
+    // Check if the file is a supported image type
+    if (!mimeType.startsWith('image/')) {
+        throw new Error('Unsupported image type. Supported extensions: .jpg, .jpeg, .png, .webp, .gif');
+    }
 
     // Create the Google Generative AI client
     const genAI = new GoogleGenerativeAI(apiKey);
