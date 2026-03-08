@@ -220,3 +220,72 @@ export const generateImageWithGoogleAi = async ({ prompt }) => {
         mimeType
     };
 };
+
+// Edit a local image using a text prompt and return generated image bytes
+export const editImageWithGoogleAi = async ({ imagePath, prompt }) => {
+    // Validate API key before starting any remote operation
+    const apiKey = getGoogleAiApiKey();
+
+    // Validate inputs
+    const inputPrompt = String(prompt || '').trim();
+    const inputImagePath = String(imagePath || '').trim();
+    if (!inputPrompt) {
+        throw new Error('Prompt is required for image editing.');
+    }
+    if (!inputImagePath) {
+        throw new Error('imagePath is required for image editing.');
+    }
+
+    // Read input image bytes and infer MIME type
+    const imageBytes = await readFile(inputImagePath);
+    const mimeType = getMimeTypeFromFileName(inputImagePath);
+
+    // Check if the file is a supported image type
+    if (!mimeType.startsWith('image/')) {
+        throw new Error('Unsupported image type. Supported extensions: .jpg, .jpeg, .png, .webp, .gif');
+    }
+
+    // Create the Google Generative AI client
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const imageModel = genAI.getGenerativeModel({ model: AI_MODEL_IMAGE_GENERATION });
+
+    // Request image edit (input image + edit prompt)
+    const result = await imageModel.generateContent({
+        contents: [{
+            role: 'user',
+            parts: [{
+                inlineData: {
+                    mimeType,
+                    data: imageBytes.toString('base64')
+                }
+            }, {
+                text: inputPrompt
+            }]
+        }],
+        generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE']
+        }
+    });
+
+    // Extract first image payload from candidates
+    const candidates = result?.response?.candidates || [];
+    const parts = candidates.flatMap(candidate => candidate?.content?.parts || []);
+    const imagePart = parts.find(part => part?.inlineData?.data);
+
+    // Validate that an edited image was returned
+    if (!imagePart?.inlineData?.data) {
+        const finishMessage = result?.response?.candidates[0]?.finishMessage || '(no text response)';
+        throw new Error(`Google AI did not return an edited image for this request. Finish message: ${finishMessage}`);
+    }
+
+    // Extract generated image data and MIME type
+    const outputMimeType = imagePart.inlineData.mimeType || 'image/png';
+    const imageBase64 = imagePart.inlineData.data;
+    logger.debug(`Artist: image edit complete (${outputMimeType}, ${imageBase64.length} base64 chars)`);
+
+    // Return edited image payload
+    return {
+        imageBase64,
+        mimeType: outputMimeType
+    };
+};
