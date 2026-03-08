@@ -1,5 +1,6 @@
 import { isAbsolute, relative, resolve, join, normalize, basename } from 'path';
 import { homedir } from 'os';
+import { spawn } from 'child_process';
 import { CONFIG_PATH, SENSITIVE_FILE_NAMES } from '../../config.js';
 import { logger } from './logger.js';
 
@@ -487,6 +488,71 @@ export const validateCameraInputDates = ({ startTime, endTime }) => {
 
     // Return success with parsed Date objects
     return { success: true, start, end };
+};
+
+// Execute an OS command and capture stdout/stderr with timeout support
+export const executeCommand = ({ command, args = [], timeoutMs = 30000, cwd }) => {
+    return new Promise(resolve => {
+        // Create a child process to execute the command with the given arguments and options
+        const child = spawn(command, args, {
+            cwd,
+            windowsHide: true
+        });
+
+        // Accumulate stdout and stderr data, and handle process completion or errors
+        let stdout = '';
+        let stderr = '';
+        let timedOut = false;
+
+        // Set up a timer to kill the process if it exceeds the specified timeout
+        const timer = setTimeout(() => {
+            timedOut = true;
+            child.kill();
+        }, timeoutMs);
+
+        // Listen for data on stdout
+        child.stdout.on('data', chunk => {
+            stdout += String(chunk);
+        });
+
+        // Listen for data on stderr
+        child.stderr.on('data', chunk => {
+            stderr += String(chunk);
+        });
+
+        // Listen for the process to exit and resolve the promise with the collected output and metadata
+        child.on('close', code => {
+            clearTimeout(timer);
+            const rawOutput = [stdout, stderr].filter(Boolean).join('\n').trim();
+            resolve({
+                command,
+                args,
+                commandLine: `${command} ${args.join(' ')}`.trim(),
+                exitCode: Number.isInteger(code) ? code : 1,
+                timedOut,
+                stdout,
+                stderr,
+                rawOutput
+            });
+        });
+
+        // Listen for errors when trying to start the process and resolve with the error message
+        child.on('error', error => {
+            clearTimeout(timer);
+            const errorMessage = error instanceof Error ? error.message : String(error);
+            resolve({
+                command,
+                args,
+                commandLine: `${command} ${args.join(' ')}`.trim(),
+                exitCode: 1,
+                timedOut,
+                stdout,
+                stderr,
+                rawOutput: [stdout, stderr, errorMessage].filter(Boolean).join('\n').trim(),
+                error: errorMessage
+            });
+        });
+    });
 };
 
 // Handle tool execution errors with standardized format

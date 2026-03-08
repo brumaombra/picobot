@@ -1,7 +1,6 @@
-import ping from 'ping';
-import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
+import { executeCommand, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 
-// Network ping diagnostic tool powered by the ping npm package.
+// Network ping diagnostic tool
 export const networkPingTool = {
     // Tool definition
     name: 'network_ping',
@@ -23,25 +22,26 @@ export const networkPingTool = {
         const pingCount = 4;
 
         try {
-            // Run ping probe with a fixed cross-platform timeout
-            const result = await ping.promise.probe(host, {
-                timeout: 10,
-                min_reply: pingCount
+            // Normalize and validate inputs
+            const command = 'ping';
+            const commandArgs = process.platform === 'win32' ? ['-n', String(pingCount), host] : ['-c', String(pingCount), host];
+
+            // Run ping and return raw command output for LLM interpretation
+            const result = await executeCommand({
+                command,
+                args: commandArgs,
+                timeoutMs: 15000
             });
 
-            // Parse numeric stats when available
-            const packetLossPercent = Number.isFinite(Number(result.packetLoss)) ? Number(result.packetLoss) : null;
-            const averageLatencyMs = Number.isFinite(Number(result.avg)) ? Number(result.avg) : null;
+            // Check for errors in execution and return appropriate responses
+            if (result.error) {
+                return handleToolError({ message: `Network ping failed: ${result.error}` });
+            }
 
-            // Return normalized ping diagnostics
+            // Return minimal output payload
             return handleToolResponse({
-                host,
                 platform: process.platform,
-                count: pingCount,
-                reachable: Boolean(result.alive),
-                timedOut: !result.alive && packetLossPercent === 100,
-                packetLossPercent,
-                averageLatencyMs
+                rawOutput: result.rawOutput || '(no output)'
             });
         } catch (error) {
             return handleToolError({ error, message: 'Network ping failed' });

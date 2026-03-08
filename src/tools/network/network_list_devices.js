@@ -1,7 +1,6 @@
-import findLocalDevices from 'local-devices';
-import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
+import { executeCommand, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 
-// Network discovery tool powered by local-devices
+// Network discovery tool
 export const networkListDevicesTool = {
     // Tool definition
     name: 'network_list_devices',
@@ -14,11 +13,23 @@ export const networkListDevicesTool = {
     // Main execution function
     execute: async () => {
         try {
-            // Use local-devices to find devices on the local network
-            const devices = await findLocalDevices();
+            // Use a single common command path and return raw output
+            const result = await executeCommand({
+                command: 'arp',
+                args: ['-a'],
+                timeoutMs: 15000
+            });
 
-            // Return the list of devices (IP, MAC, name) for the agent to use
-            return handleToolResponse(devices || 'No devices found');
+            // Check for errors in execution and return appropriate responses
+            if (result.error) {
+                return handleToolError({ message: `Failed to list network devices: ${result.error}` });
+            }
+
+            // Return minimal output payload
+            return handleToolResponse({
+                platform: process.platform,
+                rawOutput: result.rawOutput || '(no output)'
+            });
         } catch (error) {
             return handleToolError({ error, message: 'Failed to list network devices' });
         }
