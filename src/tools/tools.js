@@ -53,6 +53,8 @@ import { cameraDownloadRecordingTool } from './camera/camera_download_recording.
 import { cameraAnalyzeVideoTool } from './camera/camera_analyze_video.js';
 import { cameraAnalyzeImageTool } from './camera/camera_analyze_image.js';
 import { cameraCastStreamTool } from './camera/camera_cast_stream.js';
+import { networkPingTool } from './network/network_ping.js';
+import { networkListDevicesTool } from './network/network_list_devices.js';
 
 // Registry of all available tools (flat map: name → tool)
 const TOOLS = new Map([
@@ -135,7 +137,11 @@ const TOOLS = new Map([
     [cameraDownloadRecordingTool.name, cameraDownloadRecordingTool],
     [cameraAnalyzeVideoTool.name, cameraAnalyzeVideoTool],
     [cameraAnalyzeImageTool.name, cameraAnalyzeImageTool],
-    [cameraCastStreamTool.name, cameraCastStreamTool]
+    [cameraCastStreamTool.name, cameraCastStreamTool],
+
+    // Network tools
+    [networkPingTool.name, networkPingTool],
+    [networkListDevicesTool.name, networkListDevicesTool]
 ]);
 
 // Get a tool by name
