@@ -1,5 +1,5 @@
 import { loadConfig, validateConfig } from '../../config/config.js';
-import { basicLog, header, success } from '../../utils/print.js';
+import { basicLog, header, success } from '../../utils/common/print.js';
 import { checkIfConfigFilesExist } from '../../files/files.js';
 
 // Register the status command

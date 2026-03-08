@@ -2,7 +2,7 @@ import { existsSync, mkdirSync, writeFileSync, readFileSync, readdirSync } from 
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
 import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, PROMPTS_DIR, AGENTS_DIR, SKILLS_DIR, SESSIONS_DIR, CRONS_DIR, LOGS_DIR } from '../config.js';
-import { success, warning, error, newline } from '../utils/print.js';
+import { success, warning, error, newline } from '../utils/common/print.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);

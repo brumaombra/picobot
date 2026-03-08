@@ -1,7 +1,7 @@
 import { isAbsolute, relative, resolve, join, normalize, basename } from 'path';
 import { homedir } from 'os';
 import { CONFIG_PATH, SENSITIVE_FILE_NAMES } from '../../config.js';
-import { logger } from '../common/logger.js';
+import { logger } from './logger.js';
 
 // Expand ~ in paths and resolve relative paths
 export const expandPath = path => {

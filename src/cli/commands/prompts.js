@@ -3,7 +3,7 @@ import { join } from 'path';
 import { loadAgents, getAgents } from '../../agent/agents.js';
 import { loadSkills } from '../../agent/skills.js';
 import { buildSystemPrompt, buildSubagentSystemPrompt } from '../../agent/prompts.js';
-import { header, success, basicLog } from '../../utils/print.js';
+import { header, success, basicLog } from '../../utils/common/print.js';
 import { initLogger } from '../../utils/common/logger.js';
 import { CONFIG_DIR } from '../../config.js';
 

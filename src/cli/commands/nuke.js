@@ -1,6 +1,6 @@
 import { rmSync } from 'fs';
 import { CONFIG_DIR } from '../../config.js';
-import { header, success, error, newline } from '../../utils/print.js';
+import { header, success, error, newline } from '../../utils/common/print.js';
 
 // Register the nuke command
 export const registerNukeCommand = ({ program }) => {

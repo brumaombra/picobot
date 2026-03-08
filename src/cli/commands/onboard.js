@@ -1,6 +1,6 @@
 import { createInterface } from 'node:readline';
 import { loadConfig, writeConfig } from '../../config/config.js';
-import { basicLog, header, info, listItem, success, warning, newline } from '../../utils/print.js';
+import { basicLog, header, info, listItem, success, warning, newline } from '../../utils/common/print.js';
 import { createConfigFiles } from '../../files/files.js';
 import { CONFIG_PATH, OPENROUTER_MODELS } from '../../config.js';
 

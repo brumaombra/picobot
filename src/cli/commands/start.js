@@ -1,6 +1,6 @@
 import { startBot } from '../../index.js';
 import { loadConfig, validateConfig, setConfig } from '../../config/config.js';
-import { error, header } from '../../utils/print.js';
+import { error, header } from '../../utils/common/print.js';
 import { checkIfConfigFilesExist } from '../../files/files.js';
 
 // Register the start command
