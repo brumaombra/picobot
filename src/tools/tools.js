@@ -58,6 +58,7 @@ import { networkListDevicesTool } from './network/network_list_devices.js';
 import { networkDnsLookupTool } from './network/network_dns_lookup.js';
 import { networkPortCheckTool } from './network/network_port_check.js';
 import { networkTracerouteTool } from './network/network_traceroute.js';
+import { networkLocalIpTool } from './network/network_local_ip.js';
 
 // Registry of all available tools (flat map: name → tool)
 const TOOLS = new Map([
@@ -147,7 +148,8 @@ const TOOLS = new Map([
     [networkListDevicesTool.name, networkListDevicesTool],
     [networkDnsLookupTool.name, networkDnsLookupTool],
     [networkPortCheckTool.name, networkPortCheckTool],
-    [networkTracerouteTool.name, networkTracerouteTool]
+    [networkTracerouteTool.name, networkTracerouteTool],
+    [networkLocalIpTool.name, networkLocalIpTool]
 ]);
 
 // Get a tool by name
