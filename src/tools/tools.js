@@ -60,6 +60,11 @@ import { networkDnsLookupTool } from './network/network_dns_lookup.js';
 import { networkPortCheckTool } from './network/network_port_check.js';
 import { networkTracerouteTool } from './network/network_traceroute.js';
 import { networkLocalIpTool } from './network/network_local_ip.js';
+import { printerListTool } from './printer/printer_list.js';
+import { printerStatusTool } from './printer/printer_status.js';
+import { printerQueueTool } from './printer/printer_queue.js';
+import { printerPrintTestTool } from './printer/printer_print_test.js';
+import { printerPrintFileTool } from './printer/printer_print_file.js';
 
 // Registry of all available tools (flat map: name → tool)
 const TOOLS = new Map([
@@ -151,7 +156,14 @@ const TOOLS = new Map([
     [networkDnsLookupTool.name, networkDnsLookupTool],
     [networkPortCheckTool.name, networkPortCheckTool],
     [networkTracerouteTool.name, networkTracerouteTool],
-    [networkLocalIpTool.name, networkLocalIpTool]
+    [networkLocalIpTool.name, networkLocalIpTool],
+
+    // Printer tools
+    [printerListTool.name, printerListTool],
+    [printerStatusTool.name, printerStatusTool],
+    [printerQueueTool.name, printerQueueTool],
+    [printerPrintTestTool.name, printerPrintTestTool],
+    [printerPrintFileTool.name, printerPrintFileTool]
 ]);
 
 // Get a tool by name
