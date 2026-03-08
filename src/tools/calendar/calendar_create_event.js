@@ -1,5 +1,5 @@
 import { logger } from '../../utils/logger.js';
-import { getCalendarClient } from '../../utils/google-client.js';
+import { getCalendarClient } from '../../utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 
 // Calendar create event tool

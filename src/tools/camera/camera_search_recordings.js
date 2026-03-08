@@ -1,6 +1,6 @@
 import { handleToolError, handleToolResponse, validateCameraInputDates } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
-import { searchNvrRecordings } from '../../utils/camera-client.js';
+import { searchNvrRecordings } from '../../utils/camera/camera-client.js';
 
 // Camera recording search tool
 export const cameraSearchRecordingsTool = {

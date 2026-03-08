@@ -1,5 +1,5 @@
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
-import { analyzeImageWithGoogleAi } from '../../utils/google-ai.js';
+import { analyzeImageWithGoogleAi } from '../../utils/google/google-ai.js';
 
 // Camera image analysis tool
 export const cameraAnalyzeImageTool = {

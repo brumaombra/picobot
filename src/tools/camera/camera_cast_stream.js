@@ -1,6 +1,6 @@
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
-import { castUrlToChromecast } from '../../utils/chromecast.js';
-import { getCameraLiveRelay, startCameraLiveRelay, stopCameraLiveRelay } from '../../utils/camera-live-stream.js';
+import { castUrlToChromecast } from '../../utils/google/chromecast.js';
+import { getCameraLiveRelay, startCameraLiveRelay, stopCameraLiveRelay } from '../../utils/camera/camera-live-stream.js';
 
 // Camera Chromecast casting tool
 export const cameraCastStreamTool = {

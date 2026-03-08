@@ -1,9 +1,9 @@
 import { GoogleAIFileManager } from '@google/generative-ai/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { readFile } from 'fs/promises';
-import { getConfigValue } from '../config/config.js';
-import { logger } from './logger.js';
-import { delay, getImageMimeTypeFromPath } from './utils.js';
+import { getConfigValue } from '../../config/config.js';
+import { logger } from '../logger.js';
+import { delay, getImageMimeTypeFromPath } from '../utils.js';
 
 const AI_MODEL = 'gemini-3.1-flash-lite-preview'; // Model used
 const POLL_INTERVAL_MS = 5000; // Check status every 5 seconds

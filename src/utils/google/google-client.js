@@ -1,8 +1,8 @@
-﻿import { google } from 'googleapis';
+import { google } from 'googleapis';
 import { authenticate } from '@google-cloud/local-auth';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { logger } from './logger.js';
+import { logger } from '../logger.js';
 
 // Paths for credentials and token
 const CREDENTIALS_PATH = join(process.cwd(), 'credentials.json');

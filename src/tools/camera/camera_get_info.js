@@ -1,6 +1,6 @@
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
-import { getNvrDeviceInfo } from '../../utils/camera-client.js';
+import { getNvrDeviceInfo } from '../../utils/camera/camera-client.js';
 
 // Camera information retrieval tool
 export const cameraGetInfoTool = {

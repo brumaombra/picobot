@@ -3,7 +3,7 @@ import { join } from 'path';
 import { handleToolError, handleToolResponse, validateCameraInputDates } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { WORKSPACE_DIR } from '../../config.js';
-import { downloadNvrRecordingToPath } from '../../utils/camera-client.js';
+import { downloadNvrRecordingToPath } from '../../utils/camera/camera-client.js';
 
 // Camera recording download tool
 export const cameraDownloadRecordingTool = {

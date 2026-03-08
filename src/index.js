@@ -5,7 +5,7 @@ import { initLogger, logger } from './utils/logger.js';
 import { initSessionManager } from './session/manager.js';
 import { initializeCronManager, setCronAgent } from './crons/manager.js';
 import { getConfig } from './config/config.js';
-import { initializeGoogleClients } from './utils/google-client.js';
+import { initializeGoogleClients } from './utils/google/google-client.js';
 import { loadAgents } from './agent/agents.js';
 import { loadSkills } from './agent/skills.js';
 

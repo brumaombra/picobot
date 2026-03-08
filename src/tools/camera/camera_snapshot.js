@@ -3,7 +3,7 @@ import { mkdirSync } from 'fs';
 import { handleToolError, handleToolResponse } from '../../utils/utils.js';
 import { logger } from '../../utils/logger.js';
 import { WORKSPACE_DIR } from '../../config.js';
-import { captureSnapshotToPath } from '../../utils/camera-client.js';
+import { captureSnapshotToPath } from '../../utils/camera/camera-client.js';
 
 // Camera snapshot tool
 export const cameraSnapshotTool = {

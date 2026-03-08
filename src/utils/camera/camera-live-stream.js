@@ -3,10 +3,10 @@ import { spawn } from 'child_process';
 import { mkdirSync, existsSync, createReadStream } from 'fs';
 import { join, normalize } from 'path';
 import { networkInterfaces } from 'os';
-import { WORKSPACE_DIR } from '../config.js';
-import { getConfigValue } from '../config/config.js';
+import { WORKSPACE_DIR } from '../../config.js';
+import { getConfigValue } from '../../config/config.js';
 import { rtspUrl } from 'reolink-nvr-api/stream';
-import { logger } from './logger.js';
+import { logger } from '../logger.js';
 
 const LIVE_STREAM_BASE_DIR = join(WORKSPACE_DIR, 'camera', 'live');
 const DEFAULT_STREAM_PORT = 48761;

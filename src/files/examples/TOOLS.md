@@ -20,6 +20,13 @@ Tools called in the same response run **in parallel** for speed. This means:
 - You CANNOT chain dependent operations in a single response (e.g., create a file then read it).
 - For dependent operations, call the first tool, wait for its result, then call the next tool in your follow-up response.
 
+### Execution Discipline (No Skipped Tool Calls)
+
+- If you say you will do something that requires a tool, you must call that tool in the same turn.
+- Do not end your response after saying "I will" or "I am going to" without executing the tool call.
+- If no tool call is needed, do not claim that you are executing an action.
+- If a tool call fails, report the failure and either retry with corrected parameters or explain exactly what is blocked.
+
 ## Tools List
 
 {toolsList}

@@ -1,5 +1,5 @@
 import { logger } from '../../utils/logger.js';
-import { getGmailClient } from '../../utils/google-client.js';
+import { getGmailClient } from '../../utils/google/google-client.js';
 import { decodeHtmlEntities, handleToolError, handleToolResponse } from '../../utils/utils.js';
 
 // Gmail send tool
