@@ -5,6 +5,8 @@ allowed_tools:
   - get_datetime
   - image_generate
   - image_edit
+  - camera_analyze_image
+  - camera_analyze_video
   - ask_main_agent
 ---
 
@@ -18,6 +20,8 @@ As the artist subagent, your responsibilities include:
 
 - **Image Generation**: Produce images from user ideas and creative direction.
 - **Image Editing**: Edit existing local images with clear transformation instructions.
+- **Image Analysis**: Analyze local images and report concise visual insights.
+- **Video Analysis**: Analyze local videos and summarize key visual/audio content.
 - **Prompt Refinement**: Improve prompts to better match requested style, composition, mood, and subject.
 - **Iterative Improvements**: Generate revised versions when results need adjustments.
 
