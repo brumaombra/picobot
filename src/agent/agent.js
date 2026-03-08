@@ -239,6 +239,7 @@ export class Agent {
             sessionKey: subagentId,
             systemPromptBuilder: () => buildSubagentSystemPrompt(agentDef),
             userMessage: prompt,
+            messageRole: 'user',
             tools: toolDefs,
             context
         }).then(result => {
@@ -256,7 +257,7 @@ export class Agent {
             // Notify parent session of completion
             pushInbound({
                 sessionKey: parentSessionKey,
-                role: 'user',
+                role: 'assistant',
                 content: JSON.stringify({
                     type: 'subagent_notification',
                     subagent_id: subagentId,
@@ -274,7 +275,7 @@ export class Agent {
             // Notify parent session of failure
             pushInbound({
                 sessionKey: parentSessionKey,
-                role: 'user',
+                role: 'assistant',
                 content: JSON.stringify({
                     type: 'subagent_notification',
                     subagent_id: subagentId,
@@ -320,7 +321,7 @@ export class Agent {
             // Notify the parent session so the main agent can react
             pushInbound({
                 sessionKey: parentSessionKey,
-                role: 'user',
+                role: 'assistant',
                 content: JSON.stringify({
                     type: 'subagent_question',
                     subagent_id: subagentId,

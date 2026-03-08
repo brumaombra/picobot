@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import { Command } from 'commander';
 import { registerStartCommand } from './commands/start.js';
 import { registerOnboardCommand } from './commands/onboard.js';

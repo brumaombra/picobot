@@ -5,7 +5,8 @@ import { getConfigValue } from '../../config/config.js';
 import { logger } from '../common/logger.js';
 import { delay, getMimeTypeFromFileName } from '../common/utils.js';
 
-const AI_MODEL = 'gemini-3.1-flash-lite-preview'; // Model used
+const AI_MODEL_ANALYSIS = 'gemini-3.1-flash-lite-preview'; // Model used for video/image analysis
+const AI_MODEL_IMAGE_GENERATION = 'gemini-3.1-flash-image-preview'; // Model used for image generation
 const POLL_INTERVAL_MS = 5000; // Check status every 5 seconds
 const MAX_POLL_ATTEMPTS = 24; // Wait up to 2 minutes (24 attempts * 5 seconds)
 
@@ -66,11 +67,11 @@ export const uploadVideoToGoogleAi = async ({ filePath, apiKey }) => {
 // Run Gemini analysis against an already-uploaded Google File API video
 export const analyzeUploadedGoogleAiVideo = async ({ uploadedFile, prompt, apiKey }) => {
     // Log the successful processing
-    logger.debug(`Camera: video is ACTIVE, running analysis with model "${AI_MODEL}"`);
+    logger.debug(`Camera: video is ACTIVE, running analysis with model "${AI_MODEL_ANALYSIS}"`);
 
     // Step 3: Run Gemini analysis with the uploaded file reference
     const genAI = new GoogleGenerativeAI(apiKey);
-    const gemini = genAI.getGenerativeModel({ model: AI_MODEL });
+    const gemini = genAI.getGenerativeModel({ model: AI_MODEL_ANALYSIS });
 
     // Run the analysis prompt against the uploaded video file
     const result = await gemini.generateContent([{
@@ -149,7 +150,7 @@ export const analyzeImageWithGoogleAi = async ({ filePath, prompt }) => {
 
     // Create the Google Generative AI client
     const genAI = new GoogleGenerativeAI(apiKey);
-    const gemini = genAI.getGenerativeModel({ model: AI_MODEL });
+    const gemini = genAI.getGenerativeModel({ model: AI_MODEL_ANALYSIS });
 
     // Run the analysis prompt against the image file (base64-encoded inline data)
     const result = await gemini.generateContent([{
@@ -169,5 +170,53 @@ export const analyzeImageWithGoogleAi = async ({ filePath, prompt }) => {
     return {
         analysis,
         filePath
+    };
+};
+
+// Generate an image from a text prompt using Google AI image generation (Nano Banana)
+export const generateImageWithGoogleAi = async ({ prompt }) => {
+    // Validate API key before starting any remote operation
+    const apiKey = getGoogleAiApiKey();
+
+    // Validate prompt input
+    const inputPrompt = String(prompt || '').trim();
+    if (!inputPrompt) {
+        throw new Error('Prompt is required for image generation.');
+    }
+
+    // Create the Google Generative AI client
+    const genAI = new GoogleGenerativeAI(apiKey);
+    const imageModel = genAI.getGenerativeModel({ model: AI_MODEL_IMAGE_GENERATION });
+
+    // Request image generation (text + image response modalities)
+    const result = await imageModel.generateContent({
+        contents: [{
+            role: 'user',
+            parts: [{ text: inputPrompt }]
+        }],
+        generationConfig: {
+            responseModalities: ['TEXT', 'IMAGE']
+        }
+    });
+
+    // Extract first image payload from candidates
+    const candidates = result?.response?.candidates || [];
+    const parts = candidates.flatMap(candidate => candidate?.content?.parts || []);
+    const imagePart = parts.find(part => part?.inlineData?.data);
+
+    // Validate that an image was returned
+    if (!imagePart?.inlineData?.data) {
+        throw new Error('Google AI did not return an image for this prompt.');
+    }
+
+    // Extract the image data and MIME type
+    const mimeType = imagePart.inlineData.mimeType || 'image/png';
+    const imageBase64 = imagePart.inlineData.data;
+    logger.debug(`Artist: image generation complete (${mimeType}, ${imageBase64.length} base64 chars)`);
+
+    // Return the generated image data and metadata
+    return {
+        imageBase64,
+        mimeType
     };
 };

@@ -275,6 +275,36 @@ export const getMimeTypeFromFileName = fileName => {
     return 'application/octet-stream';
 };
 
+// Map a MIME type to a preferred file extension
+export const getFileExtensionFromMimeType = mimeType => {
+    const lower = String(mimeType || '').toLowerCase().trim();
+
+    // Common image MIME types
+    if (lower === 'image/png') return '.png';
+    if (lower === 'image/jpeg' || lower === 'image/jpg') return '.jpg';
+    if (lower === 'image/webp') return '.webp';
+    if (lower === 'image/gif') return '.gif';
+    if (lower === 'image/bmp') return '.bmp';
+    if (lower === 'image/tiff' || lower === 'image/tif') return '.tif';
+    if (lower === 'image/svg+xml') return '.svg';
+
+    // Common document MIME types
+    if (lower === 'application/pdf') return '.pdf';
+    if (lower === 'text/plain') return '.txt';
+    if (lower === 'text/csv') return '.csv';
+    if (lower === 'application/json') return '.json';
+    if (lower === 'application/zip') return '.zip';
+    if (lower === 'application/msword') return '.doc';
+    if (lower === 'application/vnd.openxmlformats-officedocument.wordprocessingml.document') return '.docx';
+    if (lower === 'application/vnd.ms-excel') return '.xls';
+    if (lower === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') return '.xlsx';
+    if (lower === 'application/vnd.ms-powerpoint') return '.ppt';
+    if (lower === 'application/vnd.openxmlformats-officedocument.presentationml.presentation') return '.pptx';
+
+    // Safe fallback for unknown MIME types
+    return '.bin';
+};
+
 // Split long base64 payloads into MIME-safe line lengths
 export const chunkBase64 = value => {
     return value.match(/.{1,76}/g)?.join('\r\n') || '';

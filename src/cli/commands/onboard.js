@@ -84,14 +84,25 @@ export const registerOnboardCommand = ({ program }) => {
 
 				/************** Prompt for allowed users **************/
 
-				let allowedUsers = [];
+				// Show current allowed users from config (if any) and prompt for updates
+				let allowedUsers = Array.isArray(config.telegram?.allowedUsers) ? config.telegram.allowedUsers.map(user => String(user).trim()).filter(Boolean) : [];
+				if (allowedUsers.length > 0) {
+					info(`Current allowed users: [${allowedUsers.join(', ')}]`);
+				}
+
+				// Prompt for allowed users until at least one is provided
 				while (allowedUsers.length === 0) {
 					// Prompt for allowed users (comma-separated)
-					const allowedUsersInput = await question('\nEnter allowed Telegram user IDs or @usernames (comma-separated, at least one required): ');
-					allowedUsers = allowedUsersInput
+					const allowedUsersInput = await question('\nEnter allowed Telegram user IDs or @usernames (comma-separated, press Enter to keep current): ');
+					const parsedUsers = allowedUsersInput
 						.split(',')
 						.map(user => user.trim())
 						.filter(Boolean);
+
+					// If input is provided, replace current list with parsed values
+					if (parsedUsers.length > 0) {
+						allowedUsers = parsedUsers;
+					}
 
 					// If no valid users entered, show warning and prompt again
 					if (allowedUsers.length === 0) {

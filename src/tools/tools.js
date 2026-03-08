@@ -45,6 +45,7 @@ import { slidesAddSlideTool } from './slides/slides_add_slide.js';
 import { slidesReplaceTextTool } from './slides/slides_replace_text.js';
 import { slidesDeleteSlideTool } from './slides/slides_delete_slide.js';
 import { browserTool } from './browser/browser.js';
+import { imageGenerateTool } from './image/image_generate.js';
 import { cameraGetInfoTool } from './camera/camera_get_info.js';
 import { cameraSnapshotTool } from './camera/camera_snapshot.js';
 import { cameraSearchRecordingsTool } from './camera/camera_search_recordings.js';
@@ -123,6 +124,9 @@ const TOOLS = new Map([
 
     // Browser tools
     [browserTool.name, browserTool],
+
+    // Image tools
+    [imageGenerateTool.name, imageGenerateTool],
 
     // Camera / NVR tools
     [cameraGetInfoTool.name, cameraGetInfoTool],

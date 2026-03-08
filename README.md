@@ -41,6 +41,7 @@ Picobot uses an **orchestrator + subagents** architecture. You talk to one main 
 | 💾 **Drive Manager** | List, read, create, and share Google Drive files |
 | 🖼️ **Slides Manager** | Create, edit, and manage Google Slides presentations |
 | 📷 **Security Camera Manager** | Get Reolink NVR info, capture snapshots, search/download recordings, analyze video/image content, and cast live streams to TV |
+| 🎨 **Artist** | Generate AI images from text prompts and iterate on style/composition |
 | 💻 **Code Implementer** | Write, refactor, and test code with execution tools |
 | 🌐 **Web Researcher** | Search the web and synthesize information |
 | 🧭 **Web Navigator** | Control a browser to interact with pages and fill forms |
