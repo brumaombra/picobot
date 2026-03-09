@@ -21,9 +21,8 @@ export const IDLE_STATUS = 'idle';
 export const DONE_STATUS = 'done';
 export const FAILED_STATUS = 'failed';
 
-/**************** LLM / OpenRouter *****************/
-export const OPENROUTER_BASE_URL = 'https://openrouter.ai/api/v1';
-export const OPENROUTER_REQUEST_TIMEOUT_MS = 60000;
-export const OPENROUTER_MAX_TOKENS = 4096;
-export const OPENROUTER_TEMPERATURE = 0.7;
-export const OPENROUTER_TOOL_CHOICE = 'auto';
+/**************** LLM *****************/
+export const DEFAULT_REQUEST_TIMEOUT_MS = 60000;
+export const DEFAULT_MAX_TOKENS = 4096;
+export const DEFAULT_TEMPERATURE = 0.7;
+export const DEFAULT_TOOL_CHOICE = 'auto';

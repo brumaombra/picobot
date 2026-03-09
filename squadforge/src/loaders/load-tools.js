@@ -4,31 +4,31 @@ import { pathToFileURL } from 'url';
 import { SUPPORTED_TOOL_EXTENSIONS } from '../config.js';
 
 // Normalize a loaded tool module into the expected tool shape
-const normalizeTool = (tool, filePath) => {
+const normalizeTool = ({ rawTool, filePath }) => {
     // Validate the tool shape
-    if (!tool || typeof tool !== 'object') {
+    if (!rawTool || typeof rawTool !== 'object') {
         throw new Error(`Tool module must export an object: ${filePath}`);
     }
 
     // Validate required properties
-    if (!tool.name) {
+    if (!rawTool.name) {
         throw new Error(`Tool is missing a name: ${filePath}`);
     }
 
     // Validate the execute function
-    if (typeof tool.execute !== 'function') {
+    if (typeof rawTool.execute !== 'function') {
         throw new Error(`Tool is missing an execute function: ${filePath}`);
     }
 
     // Return the normalized tool object
     return {
-        name: String(tool.name),
-        description: String(tool.description || ''),
-        parameters: tool.parameters || {
+        name: String(rawTool.name),
+        description: String(rawTool.description || ''),
+        parameters: rawTool.parameters || {
             type: 'object',
             properties: {}
         },
-        execute: tool.execute,
+        execute: rawTool.execute,
         filePath
     };
 };
@@ -55,7 +55,7 @@ export const loadToolsFromDirectory = async ({ toolsDir } = {}) => {
         const moduleUrl = pathToFileURL(filePath).href;
         const importedModule = await import(moduleUrl);
         const rawTool = importedModule.default || importedModule.tool || importedModule;
-        const tool = normalizeTool(rawTool, filePath);
+        const tool = normalizeTool({ rawTool, filePath });
         tools.set(tool.name, tool);
     }
 

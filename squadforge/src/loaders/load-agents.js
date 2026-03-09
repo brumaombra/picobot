@@ -5,7 +5,7 @@ import { LEADER_FILE_NAME, LEADER_SPEC_ID, MARKDOWN_EXTENSION } from '../config.
 import { isMarkdownFile, parseFrontmatter } from '../utils/utils.js';
 
 // Validate that all tools referenced in the agent spec are available
-const validateAllowedTools = (agentSpec, availableTools) => {
+const validateAllowedTools = ({ agentSpec, availableTools }) => {
     const { allowedTools } = agentSpec;
 
     // If no tools are referenced, skip validation
@@ -26,7 +26,7 @@ const validateAllowedTools = (agentSpec, availableTools) => {
 };
 
 // Read and parse an agent spec from a markdown file
-const readAgentSpec = (filePath, availableTools) => {
+const readAgentSpec = ({ filePath, availableTools }) => {
     // Read the file content and parse the frontmatter
     const fileName = basename(filePath);
     const content = readFileSync(filePath, 'utf-8');
@@ -46,7 +46,7 @@ const readAgentSpec = (filePath, availableTools) => {
     });
 
     // Validate that all referenced tools are available
-    validateAllowedTools(agentSpec, availableTools);
+    validateAllowedTools({ agentSpec, availableTools });
 
     // Return the agent spec
     return agentSpec;
@@ -71,7 +71,7 @@ export const loadAgentsFromDirectory = ({ agentsDir, availableTools = null } = {
     const agentsSpecs = new Map();
     for (const fileName of files) {
         const filePath = join(agentsDir, fileName);
-        const agentSpec = readAgentSpec(filePath, availableTools);
+        const agentSpec = readAgentSpec({ filePath, availableTools });
         agentsSpecs.set(agentSpec.id, agentSpec);
     }
 

@@ -1,54 +1,31 @@
-const stringify = value => {
-    if (typeof value === 'string') {
-        return value;
-    }
+import { parseJson, stringifyJson } from '../utils/utils.js';
 
-    try {
-        return JSON.stringify(value);
-    } catch {
-        return String(value);
-    }
-};
-
-const parseArguments = rawArguments => {
-    if (!rawArguments) {
-        return {};
-    }
-
-    if (typeof rawArguments === 'string') {
-        const trimmed = rawArguments.trim();
-        if (!trimmed) {
-            return {};
-        }
-
-        return JSON.parse(trimmed);
-    }
-
-    if (typeof rawArguments === 'object') {
-        return rawArguments;
-    }
-
-    return {};
-};
-
+// Normalize the output of a tool execution into a string format
 const normalizeToolOutput = result => {
+    // If the result is an object with success, output, or error properties, handle it accordingly
     if (result && typeof result === 'object' && ('success' in result || 'output' in result || 'error' in result)) {
+        // If the tool execution was not successful, return the error message
         if (result.success === false) {
             return `Error: ${result.error || 'Unknown error'}`;
         }
 
-        return stringify(result.output);
+        // If the tool execution was successful, return the output
+        return stringifyJson(result.output);
     }
 
-    return stringify(result);
+    // For any other type of result, return it as a string
+    return stringifyJson(result);
 };
 
+// Execute a single tool call
 export const executeToolCall = async ({ agent, toolCall }) => {
     const toolName = toolCall?.function?.name;
     const toolCallId = toolCall?.id;
     const tool = agent.getTool(toolName);
 
+    // If the tool is not found or not allowed, return an error message
     if (!tool) {
+        // Emit a tool error event
         agent.squad.emitEvent({
             type: 'tool:error',
             agentId: agent.id,
@@ -58,6 +35,7 @@ export const executeToolCall = async ({ agent, toolCall }) => {
             error: `Unknown or disallowed tool "${toolName}".`
         });
 
+        // Return an error message as the tool output
         return {
             role: 'tool',
             tool_call_id: toolCallId,
@@ -66,6 +44,7 @@ export const executeToolCall = async ({ agent, toolCall }) => {
     }
 
     try {
+        // Emit a tool start event
         agent.squad.emitEvent({
             type: 'tool:start',
             agentId: agent.id,
@@ -74,7 +53,8 @@ export const executeToolCall = async ({ agent, toolCall }) => {
             toolCallId
         });
 
-        const args = parseArguments(toolCall?.function?.arguments);
+        // Parse the tool call arguments and execute the tool function
+        const args = parseJson(toolCall?.function?.arguments);
         const result = await tool.execute(args, {
             squad: agent.squad,
             agent,
@@ -86,6 +66,7 @@ export const executeToolCall = async ({ agent, toolCall }) => {
             findAgentBySessionId: sessionId => agent.squad.findAgentBySessionId(sessionId)
         });
 
+        // Emit a tool finish event
         agent.squad.emitEvent({
             type: 'tool:finish',
             agentId: agent.id,
@@ -94,12 +75,14 @@ export const executeToolCall = async ({ agent, toolCall }) => {
             toolCallId
         });
 
+        // Return the normalized tool output
         return {
             role: 'tool',
             tool_call_id: toolCallId,
             content: normalizeToolOutput(result)
         };
     } catch (error) {
+        // Emit a tool error event
         agent.squad.emitEvent({
             type: 'tool:error',
             agentId: agent.id,
@@ -109,6 +92,7 @@ export const executeToolCall = async ({ agent, toolCall }) => {
             error: error instanceof Error ? error.message : String(error)
         });
 
+        // Return an error message as the tool output
         return {
             role: 'tool',
             tool_call_id: toolCallId,
@@ -117,16 +101,20 @@ export const executeToolCall = async ({ agent, toolCall }) => {
     }
 };
 
+// Execute a batch of tool calls
 export const executeToolBatch = async ({ agent, toolCalls }) => {
-    const settled = await Promise.allSettled(
-        toolCalls.map(toolCall => executeToolCall({ agent, toolCall }))
-    );
+    // Execute all tool calls in parallel
+    const toolCallsPromises = toolCalls.map(toolCall => executeToolCall({ agent, toolCall }));
+    const settled = await Promise.allSettled(toolCallsPromises);
 
+    // Return the results
     return settled.map((result, index) => {
+        // If success, return the tool output
         if (result.status === 'fulfilled') {
             return result.value;
         }
 
+        // If rejected, return the error message
         return {
             role: 'tool',
             tool_call_id: toolCalls[index]?.id,

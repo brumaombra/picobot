@@ -5,6 +5,48 @@ export const isMarkdownFile = fileName => {
     return fileName.toLowerCase().endsWith(MARKDOWN_EXTENSION);
 };
 
+// Stringify a JSON object
+export const stringifyJson = value => {
+    // If the value is already a string, return it as is
+    if (typeof value === 'string') {
+        return value;
+    }
+
+    try {
+        return JSON.stringify(value);
+    } catch {
+        return String(value);
+    }
+};
+
+// Parse a JSON string into an object
+export const parseJson = rawValue => {
+    // If the raw value is falsy, return an empty object
+    if (!rawValue) {
+        return {};
+    }
+
+    // If the raw value is already an object, return it as is
+    if (typeof rawValue === 'string') {
+        // If the trimmed raw value is empty, return an empty object
+        const trimmed = rawValue.trim();
+        if (!trimmed) {
+            return {};
+        }
+
+        // Parse the JSON string
+        return JSON.parse(trimmed);
+    }
+
+    // If the raw value is already an object, return it as is
+    if (typeof rawValue === 'object') {
+        return rawValue;
+    }
+
+    // For any other type of value, return an empty object
+    return {};
+};
+
 // Parse the frontmatter from a markdown file
 export const parseFrontmatter = content => {
     const source = String(content || '');
