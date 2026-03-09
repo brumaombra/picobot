@@ -9,7 +9,7 @@ const DEFAULT_LEADER_SESSION_ID = 'leader';
 const LEADER_SPEC_ID = 'leader';
 
 export class Squad {
-    constructor({ agentsSpecs = new Map(), tools = new Map(), messageStore = new InMemoryMessageStore(), rootDir = null, agentsDir = null, toolsDir = null, llm = null } = {}) {
+    constructor({ agentsSpecs = new Map(), tools = new Map(), messageStore = new InMemoryMessageStore(), rootDir = null, agentsDir = null, toolsDir = null, llm = null, model = null, maxIterations = 12, onEvent = null } = {}) {
         const leaderSpec = agentsSpecs.get(LEADER_SPEC_ID);
         if (!(leaderSpec instanceof AgentSpec)) {
             throw new Error(`Squad requires a leader spec with id "${LEADER_SPEC_ID}".`);
@@ -22,6 +22,9 @@ export class Squad {
         this.agentsDir = agentsDir;
         this.toolsDir = toolsDir;
         this.llm = llm;
+        this.model = model;
+        this.maxIterations = maxIterations;
+        this.onEvent = onEvent;
         this.leaderAgent = new Agent({
             id: 'leader',
             definition: leaderSpec,
@@ -30,7 +33,7 @@ export class Squad {
         });
     }
 
-    static async assemble({ rootDir, agentsDir = null, toolsDir = null, messageStore = new InMemoryMessageStore(), llm = null } = {}) {
+    static async assemble({ rootDir, agentsDir = null, toolsDir = null, messageStore = new InMemoryMessageStore(), llm = null, model = null, maxIterations = 12, onEvent = null } = {}) {
         const resolvedRootDir = rootDir || process.cwd();
         const resolvedAgentsDir = agentsDir || join(resolvedRootDir, 'agents');
         const resolvedToolsDir = toolsDir || join(resolvedRootDir, 'tools');
@@ -49,8 +52,19 @@ export class Squad {
             rootDir: resolvedRootDir,
             agentsDir: resolvedAgentsDir,
             toolsDir: resolvedToolsDir,
-            llm
+            llm,
+            model,
+            maxIterations,
+            onEvent
         });
+    }
+
+    emitEvent(event) {
+        if (typeof this.onEvent !== 'function') {
+            return;
+        }
+
+        this.onEvent(event);
     }
 
     getLeaderAgent() {
@@ -88,6 +102,48 @@ export class Squad {
 
     listTools() {
         return [...this.tools.values()];
+    }
+
+    listBuiltInTools(agent) {
+        const availableSubagents = this.listSubagentSpecs();
+        if (availableSubagents.length === 0) {
+            return [];
+        }
+
+        return [{
+            name: 'delegate_to_agent',
+            description: `Delegate work to a specialized agent and wait for its final response. Available agents: ${availableSubagents.map(spec => spec.id).join(', ')}`,
+            parameters: {
+                type: 'object',
+                properties: {
+                    agentId: {
+                        type: 'string',
+                        description: 'The id of the specialized agent to run.'
+                    },
+                    prompt: {
+                        type: 'string',
+                        description: 'The task to delegate to the specialized agent.'
+                    }
+                },
+                required: ['agentId', 'prompt']
+            },
+            execute: async ({ agentId, prompt }) => {
+                const childAgent = agent.spawnSubagent(agentId, {
+                    prompt
+                });
+                const result = await childAgent.run();
+
+                return {
+                    agentId: childAgent.id,
+                    sessionId: childAgent.sessionId,
+                    response: result.response
+                };
+            }
+        }];
+    }
+
+    getBuiltInTool(name, agent) {
+        return this.listBuiltInTools(agent).find(tool => tool.name === String(name)) || null;
     }
 
     getMessages(sessionId = DEFAULT_LEADER_SESSION_ID) {

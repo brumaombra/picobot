@@ -7,9 +7,14 @@
     "exports": {
         ".": "./src/index.js"
     },
+    "scripts": {
+        "example": "node ./examples/basic/run.mjs",
+        "example:real": "node ./examples/basic/run.mjs"
+    },
     "files": [
         "src",
-        "README.md"
+        "README.md",
+        "examples"
     ],
     "engines": {
         "node": ">=18.0.0"
@@ -22,5 +27,8 @@
         "subagent",
         "llm"
     ],
+    "dependencies": {
+        "openai": "6.18.0"
+    },
     "license": "MIT"
 }
