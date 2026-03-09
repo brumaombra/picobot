@@ -1,13 +1,8 @@
 import OpenAI from 'openai';
-
-const DEFAULT_BASE_URL = 'https://openrouter.ai/api/v1';
-const DEFAULT_REQUEST_TIMEOUT_MS = 60000;
-const DEFAULT_MAX_TOKENS = 4096;
-const DEFAULT_TEMPERATURE = 0.7;
-const DEFAULT_TOOL_CHOICE = 'auto';
+import { OPENROUTER_BASE_URL, OPENROUTER_REQUEST_TIMEOUT_MS, OPENROUTER_MAX_TOKENS, OPENROUTER_TEMPERATURE, OPENROUTER_TOOL_CHOICE } from '../config.js';
 
 export class OpenRouterLlm {
-    constructor({ apiKey, baseURL = DEFAULT_BASE_URL, timeout = DEFAULT_REQUEST_TIMEOUT_MS, maxTokens = DEFAULT_MAX_TOKENS, temperature = DEFAULT_TEMPERATURE, toolChoice = DEFAULT_TOOL_CHOICE } = {}) {
+    constructor({ apiKey, baseURL = OPENROUTER_BASE_URL, timeout = OPENROUTER_REQUEST_TIMEOUT_MS, maxTokens = OPENROUTER_MAX_TOKENS, temperature = OPENROUTER_TEMPERATURE, toolChoice = OPENROUTER_TOOL_CHOICE } = {}) {
         if (!apiKey) {
             throw new Error('OpenRouterLlm requires an apiKey.');
         }

@@ -4,12 +4,10 @@ import { Agent } from './agent.js';
 import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
 import { loadToolsFromDirectory } from '../loaders/load-tools.js';
 import { InMemoryMessageStore } from '../runtime/in-memory-message-store.js';
-
-const DEFAULT_LEADER_SESSION_ID = 'leader';
-const LEADER_SPEC_ID = 'leader';
+import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_MAX_ITERATIONS } from '../config.js';
 
 export class Squad {
-    constructor({ agentsSpecs = new Map(), tools = new Map(), messageStore = new InMemoryMessageStore(), rootDir = null, agentsDir = null, toolsDir = null, llm = null, model = null, maxIterations = 12, onEvent = null } = {}) {
+    constructor({ agentsSpecs = new Map(), tools = new Map(), messageStore = new InMemoryMessageStore(), rootDir = null, agentsDir = null, toolsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS, onEvent = null } = {}) {
         const leaderSpec = agentsSpecs.get(LEADER_SPEC_ID);
         if (!(leaderSpec instanceof AgentSpec)) {
             throw new Error(`Squad requires a leader spec with id "${LEADER_SPEC_ID}".`);
@@ -26,17 +24,17 @@ export class Squad {
         this.maxIterations = maxIterations;
         this.onEvent = onEvent;
         this.leaderAgent = new Agent({
-            id: 'leader',
+            id: LEADER_SPEC_ID,
             definition: leaderSpec,
             squad: this,
             sessionId: DEFAULT_LEADER_SESSION_ID
         });
     }
 
-    static async assemble({ rootDir, agentsDir = null, toolsDir = null, messageStore = new InMemoryMessageStore(), llm = null, model = null, maxIterations = 12, onEvent = null } = {}) {
+    static async assemble({ rootDir, agentsDir = null, toolsDir = null, messageStore = new InMemoryMessageStore(), llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS, onEvent = null } = {}) {
         const resolvedRootDir = rootDir || process.cwd();
-        const resolvedAgentsDir = agentsDir || join(resolvedRootDir, 'agents');
-        const resolvedToolsDir = toolsDir || join(resolvedRootDir, 'tools');
+        const resolvedAgentsDir = agentsDir || join(resolvedRootDir, DEFAULT_AGENTS_DIR_NAME);
+        const resolvedToolsDir = toolsDir || join(resolvedRootDir, DEFAULT_TOOLS_DIR_NAME);
         const tools = await loadToolsFromDirectory({
             toolsDir: resolvedToolsDir
         });

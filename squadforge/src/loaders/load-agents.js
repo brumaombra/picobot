@@ -1,11 +1,8 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { basename, join } from 'path';
-import { AgentSpec, LEADER_AGENT_KIND, SUBAGENT_KIND } from '../core/agent-spec.js';
-import { parseFrontmatter } from '../utils/frontmatter.js';
-
-const MARKDOWN_EXTENSION = '.md';
-const LEADER_FILE_NAME = 'leader.md';
-const LEADER_SPEC_ID = 'leader';
+import { AgentSpec } from '../core/agent-spec.js';
+import { LEADER_AGENT_KIND, SUBAGENT_KIND, LEADER_FILE_NAME, LEADER_SPEC_ID, MARKDOWN_EXTENSION } from '../config.js';
+import { parseFrontmatter } from '../utils/utils.js';
 
 const isMarkdownFile = fileName => fileName.toLowerCase().endsWith(MARKDOWN_EXTENSION);
 

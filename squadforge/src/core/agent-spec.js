@@ -1,5 +1,4 @@
-const LEADER_AGENT_KIND = 'leader';
-const SUBAGENT_KIND = 'subagent';
+import { LEADER_AGENT_KIND, SUBAGENT_KIND } from '../config.js';
 
 const normalizeAllowedTools = value => {
     if (!value) {

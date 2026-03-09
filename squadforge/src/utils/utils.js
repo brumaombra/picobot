@@ -1,7 +1,9 @@
+// Parse the frontmatter from a markdown file
 export const parseFrontmatter = content => {
     const source = String(content || '');
     const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---/);
 
+    // If no frontmatter is found, return an empty metadata object
     if (!match) {
         return { metadata: {}, body: source.trim() };
     }
@@ -12,6 +14,7 @@ export const parseFrontmatter = content => {
     let currentKey = null;
     let currentList = null;
 
+    // Parse the frontmatter line by line
     for (const rawLine of rawMetadata.split(/\r?\n/)) {
         const line = rawLine.trimEnd();
         const listItem = line.match(/^\s+-\s+(.+)$/);

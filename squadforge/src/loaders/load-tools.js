@@ -1,8 +1,9 @@
 import { existsSync, readdirSync } from 'fs';
 import { extname, join } from 'path';
 import { pathToFileURL } from 'url';
+import { SUPPORTED_TOOL_EXTENSIONS } from '../config.js';
 
-const SUPPORTED_EXTENSIONS = new Set(['.js', '.mjs']);
+const SUPPORTED_EXTENSIONS = new Set(SUPPORTED_TOOL_EXTENSIONS);
 
 const normalizeTool = (tool, filePath) => {
     if (!tool || typeof tool !== 'object') {

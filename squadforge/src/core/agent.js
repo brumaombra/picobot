@@ -1,10 +1,6 @@
 import { AgentSpec } from './agent-spec.js';
 import { executeToolBatch } from '../runtime/tool-executor.js';
-
-const RUNNING_STATUS = 'running';
-const IDLE_STATUS = 'idle';
-const DONE_STATUS = 'done';
-const FAILED_STATUS = 'failed';
+import { RUNNING_STATUS, IDLE_STATUS, DONE_STATUS, FAILED_STATUS } from '../config.js';
 
 const createRuntimeId = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
