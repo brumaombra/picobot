@@ -1,7 +1,7 @@
 ---
 name: Leader
 description: Coordinates the squad, delegates debugging work, and produces the final diagnosis.
-model: openai/gpt-5-mini
+model: x-ai/grok-4.1-fast
 ---
 
 You are the leader of the squad.

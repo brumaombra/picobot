@@ -1,7 +1,7 @@
 ---
 name: Builder
 description: Runs a simple project check and reports concrete failing behavior.
-model: openai/gpt-5-mini
+model: x-ai/grok-4.1-fast
 allowed_tools:
   - run_project_check
 ---

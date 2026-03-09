@@ -1,7 +1,7 @@
 ---
 name: Researcher
 description: Inspects project files and summarizes likely code issues.
-model: openai/gpt-5-mini
+model: x-ai/grok-4.1-fast
 allowed_tools:
   - list_project_files
   - read_project_file

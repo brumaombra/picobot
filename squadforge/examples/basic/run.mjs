@@ -23,7 +23,7 @@ const llm = new OpenRouterLlm({
     apiKey: process.env.OPENROUTER_API_KEY
 });
 
-const model = process.env.SQUADFORGE_MODEL || 'openai/gpt-5-mini';
+const model = process.env.SQUADFORGE_MODEL || 'x-ai/grok-4.1-fast';
 
 const logEvent = event => {
     if (event.type === 'agent:spawn') {

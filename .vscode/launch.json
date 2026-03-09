@@ -50,6 +50,21 @@
                 "nuke"
             ],
             "console": "integratedTerminal"
+        },
+        {
+            "name": "Squadforge Example",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/squadforge/examples/basic/run.mjs",
+            "cwd": "${workspaceFolder}/squadforge/examples/basic",
+            "envFile": "${workspaceFolder}/squadforge/examples/basic/.env",
+            "env": {
+                "SQUADFORGE_MODEL": "x-ai/grok-4.1-fast"
+            },
+            "console": "integratedTerminal",
+            "skipFiles": [
+                "<node_internals>/**"
+            ]
         }
     ]
 }
