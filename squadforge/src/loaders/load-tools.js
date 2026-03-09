@@ -29,7 +29,7 @@ const normalizeTool = (tool, filePath) => {
     };
 };
 
-export const loadToolsFromDirectory = async toolsDir => {
+export const loadToolsFromDirectory = async ({ toolsDir } = {}) => {
     if (!toolsDir) {
         throw new Error('toolsDir is required.');
     }

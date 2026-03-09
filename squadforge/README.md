@@ -6,10 +6,10 @@ Opinionated JavaScript framework for building a single main-agent entrypoint bac
 
 This first cut focuses on the core filesystem-driven abstraction layer:
 
-- load `main.md` plus subagent markdown files from an `agents/` folder
+- automatically load `main.md` plus subagent markdown files from an `agents/` folder during squad initialization
 - parse frontmatter metadata such as `name`, `description`, `model`, and `allowed_tools`
-- dynamically load tools from a `tools/` folder
-- expose a single `Agent` class that owns the main agent, loaded subagent definitions, active subagent instances, and chat history storage
+- automatically load tools from a `tools/` folder during squad initialization
+- expose a single `Squad` class that owns the main agent, loaded subagent definitions, active subagent instances, and chat history storage
 
 The orchestration loop and LLM adapter layer can be added on top of this base without changing the folder conventions.
 
@@ -43,23 +43,20 @@ You are a research specialist.
 ## Usage
 
 ```js
-import { Agent } from 'squadforge';
+import { Squad } from 'squadforge';
 
-const agent = await Agent.fromDirectory({
-    rootDir: process.cwd()
-});
+const squad = await Squad.assemble();
 
-await agent.send('Plan a research task for the team.');
-const subagent = agent.spawnSubagent('researcher', {
+await squad.send('Plan a research task for the team.');
+const subagent = squad.spawnSubagent('researcher', {
     prompt: 'Investigate the latest model releases.'
 });
 ```
 
 ## Public Surface
 
-- `Agent`
-- `AgentDefinition`
-- `SubagentInstance`
+- `Squad`
+- `AgentSpec`
 - `InMemoryMessageStore`
-- `loadAgentsFromDirectory`
-- `loadToolsFromDirectory`
+
+The folder loaders are internal implementation details. Consumers initialize a squad through `Squad.assemble(...)`, and squadforge loads the `agents/` and `tools/` folders automatically. When `rootDir` is omitted, squadforge defaults it to the current working directory.

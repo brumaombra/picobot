@@ -1,138 +1,182 @@
-import { join } from 'path';
-import { AgentDefinition } from './agent-definition.js';
-import { SubagentInstance } from './subagent-instance.js';
-import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
-import { loadToolsFromDirectory } from '../loaders/load-tools.js';
-import { InMemoryMessageStore } from '../runtime/in-memory-message-store.js';
+import { AgentSpec } from './agent-spec.js';
 
-const DEFAULT_MAIN_SESSION_ID = 'main';
+const RUNNING_STATUS = 'running';
+const IDLE_STATUS = 'idle';
 
 const createRuntimeId = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 
 export class Agent {
-    constructor({ mainAgent, subagents = new Map(), tools = new Map(), messageStore = new InMemoryMessageStore(), rootDir = null, agentsDir = null, toolsDir = null, llm = null } = {}) {
-        if (!(mainAgent instanceof AgentDefinition)) {
-            throw new Error('Agent requires a mainAgent definition.');
+    constructor({ id = null, definition, squad, parent = null, sessionId = null, initialPrompt = '' } = {}) {
+        if (!(definition instanceof AgentSpec)) {
+            throw new Error('Agent requires an AgentSpec.');
         }
 
-        this.mainAgent = mainAgent;
-        this.subagents = subagents instanceof Map ? subagents : new Map(subagents);
-        this.tools = tools instanceof Map ? tools : new Map(tools);
-        this.messageStore = messageStore;
-        this.rootDir = rootDir;
-        this.agentsDir = agentsDir;
-        this.toolsDir = toolsDir;
-        this.llm = llm;
+        if (!squad) {
+            throw new Error('Agent requires a squad instance.');
+        }
 
-        this.subagentInstances = new Map();
+        this.id = String(id || createRuntimeId(definition.id));
+        this.definition = definition;
+        this.squad = squad;
+        this.parent = parent;
+        this.sessionId = String(sessionId || this.id);
+        this.initialPrompt = String(initialPrompt || '');
+        this.status = IDLE_STATUS;
+        this.startedAt = new Date();
+        this.completedAt = null;
+        this.result = null;
+        this.error = null;
+        this.subagents = new Map();
     }
 
-    static async fromDirectory({ rootDir, agentsDir = null, toolsDir = null, messageStore = new InMemoryMessageStore(), llm = null } = {}) {
-        if (!rootDir && !agentsDir) {
-            throw new Error('rootDir or agentsDir is required.');
+    get name() {
+        return this.definition.name;
+    }
+
+    get prompt() {
+        return this.definition.prompt;
+    }
+
+    get allowedToolNames() {
+        return [...this.definition.allowedTools];
+    }
+
+    getMessages() {
+        return this.squad.messageStore.getMessages(this.sessionId);
+    }
+
+    ensureSession() {
+        const messages = this.getMessages();
+        if (messages.length === 0) {
+            this.squad.messageStore.appendMessage(this.sessionId, {
+                role: 'system',
+                content: this.prompt
+            });
+
+            if (this.initialPrompt) {
+                this.squad.messageStore.appendMessage(this.sessionId, {
+                    role: 'user',
+                    content: this.initialPrompt
+                });
+            }
         }
 
-        const resolvedAgentsDir = agentsDir || join(rootDir, 'agents');
-        const resolvedToolsDir = toolsDir || join(rootDir, 'tools');
-        const { mainAgent, subagents } = loadAgentsFromDirectory(resolvedAgentsDir);
-        const tools = await loadToolsFromDirectory(resolvedToolsDir);
+        return this.squad.messageStore.getOrCreateSession(this.sessionId);
+    }
 
-        return new Agent({
-            mainAgent,
-            subagents,
-            tools,
-            messageStore,
-            rootDir,
-            agentsDir: resolvedAgentsDir,
-            toolsDir: resolvedToolsDir,
-            llm
+    async send(content, { role = 'user' } = {}) {
+        this.ensureSession();
+        this.status = RUNNING_STATUS;
+        this.squad.messageStore.appendMessage(this.sessionId, {
+            role,
+            content: String(content || '')
         });
+
+        return {
+            agentId: this.id,
+            sessionId: this.sessionId,
+            messages: this.getMessages()
+        };
     }
 
-    getMainAgent() {
-        return this.mainAgent;
+    complete(result = null) {
+        this.status = 'done';
+        this.result = result;
+        this.error = null;
+        this.completedAt = new Date();
+        return this;
     }
 
-    getSubagent(id) {
-        return this.subagents.get(String(id));
+    fail(error) {
+        this.status = 'failed';
+        this.result = null;
+        this.error = error instanceof Error ? error.message : String(error);
+        this.completedAt = new Date();
+        return this;
+    }
+
+    getTool(name) {
+        const normalizedName = String(name);
+        if (!this.definition.allowedTools.includes(normalizedName)) {
+            return null;
+        }
+
+        return this.squad.getTool(normalizedName);
+    }
+
+    listTools() {
+        return this.definition.allowedTools
+            .map(toolName => this.squad.getTool(toolName))
+            .filter(Boolean);
+    }
+
+    spawnSubagent(type, { prompt = '' } = {}) {
+        const definition = this.squad.getSubagentSpec(type);
+        if (!definition) {
+            const available = this.squad.listSubagentSpecs().map(agent => agent.id).join(', ');
+            throw new Error(`Unknown subagent "${type}". Available subagents: ${available}`);
+        }
+
+        const agent = new Agent({
+            definition,
+            squad: this.squad,
+            parent: this,
+            initialPrompt: prompt
+        });
+
+        agent.ensureSession();
+        this.subagents.set(agent.id, agent);
+        return agent;
+    }
+
+    getSubagent(agentId) {
+        return this.subagents.get(String(agentId));
     }
 
     listSubagents() {
         return [...this.subagents.values()];
     }
 
-    getTool(name) {
-        return this.tools.get(String(name));
-    }
+    listDescendants() {
+        const descendants = [];
 
-    listTools() {
-        return [...this.tools.values()];
-    }
-
-    getMessages(sessionId = DEFAULT_MAIN_SESSION_ID) {
-        return this.messageStore.getMessages(sessionId);
-    }
-
-    ensureMainSession(sessionId = DEFAULT_MAIN_SESSION_ID) {
-        const messages = this.messageStore.getMessages(sessionId);
-        if (messages.length === 0) {
-            this.messageStore.appendMessage(sessionId, {
-                role: 'system',
-                content: this.mainAgent.prompt
-            });
+        for (const agent of this.subagents.values()) {
+            descendants.push(agent);
+            descendants.push(...agent.listDescendants());
         }
 
-        return this.messageStore.getOrCreateSession(sessionId);
+        return descendants;
     }
 
-    async send(content, { sessionId = DEFAULT_MAIN_SESSION_ID, role = 'user' } = {}) {
-        this.ensureMainSession(sessionId);
-        this.messageStore.appendMessage(sessionId, {
-            role,
-            content: String(content || '')
-        });
-
-        return {
-            sessionId,
-            messages: this.messageStore.getMessages(sessionId)
-        };
-    }
-
-    spawnSubagent(type, { prompt = '', parentSessionId = DEFAULT_MAIN_SESSION_ID } = {}) {
-        const definition = this.getSubagent(type);
-        if (!definition) {
-            const available = [...this.subagents.keys()].join(', ');
-            throw new Error(`Unknown subagent "${type}". Available subagents: ${available}`);
+    findById(agentId) {
+        const normalizedId = String(agentId);
+        if (this.id === normalizedId) {
+            return this;
         }
 
-        const instance = new SubagentInstance({
-            id: createRuntimeId(definition.id),
-            definition,
-            prompt,
-            parentSessionId
-        });
-
-        this.subagentInstances.set(instance.id, instance);
-        this.messageStore.appendMessage(instance.sessionId, {
-            role: 'system',
-            content: definition.prompt
-        });
-
-        if (prompt) {
-            this.messageStore.appendMessage(instance.sessionId, {
-                role: 'user',
-                content: String(prompt)
-            });
+        for (const agent of this.subagents.values()) {
+            const match = agent.findById(normalizedId);
+            if (match) {
+                return match;
+            }
         }
 
-        return instance;
+        return null;
     }
 
-    getSubagentInstance(instanceId) {
-        return this.subagentInstances.get(String(instanceId));
-    }
+    findBySessionId(sessionId) {
+        const normalizedSessionId = String(sessionId);
+        if (this.sessionId === normalizedSessionId) {
+            return this;
+        }
 
-    listRunningSubagents() {
-        return [...this.subagentInstances.values()];
+        for (const agent of this.subagents.values()) {
+            const match = agent.findBySessionId(normalizedSessionId);
+            if (match) {
+                return match;
+            }
+        }
+
+        return null;
     }
 }

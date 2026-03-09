@@ -13,10 +13,10 @@ const normalizeAllowedTools = value => {
     return [String(value).trim()].filter(Boolean);
 };
 
-export class AgentDefinition {
+export class AgentSpec {
     constructor({ id, kind = SUBAGENT_KIND, name, description = '', model = null, allowedTools = [], prompt = '', filePath = null, metadata = {} } = {}) {
         if (!id) {
-            throw new Error('AgentDefinition requires an id.');
+            throw new Error('AgentSpec requires an id.');
         }
 
         if (kind !== MAIN_AGENT_KIND && kind !== SUBAGENT_KIND) {
@@ -39,10 +39,10 @@ export class AgentDefinition {
     }
 }
 
-export const normalizeAgentDefinition = (rawDefinition = {}, overrides = {}) => {
-    const metadata = rawDefinition.metadata || {};
+export const normalizeAgentSpec = (rawSpec = {}, overrides = {}) => {
+    const metadata = rawSpec.metadata || {};
     const merged = {
-        ...rawDefinition,
+        ...rawSpec,
         ...overrides,
         metadata: {
             ...metadata,
@@ -50,7 +50,7 @@ export const normalizeAgentDefinition = (rawDefinition = {}, overrides = {}) => 
         }
     };
 
-    return new AgentDefinition({
+    return new AgentSpec({
         id: merged.id,
         kind: merged.kind,
         name: merged.name || metadata.name,
