@@ -1,0 +1,26 @@
+{
+    "name": "squadforge",
+    "version": "0.1.0",
+    "description": "Opinionated JavaScript framework for main-agent and subagent teams",
+    "type": "module",
+    "main": "./src/index.js",
+    "exports": {
+        ".": "./src/index.js"
+    },
+    "files": [
+        "src",
+        "README.md"
+    ],
+    "engines": {
+        "node": ">=18.0.0"
+    },
+    "keywords": [
+        "ai",
+        "agent",
+        "framework",
+        "multi-agent",
+        "subagent",
+        "llm"
+    ],
+    "license": "MIT"
+}
