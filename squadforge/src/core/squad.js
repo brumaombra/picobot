@@ -32,17 +32,16 @@ export class Squad {
     }
 
     static async assemble({ rootDir, agentsDir = null, toolsDir = null, messageStore = new InMemoryMessageStore(), llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS, onEvent = null } = {}) {
+        // Resolve directories
         const resolvedRootDir = rootDir || process.cwd();
         const resolvedAgentsDir = agentsDir || join(resolvedRootDir, DEFAULT_AGENTS_DIR_NAME);
         const resolvedToolsDir = toolsDir || join(resolvedRootDir, DEFAULT_TOOLS_DIR_NAME);
-        const tools = await loadToolsFromDirectory({
-            toolsDir: resolvedToolsDir
-        });
-        const { agentsSpecs } = loadAgentsFromDirectory({
-            agentsDir: resolvedAgentsDir,
-            availableTools: tools
-        });
 
+        // Load the tools and agent specs and validate them
+        const tools = await loadToolsFromDirectory({ toolsDir: resolvedToolsDir });
+        const agentsSpecs = loadAgentsFromDirectory({ agentsDir: resolvedAgentsDir, availableTools: tools });
+
+        // Create and return the squad instance
         return new Squad({
             agentsSpecs,
             tools,

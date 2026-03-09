@@ -12,8 +12,6 @@ export const MARKDOWN_EXTENSION = '.md';
 export const SUPPORTED_TOOL_EXTENSIONS = ['.js', '.mjs'];
 
 /**************** Agent *****************/
-export const LEADER_AGENT_KIND = 'leader';
-export const SUBAGENT_KIND = 'subagent';
 export const LEADER_FILE_NAME = 'leader.md';
 export const LEADER_SPEC_ID = 'leader';
 export const DEFAULT_LEADER_SESSION_ID = 'leader';

@@ -1,4 +1,4 @@
-import { LEADER_AGENT_KIND, SUBAGENT_KIND } from '../config.js';
+import { LEADER_SPEC_ID } from '../config.js';
 
 const normalizeAllowedTools = value => {
     if (!value) {
@@ -13,17 +13,12 @@ const normalizeAllowedTools = value => {
 };
 
 export class AgentSpec {
-    constructor({ id, kind = SUBAGENT_KIND, name, description = '', model = null, allowedTools = [], prompt = '', filePath = null, metadata = {} } = {}) {
+    constructor({ id, name, description = '', model = null, allowedTools = [], prompt = '', filePath = null, metadata = {} } = {}) {
         if (!id) {
             throw new Error('AgentSpec requires an id.');
         }
 
-        if (kind !== LEADER_AGENT_KIND && kind !== SUBAGENT_KIND) {
-            throw new Error(`Unsupported agent kind "${kind}".`);
-        }
-
         this.id = String(id);
-        this.kind = kind;
         this.name = name ? String(name) : this.id;
         this.description = String(description || '');
         this.model = model ? String(model) : null;
@@ -34,7 +29,7 @@ export class AgentSpec {
     }
 
     get isLeaderAgent() {
-        return this.kind === LEADER_AGENT_KIND;
+        return this.id === LEADER_SPEC_ID;
     }
 }
 
@@ -51,7 +46,6 @@ export const normalizeAgentSpec = (rawSpec = {}, overrides = {}) => {
 
     return new AgentSpec({
         id: merged.id,
-        kind: merged.kind,
         name: merged.name || metadata.name,
         description: merged.description || metadata.description || '',
         model: merged.model || metadata.model || null,
@@ -61,5 +55,3 @@ export const normalizeAgentSpec = (rawSpec = {}, overrides = {}) => {
         metadata: merged.metadata
     });
 };
-
-export { LEADER_AGENT_KIND, SUBAGENT_KIND };
