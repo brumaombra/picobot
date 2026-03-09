@@ -5,26 +5,26 @@ import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
 import { loadToolsFromDirectory } from '../loaders/load-tools.js';
 import { InMemoryMessageStore } from '../runtime/in-memory-message-store.js';
 
-const DEFAULT_LEADER_SESSION_ID = 'main';
+const DEFAULT_LEADER_SESSION_ID = 'leader';
+const LEADER_SPEC_ID = 'leader';
 
 export class Squad {
-    constructor({ leaderSpec, subagentSpecs = new Map(), tools = new Map(), messageStore = new InMemoryMessageStore(), rootDir = null, agentsDir = null, toolsDir = null, llm = null } = {}) {
+    constructor({ agentsSpecs = new Map(), tools = new Map(), messageStore = new InMemoryMessageStore(), rootDir = null, agentsDir = null, toolsDir = null, llm = null } = {}) {
+        const leaderSpec = agentsSpecs.get(LEADER_SPEC_ID);
         if (!(leaderSpec instanceof AgentSpec)) {
-            throw new Error('Squad requires a leaderSpec.');
+            throw new Error(`Squad requires a leader spec with id "${LEADER_SPEC_ID}".`);
         }
 
-        this.leaderSpec = leaderSpec;
-        this.subagentSpecs = subagentSpecs instanceof Map ? subagentSpecs : new Map(subagentSpecs);
-        this.tools = tools instanceof Map ? tools : new Map(tools);
+        this.agentsSpecs = agentsSpecs;
+        this.tools = tools;
         this.messageStore = messageStore;
         this.rootDir = rootDir;
         this.agentsDir = agentsDir;
         this.toolsDir = toolsDir;
         this.llm = llm;
-
         this.leaderAgent = new Agent({
             id: 'leader',
-            definition: this.leaderSpec,
+            definition: leaderSpec,
             squad: this,
             sessionId: DEFAULT_LEADER_SESSION_ID
         });
@@ -37,14 +37,13 @@ export class Squad {
         const tools = await loadToolsFromDirectory({
             toolsDir: resolvedToolsDir
         });
-        const { leaderAgent, subagents } = loadAgentsFromDirectory({
+        const { agentsSpecs } = loadAgentsFromDirectory({
             agentsDir: resolvedAgentsDir,
             availableTools: tools
         });
 
         return new Squad({
-            leaderSpec: leaderAgent,
-            subagentSpecs: subagents,
+            agentsSpecs,
             tools,
             messageStore,
             rootDir: resolvedRootDir,
@@ -58,12 +57,29 @@ export class Squad {
         return this.leaderAgent;
     }
 
+    getLeaderSpec() {
+        return this.agentsSpecs.get(LEADER_SPEC_ID) || null;
+    }
+
+    getAgentSpec(id) {
+        return this.agentsSpecs.get(String(id)) || null;
+    }
+
+    listAgentSpecs() {
+        return [...this.agentsSpecs.values()];
+    }
+
     getSubagentSpec(id) {
-        return this.subagentSpecs.get(String(id));
+        const normalizedId = String(id);
+        if (normalizedId === LEADER_SPEC_ID) {
+            return null;
+        }
+
+        return this.getAgentSpec(normalizedId);
     }
 
     listSubagentSpecs() {
-        return [...this.subagentSpecs.values()];
+        return this.listAgentSpecs().filter(agentSpec => agentSpec.id !== LEADER_SPEC_ID);
     }
 
     getTool(name) {
@@ -75,37 +91,19 @@ export class Squad {
     }
 
     getMessages(sessionId = DEFAULT_LEADER_SESSION_ID) {
-        return this.messageStore.getMessages(sessionId);
+        return this.requireAgentBySessionId(sessionId).getMessages();
     }
 
-    ensureLeaderSession(sessionId = DEFAULT_LEADER_SESSION_ID) {
-        if (sessionId !== DEFAULT_LEADER_SESSION_ID) {
-            return this.messageStore.getOrCreateSession(sessionId);
-        }
-
+    ensureLeaderSession() {
         return this.leaderAgent.ensureSession();
     }
 
     async send(content, { sessionId = DEFAULT_LEADER_SESSION_ID, role = 'user' } = {}) {
-        if (sessionId !== DEFAULT_LEADER_SESSION_ID) {
-            const agent = this.leaderAgent.findBySessionId(sessionId);
-            if (!agent) {
-                throw new Error(`Unknown session "${sessionId}".`);
-            }
-
-            return agent.send(content, { role });
-        }
-
-        return this.leaderAgent.send(content, { role });
+        return this.requireAgentBySessionId(sessionId).send(content, { role });
     }
 
     spawnSubagent(type, { prompt = '', parentSessionId = DEFAULT_LEADER_SESSION_ID } = {}) {
-        const parentAgent = this.leaderAgent.findBySessionId(parentSessionId);
-        if (!parentAgent) {
-            throw new Error(`Unknown parent session "${parentSessionId}".`);
-        }
-
-        return parentAgent.spawnSubagent(type, { prompt });
+        return this.requireAgentBySessionId(parentSessionId).spawnSubagent(type, { prompt });
     }
 
     getAgent(agentId) {
@@ -122,5 +120,14 @@ export class Squad {
 
     findAgentBySessionId(sessionId) {
         return this.leaderAgent.findBySessionId(sessionId);
+    }
+
+    requireAgentBySessionId(sessionId) {
+        const agent = this.findAgentBySessionId(sessionId);
+        if (!agent) {
+            throw new Error(`Unknown session "${sessionId}".`);
+        }
+
+        return agent;
     }
 }

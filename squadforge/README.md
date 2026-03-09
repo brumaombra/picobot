@@ -6,7 +6,7 @@ Opinionated JavaScript framework for building a single main-agent entrypoint bac
 
 This first cut focuses on the core filesystem-driven abstraction layer:
 
-- automatically load `main.md` plus subagent markdown files from an `agents/` folder during squad initialization
+- automatically load `leader.md` plus subagent markdown files from an `agents/` folder during squad initialization
 - parse frontmatter metadata such as `name`, `description`, `model`, and `allowed_tools`
 - automatically load tools from a `tools/` folder during squad initialization
 - expose a single `Squad` class that owns the main agent, loaded subagent definitions, active subagent instances, and chat history storage
@@ -18,7 +18,7 @@ The orchestration loop and LLM adapter layer can be added on top of this base wi
 ```text
 my-app/
   agents/
-    main.md
+    leader.md
     researcher.md
     coder.md
   tools/

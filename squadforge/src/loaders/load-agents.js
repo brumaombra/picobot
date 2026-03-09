@@ -1,33 +1,34 @@
 import { existsSync, readdirSync, readFileSync } from 'fs';
 import { basename, join } from 'path';
-import { AgentSpec, MAIN_AGENT_KIND, SUBAGENT_KIND } from '../core/agent-spec.js';
+import { AgentSpec, LEADER_AGENT_KIND, SUBAGENT_KIND } from '../core/agent-spec.js';
 import { parseFrontmatter } from '../utils/frontmatter.js';
 
 const MARKDOWN_EXTENSION = '.md';
-const MAIN_FILE_NAME = 'main.md';
+const LEADER_FILE_NAME = 'leader.md';
+const LEADER_SPEC_ID = 'leader';
 
 const isMarkdownFile = fileName => fileName.toLowerCase().endsWith(MARKDOWN_EXTENSION);
 
-const validateAllowedTools = (definition, availableTools) => {
-    if (!(availableTools instanceof Map) || definition.allowedTools.length === 0) {
+const validateAllowedTools = (agentSpec, availableTools) => {
+    if (agentSpec.allowedTools.length === 0) {
         return;
     }
 
-    const missingTools = definition.allowedTools.filter(toolName => !availableTools.has(toolName));
+    const missingTools = agentSpec.allowedTools.filter(toolName => !availableTools.has(toolName));
     if (missingTools.length === 0) {
         return;
     }
 
-    throw new Error(`Agent "${definition.id}" references unknown tools: ${missingTools.join(', ')}`);
+    throw new Error(`Agent "${agentSpec.id}" references unknown tools: ${missingTools.join(', ')}`);
 };
 
 const readAgentSpec = (filePath, kind, availableTools) => {
     const fileName = basename(filePath);
     const content = readFileSync(filePath, 'utf-8');
     const { metadata, body } = parseFrontmatter(content);
-    const id = kind === MAIN_AGENT_KIND ? 'main' : basename(fileName, MARKDOWN_EXTENSION);
+    const id = kind === LEADER_AGENT_KIND ? LEADER_SPEC_ID : basename(fileName, MARKDOWN_EXTENSION);
 
-    const definition = new AgentSpec({
+    const agentSpec = new AgentSpec({
         id,
         kind,
         name: metadata.name || id,
@@ -39,8 +40,8 @@ const readAgentSpec = (filePath, kind, availableTools) => {
         metadata
     });
 
-    validateAllowedTools(definition, availableTools);
-    return definition;
+    validateAllowedTools(agentSpec, availableTools);
+    return agentSpec;
 };
 
 export const loadAgentsFromDirectory = ({ agentsDir, availableTools = null } = {}) => {
@@ -56,26 +57,26 @@ export const loadAgentsFromDirectory = ({ agentsDir, availableTools = null } = {
         .filter(isMarkdownFile)
         .sort((left, right) => left.localeCompare(right));
 
-    const mainFilePath = join(agentsDir, MAIN_FILE_NAME);
-    if (!existsSync(mainFilePath)) {
-        throw new Error(`Main agent file not found: ${mainFilePath}`);
+    const leaderFilePath = join(agentsDir, LEADER_FILE_NAME);
+    if (!existsSync(leaderFilePath)) {
+        throw new Error(`Leader agent file not found: ${leaderFilePath}`);
     }
 
-    const leaderAgent = readAgentSpec(mainFilePath, MAIN_AGENT_KIND, availableTools);
-    const subagents = new Map();
+    const agentsSpecs = new Map();
+    const leaderSpec = readAgentSpec(leaderFilePath, LEADER_AGENT_KIND, availableTools);
+    agentsSpecs.set(leaderSpec.id, leaderSpec);
 
     for (const fileName of files) {
-        if (fileName.toLowerCase() === MAIN_FILE_NAME) {
+        if (fileName.toLowerCase() === LEADER_FILE_NAME) {
             continue;
         }
 
         const filePath = join(agentsDir, fileName);
-        const definition = readAgentSpec(filePath, SUBAGENT_KIND, availableTools);
-        subagents.set(definition.id, definition);
+        const subagentSpec = readAgentSpec(filePath, SUBAGENT_KIND, availableTools);
+        agentsSpecs.set(subagentSpec.id, subagentSpec);
     }
 
     return {
-        leaderAgent,
-        subagents
+        agentsSpecs
     };
 };

@@ -4,7 +4,7 @@ export class InMemoryMessageStore {
     }
 
     getOrCreateSession(sessionId) {
-        const normalizedSessionId = String(sessionId || 'main');
+        const normalizedSessionId = String(sessionId || 'leader');
 
         if (!this.sessions.has(normalizedSessionId)) {
             this.sessions.set(normalizedSessionId, {
@@ -31,6 +31,6 @@ export class InMemoryMessageStore {
     }
 
     clearSession(sessionId) {
-        this.sessions.delete(String(sessionId || 'main'));
+        this.sessions.delete(String(sessionId || 'leader'));
     }
 }

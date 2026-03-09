@@ -1,4 +1,4 @@
-const MAIN_AGENT_KIND = 'main';
+const LEADER_AGENT_KIND = 'leader';
 const SUBAGENT_KIND = 'subagent';
 
 const normalizeAllowedTools = value => {
@@ -19,7 +19,7 @@ export class AgentSpec {
             throw new Error('AgentSpec requires an id.');
         }
 
-        if (kind !== MAIN_AGENT_KIND && kind !== SUBAGENT_KIND) {
+        if (kind !== LEADER_AGENT_KIND && kind !== SUBAGENT_KIND) {
             throw new Error(`Unsupported agent kind "${kind}".`);
         }
 
@@ -34,8 +34,8 @@ export class AgentSpec {
         this.metadata = { ...metadata };
     }
 
-    get isMainAgent() {
-        return this.kind === MAIN_AGENT_KIND;
+    get isLeaderAgent() {
+        return this.kind === LEADER_AGENT_KIND;
     }
 }
 
@@ -63,4 +63,4 @@ export const normalizeAgentSpec = (rawSpec = {}, overrides = {}) => {
     });
 };
 
-export { MAIN_AGENT_KIND, SUBAGENT_KIND };
+export { LEADER_AGENT_KIND, SUBAGENT_KIND };
