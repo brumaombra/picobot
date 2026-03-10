@@ -26,8 +26,7 @@ export const executeToolCall = async ({ agent, toolCall }) => {
     // If the tool is not found or not allowed, return an error message
     if (!tool) {
         // Emit a tool error event
-        agent.squad.emitEvent({
-            type: 'tool:error',
+        agent.squad.emitEvent('toolError', {
             agentId: agent.id,
             agentType: agent.definition.id,
             toolName,
@@ -45,8 +44,7 @@ export const executeToolCall = async ({ agent, toolCall }) => {
 
     try {
         // Emit a tool start event
-        agent.squad.emitEvent({
-            type: 'tool:start',
+        agent.squad.emitEvent('toolStart', {
             agentId: agent.id,
             agentType: agent.definition.id,
             toolName,
@@ -67,8 +65,7 @@ export const executeToolCall = async ({ agent, toolCall }) => {
         });
 
         // Emit a tool finish event
-        agent.squad.emitEvent({
-            type: 'tool:finish',
+        agent.squad.emitEvent('toolFinish', {
             agentId: agent.id,
             agentType: agent.definition.id,
             toolName,
@@ -83,20 +80,19 @@ export const executeToolCall = async ({ agent, toolCall }) => {
         };
     } catch (error) {
         // Emit a tool error event
-        agent.squad.emitEvent({
-            type: 'tool:error',
+        agent.squad.emitEvent('toolError', {
             agentId: agent.id,
             agentType: agent.definition.id,
             toolName,
             toolCallId,
-            error: error instanceof Error ? error.message : String(error)
+            error: error instanceof Error ? error.message : error
         });
 
         // Return an error message as the tool output
         return {
             role: 'tool',
             tool_call_id: toolCallId,
-            content: `Error executing tool: ${error instanceof Error ? error.message : String(error)}`
+            content: `Error executing tool: ${error instanceof Error ? error.message : error}`
         };
     }
 };
@@ -118,7 +114,7 @@ export const executeToolBatch = async ({ agent, toolCalls }) => {
         return {
             role: 'tool',
             tool_call_id: toolCalls[index]?.id,
-            content: `Error executing tool: ${result.reason instanceof Error ? result.reason.message : String(result.reason)}`
+            content: `Error executing tool: ${result.reason instanceof Error ? result.reason.message : result.reason}`
         };
     });
 };

@@ -7,7 +7,7 @@ export class InMemoryMessageStore {
 
     // Get or create a session by its ID
     getOrCreateSession(sessionId) {
-        const normalizedSessionId = String(sessionId || 'leader');
+        const normalizedSessionId = sessionId || 'leader';
 
         // If the session doesn't exist, create a new one
         if (!this.sessions.has(normalizedSessionId)) {
@@ -39,6 +39,6 @@ export class InMemoryMessageStore {
 
     // Clear all messages for a session
     clearSession(sessionId) {
-        this.sessions.delete(String(sessionId || 'leader'));
+        this.sessions.delete(sessionId || 'leader');
     }
 }

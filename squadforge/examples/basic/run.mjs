@@ -25,32 +25,6 @@ const llm = new OpenRouterLlm({
 
 const model = process.env.SQUADFORGE_MODEL || 'x-ai/grok-4.1-fast';
 
-const logEvent = event => {
-    if (event.type === 'agent:spawn') {
-        console.log(`[spawn] ${event.parentAgentType} -> ${event.agentType}`);
-        return;
-    }
-
-    if (event.type === 'agent:iteration') {
-        console.log(`[thinking] ${event.agentType} iteration ${event.iteration}`);
-        return;
-    }
-
-    if (event.type === 'tool:start') {
-        console.log(`[tool] ${event.agentType} -> ${event.toolName}`);
-        return;
-    }
-
-    if (event.type === 'tool:error') {
-        console.log(`[tool-error] ${event.agentType} -> ${event.toolName}: ${event.error}`);
-        return;
-    }
-
-    if (event.type === 'agent:complete') {
-        console.log(`[done] ${event.agentType}`);
-    }
-};
-
 try {
     console.log(`Using model: ${model}`);
     console.log(`Project root: ${exampleRoot}`);
@@ -60,8 +34,27 @@ try {
         rootDir: exampleRoot,
         llm,
         model,
-        onEvent: logEvent,
         maxIterations: 8
+    });
+
+    squad.on('agentSpawn', event => {
+        console.log(`[spawn] ${event.parentAgentType} -> ${event.agentType}`);
+    });
+
+    squad.on('agentIteration', event => {
+        console.log(`[thinking] ${event.agentType} iteration ${event.iteration}`);
+    });
+
+    squad.on('toolStart', event => {
+        console.log(`[tool] ${event.agentType} -> ${event.toolName}`);
+    });
+
+    squad.on('toolError', event => {
+        console.log(`[tool-error] ${event.agentType} -> ${event.toolName}: ${event.error}`);
+    });
+
+    squad.on('agentComplete', event => {
+        console.log(`[done] ${event.agentType}`);
     });
 
     console.log('Sending prompt...');

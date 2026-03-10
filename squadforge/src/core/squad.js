@@ -10,7 +10,7 @@ import { getPredefinedTool, listPredefinedTools } from '../tools/tools.js';
 // Squad class
 export class Squad {
     // Constructor
-    constructor({ agentsSpecs = new Map(), tools = new Map(), messageStore = new InMemoryMessageStore(), rootDir = null, agentsDir = null, toolsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS, onEvent = null } = {}) {
+    constructor({ agentsSpecs = new Map(), tools = new Map(), messageStore = new InMemoryMessageStore(), rootDir = null, agentsDir = null, toolsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
         // Validate that the leader spec is present
         const leaderSpec = agentsSpecs.get(LEADER_SPEC_ID);
         if (!(leaderSpec instanceof AgentSpec)) {
@@ -27,7 +27,7 @@ export class Squad {
         this.llm = llm;
         this.model = model;
         this.maxIterations = maxIterations;
-        this.onEvent = onEvent;
+        this.eventHandlers = new Map();
         this.leaderAgent = new Agent({
             id: LEADER_SPEC_ID,
             definition: leaderSpec,
@@ -37,7 +37,7 @@ export class Squad {
     }
 
     // Main method to assemble the squad
-    static async assemble({ rootDir, agentsDir = null, toolsDir = null, messageStore = new InMemoryMessageStore(), llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS, onEvent = null } = {}) {
+    static async assemble({ rootDir, agentsDir = null, toolsDir = null, messageStore = new InMemoryMessageStore(), llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
         // Resolve directories
         const resolvedRootDir = rootDir || process.cwd();
         const resolvedAgentsDir = agentsDir || join(resolvedRootDir, DEFAULT_AGENTS_DIR_NAME);
@@ -57,20 +57,49 @@ export class Squad {
             toolsDir: resolvedToolsDir,
             llm,
             model,
-            maxIterations,
-            onEvent
+            maxIterations
         });
     }
 
+    // Register an event handler
+    on(eventId, handler) {
+        // Validate eventId
+        if (!eventId) {
+            throw new Error('Squad.on requires an eventId.');
+        }
+
+        // Validate handler
+        if (typeof handler !== 'function') {
+            throw new Error('Squad.on requires a handler function.');
+        }
+
+        // Add the handler to the set of handlers for the event
+        const handlers = this.eventHandlers.get(eventId) || new Set();
+        handlers.add(handler);
+        this.eventHandlers.set(eventId, handlers);
+
+        // Return an unsubscribe function
+        return () => {
+            // Delete the handler from the set of handlers for the event
+            handlers.delete(handler);
+            if (handlers.size === 0) {
+                this.eventHandlers.delete(eventId);
+            }
+        };
+    }
+
     // Emit an event
-    emitEvent(event) {
-        // Validate the event function
-        if (typeof this.onEvent !== 'function') {
+    emitEvent(eventId, eventData = {}) {
+        // Validate eventId
+        const handlers = this.eventHandlers.get(eventId) || new Set();
+        if (handlers.size === 0) {
             return;
         }
 
-        // Execute the function
-        this.onEvent(event);
+        // Call each handler for the event
+        for (const handler of handlers) {
+            handler(eventData);
+        }
     }
 
     // Get the leader agent

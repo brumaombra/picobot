@@ -14,5 +14,5 @@ export const listPredefinedTools = ({ squad, agent }) => {
 
 // Get a built-in tool by name for an agent
 export const getPredefinedTool = ({ squad, agent, name }) => {
-    return listPredefinedTools({ squad, agent }).find(tool => tool.name === String(name)) || null;
+    return listPredefinedTools({ squad, agent }).find(tool => tool.name === name) || null;
 };

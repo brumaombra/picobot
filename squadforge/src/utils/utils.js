@@ -5,6 +5,11 @@ export const isMarkdownFile = fileName => {
     return fileName.toLowerCase().endsWith(MARKDOWN_EXTENSION);
 };
 
+// Generate a unique ID using a prefix and the current timestamp
+export const generateId = (prefix = 'id') => {
+    return `${prefix}_${Date.now()}`;
+};
+
 // Stringify a JSON object
 export const stringifyJson = value => {
     // If the value is already a string, return it as is
@@ -49,7 +54,7 @@ export const parseJson = rawValue => {
 
 // Parse the frontmatter from a markdown file
 export const parseFrontmatter = content => {
-    const source = String(content || '');
+    const source = content || '';
     const match = source.match(/^---\r?\n([\s\S]*?)\r?\n---/);
 
     // If no frontmatter is found, return an empty metadata object

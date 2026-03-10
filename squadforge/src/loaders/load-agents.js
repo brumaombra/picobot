@@ -4,6 +4,20 @@ import { AgentSpec } from '../core/agent-spec.js';
 import { LEADER_FILE_NAME, LEADER_SPEC_ID, MARKDOWN_EXTENSION } from '../config.js';
 import { isMarkdownFile, parseFrontmatter } from '../utils/utils.js';
 
+// Validate that the allowed tools frontmatter is a list of non-empty strings
+const validateAllowedToolsStructure = ({ agentId, allowedTools }) => {
+    // Validate that allowedTools is an array
+    if (!Array.isArray(allowedTools)) {
+        throw new Error(`Agent "${agentId}" has invalid allowed_tools. Expected a list of strings.`);
+    }
+
+    // Validate that each entry in allowedTools is a non-empty string
+    const hasInvalidToolName = allowedTools.some(toolName => typeof toolName !== 'string' || !toolName.trim());
+    if (hasInvalidToolName) {
+        throw new Error(`Agent "${agentId}" has invalid allowed_tools. Each entry must be a non-empty string.`);
+    }
+};
+
 // Validate that all tools referenced in the agent spec are available
 const validateAllowedTools = ({ agentSpec, availableTools }) => {
     const { allowedTools } = agentSpec;
@@ -32,6 +46,10 @@ const readAgentSpec = ({ filePath, availableTools }) => {
     const content = readFileSync(filePath, 'utf-8');
     const { metadata, body } = parseFrontmatter(content);
     const id = basename(fileName, MARKDOWN_EXTENSION);
+    const allowedTools = metadata.allowed_tools || [];
+
+    // Validate the allowed tools structure before constructing the spec
+    validateAllowedToolsStructure({ agentId: id, allowedTools });
 
     // Create the agent spec object
     const agentSpec = new AgentSpec({
@@ -39,7 +57,7 @@ const readAgentSpec = ({ filePath, availableTools }) => {
         name: metadata.name || id,
         description: metadata.description || '',
         model: metadata.model || null,
-        allowedTools: metadata.allowed_tools || [],
+        allowedTools,
         prompt: body,
         filePath,
         metadata

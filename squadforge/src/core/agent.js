@@ -1,50 +1,29 @@
 import { AgentSpec } from './agent-spec.js';
 import { executeToolBatch } from '../tools/tool-executor.js';
 import { RUNNING_STATUS, IDLE_STATUS, DONE_STATUS, FAILED_STATUS } from '../config.js';
+import { generateId } from '../utils/utils.js';
 
-const createRuntimeId = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
-
-const normalizeAssistantContent = content => {
-    if (typeof content === 'string') {
-        return content;
-    }
-
-    if (Array.isArray(content)) {
-        return content
-            .map(item => {
-                if (typeof item === 'string') {
-                    return item;
-                }
-
-                if (item?.type === 'text') {
-                    return item.text || '';
-                }
-
-                return '';
-            })
-            .filter(Boolean)
-            .join('\n');
-    }
-
-    return '';
-};
-
+// Agent class
 export class Agent {
+    // Constructor
     constructor({ id = null, definition, squad, parent = null, sessionId = null, initialPrompt = '' } = {}) {
+        // Validate the definition
         if (!(definition instanceof AgentSpec)) {
             throw new Error('Agent requires an AgentSpec.');
         }
 
+        // Validate the squad instance
         if (!squad) {
             throw new Error('Agent requires a squad instance.');
         }
 
-        this.id = String(id || createRuntimeId(definition.id));
+        // Initialize properties
+        this.id = id || generateId(definition.id);
         this.definition = definition;
         this.squad = squad;
         this.parent = parent;
-        this.sessionId = String(sessionId || this.id);
-        this.initialPrompt = String(initialPrompt || '');
+        this.sessionId = sessionId || this.id;
+        this.initialPrompt = initialPrompt;
         this.status = IDLE_STATUS;
         this.startedAt = new Date();
         this.completedAt = null;
@@ -53,31 +32,38 @@ export class Agent {
         this.subagents = new Map();
     }
 
+    // Get the agent name
     get name() {
         return this.definition.name;
     }
 
+    // Get the system prompt
     get prompt() {
         return this.definition.prompt;
     }
 
+    // Get the names of allowed tools
     get allowedToolNames() {
         return [...this.definition.allowedTools];
     }
 
+    // Get the model for this agent
     get model() {
         return this.definition.model || this.squad.model || null;
     }
 
+    // Get all messages for the current session
     getMessages() {
         return this.squad.messageStore.getMessages(this.sessionId);
     }
 
+    // Append a message to the current session
     appendMessage(message) {
         this.squad.messageStore.appendMessage(this.sessionId, message);
         return message;
     }
 
+    // Get tool definitions formatted for the LLM API
     getToolDefinitions() {
         return this.listTools().map(tool => ({
             type: 'function',
@@ -89,14 +75,18 @@ export class Agent {
         }));
     }
 
+    // Ensure the session has the initial system and user messages
     ensureSession() {
+        // Create the session if not present
         const messages = this.getMessages();
         if (messages.length === 0) {
+            // Add the system prompt
             this.appendMessage({
                 role: 'system',
                 content: this.prompt
             });
 
+            // Add the initial user prompt if provided
             if (this.initialPrompt) {
                 this.appendMessage({
                     role: 'user',
@@ -105,24 +95,31 @@ export class Agent {
             }
         }
 
+        // Return the session messages
         return this.squad.messageStore.getOrCreateSession(this.sessionId);
     }
 
+    // Send a message to the agent
     async send(content, { role = 'user' } = {}) {
+        // Ensure the session is initialized
         this.ensureSession();
         this.status = RUNNING_STATUS;
-        this.squad.emitEvent({
-            type: 'agent:message',
+
+        // Emit the message event
+        this.squad.emitEvent('agentMessage', {
             agentId: this.id,
             agentType: this.definition.id,
             role,
             sessionId: this.sessionId
         });
+
+        // Append the user message
         this.appendMessage({
             role,
-            content: String(content || '')
+            content: content || ''
         });
 
+        // Return early if no LLM is configured
         if (!this.squad.llm) {
             return {
                 agentId: this.id,
@@ -132,8 +129,10 @@ export class Agent {
             };
         }
 
+        // Run the main loop and return the result
         const result = await this.runLoop();
 
+        // Return the final response along with all messages in the session
         return {
             agentId: this.id,
             sessionId: this.sessionId,
@@ -142,83 +141,98 @@ export class Agent {
         };
     }
 
+    // Run the main agent loop
     async runLoop() {
+        // Loop until the agent completes or fails
         const maxIterations = this.squad.maxIterations;
-
         for (let iteration = 0; iteration < maxIterations; iteration++) {
-            this.squad.emitEvent({
-                type: 'agent:iteration',
+            // Emit the iteration event
+            this.squad.emitEvent('agentIteration', {
                 agentId: this.id,
                 agentType: this.definition.id,
                 iteration: iteration + 1,
                 sessionId: this.sessionId
             });
 
+            // Ask the LLM for the next response
             const result = await this.squad.llm.chat(
                 this.getMessages(),
                 this.getToolDefinitions(),
                 this.model
             );
 
-            const content = normalizeAssistantContent(result?.content);
+            // Extract content and tool calls from the LLM response
+            const content = result?.content || '';
             const toolCalls = Array.isArray(result?.tool_calls) ? result.tool_calls : [];
 
+            // Append the assistant response
             this.appendMessage({
                 role: 'assistant',
                 content,
                 tool_calls: toolCalls.length > 0 ? toolCalls : undefined
             });
 
-            this.squad.emitEvent({
-                type: 'agent:assistant',
+            // Emit the assistant event
+            this.squad.emitEvent('agentAssistant', {
                 agentId: this.id,
                 agentType: this.definition.id,
                 toolCalls: toolCalls.length,
                 hasContent: Boolean(content)
             });
 
+            // Complete if there are no tool calls to execute
             if (toolCalls.length === 0) {
+                // Mark the agent as completed
                 this.complete(content || null);
-                this.squad.emitEvent({
-                    type: 'agent:complete',
+                this.squad.emitEvent('agentComplete', {
                     agentId: this.id,
                     agentType: this.definition.id,
                     sessionId: this.sessionId
                 });
+
+                // Return the final response
                 return {
                     response: content || null,
                     finishReason: result?.finish_reason || 'stop'
                 };
             }
 
+            // Execute tool calls and append their messages
             const toolMessages = await executeToolBatch({
                 agent: this,
                 toolCalls
             });
 
+            // Append tool response messages to the session
             for (const toolMessage of toolMessages) {
                 this.appendMessage(toolMessage);
             }
         }
 
+        // Fail if the loop exceeds the maximum iterations
         this.fail(`Agent loop exceeded max iterations (${maxIterations}).`);
-        this.squad.emitEvent({
-            type: 'agent:error',
+        this.squad.emitEvent('agentError', {
             agentId: this.id,
             agentType: this.definition.id,
             error: `Agent loop exceeded max iterations (${maxIterations}).`
         });
+
+        // Throw an error to indicate the failure
         throw new Error(`Agent loop exceeded max iterations (${maxIterations}).`);
     }
 
+    // Run the agent with optional input
     async run(input = null, options = {}) {
+        // Run the loop directly if no input was provided
         if (input === null || input === undefined) {
             return this.runLoop();
         }
 
+        // Otherwise send the input as a message
         return this.send(input, options);
     }
 
+    // Mark the agent as completed
     complete(result = null) {
         this.status = DONE_STATUS;
         this.result = result;
@@ -227,43 +241,55 @@ export class Agent {
         return this;
     }
 
+    // Mark the agent as failed
     fail(error) {
         this.status = FAILED_STATUS;
         this.result = null;
-        this.error = error instanceof Error ? error.message : String(error);
+        this.error = error instanceof Error ? error.message : error;
         this.completedAt = new Date();
         return this;
     }
 
+    // Get a tool available to this agent by name
     getTool(name) {
-        const normalizedName = String(name);
+        const normalizedName = name;
         const builtInTool = this.squad.getBuiltInTool(normalizedName, this);
+
+        // Prefer built-in tools
         if (builtInTool) {
             return builtInTool;
         }
 
+        // Reject tools that are not allowed for this agent
         if (!this.definition.allowedTools.includes(normalizedName)) {
             return null;
         }
 
+        // Return the registered external tool
         return this.squad.getTool(normalizedName);
     }
 
+    // List all tools available to this agent
     listTools() {
+        // Get all external tools
         const externalTools = this.definition.allowedTools
             .map(toolName => this.squad.getTool(toolName))
             .filter(Boolean);
 
+        // Combine built-in tools with allowed external tools
         return [...this.squad.listBuiltInTools(this), ...externalTools];
     }
 
+    // Spawn a subagent
     spawnSubagent(type, { prompt = '' } = {}) {
+        // Look up the subagent definition
         const definition = this.squad.getAgentSpec(type);
         if (!definition) {
             const available = this.squad.listSubagentSpecs().map(agent => agent.id).join(', ');
             throw new Error(`Unknown subagent "${type}". Available subagents: ${available}`);
         }
 
+        // Create the child agent
         const agent = new Agent({
             definition,
             squad: this.squad,
@@ -271,67 +297,82 @@ export class Agent {
             initialPrompt: prompt
         });
 
+        // Initialize the child session and register it
         agent.ensureSession();
         this.subagents.set(agent.id, agent);
-        this.squad.emitEvent({
-            type: 'agent:spawn',
+
+        // Emit the spawn event
+        this.squad.emitEvent('agentSpawn', {
             parentAgentId: this.id,
             parentAgentType: this.definition.id,
             agentId: agent.id,
             agentType: agent.definition.id,
             sessionId: agent.sessionId
         });
+
+        // Return the child agent
         return agent;
     }
 
+    // Get a subagent by id
     getSubagent(agentId) {
-        return this.subagents.get(String(agentId));
+        return this.subagents.get(agentId);
     }
 
+    // List direct child subagents
     listSubagents() {
         return [...this.subagents.values()];
     }
 
+    // List all descendant subagents recursively
     listDescendants() {
         const descendants = [];
 
+        // Recursively collect descendants from subagents
         for (const agent of this.subagents.values()) {
             descendants.push(agent);
             descendants.push(...agent.listDescendants());
         }
 
+        // Return the list of descendants
         return descendants;
     }
 
+    // Find an agent by id in this subtree
     findById(agentId) {
-        const normalizedId = String(agentId);
-        if (this.id === normalizedId) {
+        // Check if the current agent matches the id
+        if (this.id === agentId) {
             return this;
         }
 
+        // Recursively search subagents for a matching id
         for (const agent of this.subagents.values()) {
-            const match = agent.findById(normalizedId);
+            const match = agent.findById(agentId);
             if (match) {
                 return match;
             }
         }
 
+        // Return null if no match is found
         return null;
     }
 
+    // Find an agent by session id in this subtree
     findBySessionId(sessionId) {
-        const normalizedSessionId = String(sessionId);
-        if (this.sessionId === normalizedSessionId) {
+        // Check if the current agent's session id matches
+        if (this.sessionId === sessionId) {
             return this;
         }
 
+        // Recursively search subagents for a matching session id
         for (const agent of this.subagents.values()) {
-            const match = agent.findBySessionId(normalizedSessionId);
+            const match = agent.findBySessionId(sessionId);
             if (match) {
                 return match;
             }
         }
 
+        // Return null if no match is found
         return null;
     }
 }

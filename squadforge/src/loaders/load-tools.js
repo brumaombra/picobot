@@ -22,8 +22,8 @@ const normalizeTool = ({ rawTool, filePath }) => {
 
     // Return the normalized tool object
     return {
-        name: String(rawTool.name),
-        description: String(rawTool.description || ''),
+        name: rawTool.name,
+        description: rawTool.description || '',
         parameters: rawTool.parameters || {
             type: 'object',
             properties: {}
