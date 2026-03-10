@@ -54,12 +54,12 @@ export class Agent {
 
     // Get all messages for the current session
     getMessages() {
-        return this.squad.messageStore.getMessages(this.sessionId);
+        return this.squad.sessionStore.getMessages(this.sessionId);
     }
 
     // Append a message to the current session
     appendMessage(message) {
-        this.squad.messageStore.appendMessage(this.sessionId, message);
+        this.squad.sessionStore.appendMessage(this.sessionId, message);
         return message;
     }
 
@@ -96,7 +96,7 @@ export class Agent {
         }
 
         // Return the session messages
-        return this.squad.messageStore.getOrCreateSession(this.sessionId);
+        return this.squad.sessionStore.getOrCreateSession(this.sessionId);
     }
 
     // Send a message to the agent

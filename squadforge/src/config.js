@@ -8,6 +8,7 @@ export const SQUADFORGE_ROOT_DIR = join(homedir(), '.squadforge');
 /**************** Filesystem *****************/
 export const DEFAULT_AGENTS_DIR_NAME = 'agents';
 export const DEFAULT_TOOLS_DIR_NAME = 'tools';
+export const DEFAULT_SESSIONS_DIR_NAME = 'sessions';
 export const MARKDOWN_EXTENSION = '.md';
 export const SUPPORTED_TOOL_EXTENSIONS = ['.js', '.mjs'];
 

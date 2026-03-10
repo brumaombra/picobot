@@ -3,27 +3,34 @@ import { AgentSpec } from './agent-spec.js';
 import { Agent } from './agent.js';
 import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
 import { loadToolsFromDirectory } from '../loaders/load-tools.js';
-import { InMemoryMessageStore } from '../runtime/in-memory-message-store.js';
-import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_MAX_ITERATIONS } from '../config.js';
+import { SessionStore } from '../sessions/session-store.js';
+import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_MAX_ITERATIONS } from '../config.js';
 import { getPredefinedTool, listPredefinedTools } from '../tools/tools.js';
 
 // Squad class
 export class Squad {
     // Constructor
-    constructor({ agentsSpecs = new Map(), tools = new Map(), messageStore = new InMemoryMessageStore(), rootDir = null, agentsDir = null, toolsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
+    constructor({ agentsSpecs = new Map(), tools = new Map(), sessionStore = null, rootDir = null, agentsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
         // Validate that the leader spec is present
         const leaderSpec = agentsSpecs.get(LEADER_SPEC_ID);
         if (!(leaderSpec instanceof AgentSpec)) {
             throw new Error(`Squad requires a leader spec with id "${LEADER_SPEC_ID}".`);
         }
 
+        // Resolve the sessions directory and session store
+        const resolvedSessionsDir = sessionsDir || (rootDir ? join(rootDir, DEFAULT_SESSIONS_DIR_NAME) : DEFAULT_SESSIONS_DIR_NAME);
+        const resolvedSessionStore = sessionStore || new SessionStore({
+            sessionsDir: resolvedSessionsDir
+        });
+
         // Initialize properties
         this.agentsSpecs = agentsSpecs;
         this.tools = tools;
-        this.messageStore = messageStore;
+        this.sessionStore = resolvedSessionStore;
         this.rootDir = rootDir;
         this.agentsDir = agentsDir;
         this.toolsDir = toolsDir;
+        this.sessionsDir = resolvedSessionsDir;
         this.llm = llm;
         this.model = model;
         this.maxIterations = maxIterations;
@@ -37,11 +44,15 @@ export class Squad {
     }
 
     // Main method to assemble the squad
-    static async assemble({ rootDir, agentsDir = null, toolsDir = null, messageStore = new InMemoryMessageStore(), llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
+    static async assemble({ rootDir, agentsDir = null, toolsDir = null, sessionsDir = null, sessionStore = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
         // Resolve directories
         const resolvedRootDir = rootDir || process.cwd();
         const resolvedAgentsDir = agentsDir || join(resolvedRootDir, DEFAULT_AGENTS_DIR_NAME);
         const resolvedToolsDir = toolsDir || join(resolvedRootDir, DEFAULT_TOOLS_DIR_NAME);
+        const resolvedSessionsDir = sessionsDir || join(resolvedRootDir, DEFAULT_SESSIONS_DIR_NAME);
+        const resolvedSessionStore = sessionStore || new SessionStore({
+            sessionsDir: resolvedSessionsDir
+        });
 
         // Load the tools and agent specs and validate them
         const tools = await loadToolsFromDirectory({ toolsDir: resolvedToolsDir });
@@ -51,10 +62,11 @@ export class Squad {
         return new Squad({
             agentsSpecs,
             tools,
-            messageStore,
+            sessionStore: resolvedSessionStore,
             rootDir: resolvedRootDir,
             agentsDir: resolvedAgentsDir,
             toolsDir: resolvedToolsDir,
+            sessionsDir: resolvedSessionsDir,
             llm,
             model,
             maxIterations

@@ -9,7 +9,7 @@ This first cut focuses on the core filesystem-driven abstraction layer:
 - automatically load `leader.md` plus subagent markdown files from an `agents/` folder during squad initialization
 - parse frontmatter metadata such as `name`, `description`, `model`, and `allowed_tools`
 - automatically load tools from a `tools/` folder during squad initialization
-- expose a single `Squad` class that owns the main agent, loaded subagent definitions, active subagent instances, and chat history storage
+- expose a single `Squad` class that owns the main agent, loaded subagent definitions, active subagent instances, and session storage
 
 The orchestration loop and LLM adapter layer can be added on top of this base without changing the folder conventions.
 
@@ -57,6 +57,6 @@ const subagent = squad.spawnSubagent('researcher', {
 
 - `Squad`
 - `AgentSpec`
-- `InMemoryMessageStore`
+- `SessionStore`
 
 The folder loaders are internal implementation details. Consumers initialize a squad through `Squad.assemble(...)`, and squadforge loads the `agents/` and `tools/` folders automatically. When `rootDir` is omitted, squadforge defaults it to the current working directory.
