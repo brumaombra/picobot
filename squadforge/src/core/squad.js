@@ -5,14 +5,19 @@ import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
 import { loadToolsFromDirectory } from '../loaders/load-tools.js';
 import { InMemoryMessageStore } from '../runtime/in-memory-message-store.js';
 import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_MAX_ITERATIONS } from '../config.js';
+import { getPredefinedTool, listPredefinedTools } from '../tools/tools.js';
 
+// Squad class
 export class Squad {
+    // Constructor
     constructor({ agentsSpecs = new Map(), tools = new Map(), messageStore = new InMemoryMessageStore(), rootDir = null, agentsDir = null, toolsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS, onEvent = null } = {}) {
+        // Validate that the leader spec is present
         const leaderSpec = agentsSpecs.get(LEADER_SPEC_ID);
         if (!(leaderSpec instanceof AgentSpec)) {
             throw new Error(`Squad requires a leader spec with id "${LEADER_SPEC_ID}".`);
         }
 
+        // Initialize properties
         this.agentsSpecs = agentsSpecs;
         this.tools = tools;
         this.messageStore = messageStore;
@@ -31,6 +36,7 @@ export class Squad {
         });
     }
 
+    // Main method to assemble the squad
     static async assemble({ rootDir, agentsDir = null, toolsDir = null, messageStore = new InMemoryMessageStore(), llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS, onEvent = null } = {}) {
         // Resolve directories
         const resolvedRootDir = rootDir || process.cwd();
@@ -56,131 +62,113 @@ export class Squad {
         });
     }
 
+    // Emit an event
     emitEvent(event) {
+        // Validate the event function
         if (typeof this.onEvent !== 'function') {
             return;
         }
 
+        // Execute the function
         this.onEvent(event);
     }
 
+    // Get the leader agent
     getLeaderAgent() {
         return this.leaderAgent;
     }
 
+    // Get the leader spec
     getLeaderSpec() {
         return this.agentsSpecs.get(LEADER_SPEC_ID) || null;
     }
 
+    // Get an agent spec by id
     getAgentSpec(id) {
-        return this.agentsSpecs.get(String(id)) || null;
+        return this.agentsSpecs.get(id) || null;
     }
 
+    // List all agent specs
     listAgentSpecs() {
         return [...this.agentsSpecs.values()];
     }
 
-    getSubagentSpec(id) {
-        const normalizedId = String(id);
-        if (normalizedId === LEADER_SPEC_ID) {
-            return null;
-        }
-
-        return this.getAgentSpec(normalizedId);
-    }
-
+    // List all subagent specs (excluding the leader)
     listSubagentSpecs() {
         return this.listAgentSpecs().filter(agentSpec => agentSpec.id !== LEADER_SPEC_ID);
     }
 
+    // Get a tool by name
     getTool(name) {
-        return this.tools.get(String(name));
+        return this.tools.get(name);
     }
 
+    // List all tools
     listTools() {
         return [...this.tools.values()];
     }
 
+    // List built-in tools available to an agent
     listBuiltInTools(agent) {
-        const availableSubagents = this.listSubagentSpecs();
-        if (availableSubagents.length === 0) {
-            return [];
-        }
-
-        return [{
-            name: 'delegate_to_agent',
-            description: `Delegate work to a specialized agent and wait for its final response. Available agents: ${availableSubagents.map(spec => spec.id).join(', ')}`,
-            parameters: {
-                type: 'object',
-                properties: {
-                    agentId: {
-                        type: 'string',
-                        description: 'The id of the specialized agent to run.'
-                    },
-                    prompt: {
-                        type: 'string',
-                        description: 'The task to delegate to the specialized agent.'
-                    }
-                },
-                required: ['agentId', 'prompt']
-            },
-            execute: async ({ agentId, prompt }) => {
-                const childAgent = agent.spawnSubagent(agentId, {
-                    prompt
-                });
-                const result = await childAgent.run();
-
-                return {
-                    agentId: childAgent.id,
-                    sessionId: childAgent.sessionId,
-                    response: result.response
-                };
-            }
-        }];
+        return listPredefinedTools({
+            squad: this,
+            agent
+        });
     }
 
+    // Get a built-in tool by name for an agent
     getBuiltInTool(name, agent) {
-        return this.listBuiltInTools(agent).find(tool => tool.name === String(name)) || null;
+        return getPredefinedTool({
+            squad: this,
+            agent,
+            name
+        });
     }
 
+    // Get messages for a session
     getMessages(sessionId = DEFAULT_LEADER_SESSION_ID) {
         return this.requireAgentBySessionId(sessionId).getMessages();
     }
 
-    ensureLeaderSession() {
-        return this.leaderAgent.ensureSession();
-    }
-
+    // Send a message to an agent in a session
     async send(content, { sessionId = DEFAULT_LEADER_SESSION_ID, role = 'user' } = {}) {
         return this.requireAgentBySessionId(sessionId).send(content, { role });
     }
 
+    // Spawn a subagent
     spawnSubagent(type, { prompt = '', parentSessionId = DEFAULT_LEADER_SESSION_ID } = {}) {
         return this.requireAgentBySessionId(parentSessionId).spawnSubagent(type, { prompt });
     }
 
+    // Get an agent by id
     getAgent(agentId) {
         return this.findAgentById(agentId);
     }
 
+    // List all running subagents
     listRunningSubagents() {
         return this.leaderAgent.listDescendants();
     }
 
+    // Find an agent by id in the entire hierarchy
     findAgentById(agentId) {
         return this.leaderAgent.findById(agentId);
     }
 
+    // Find an agent by session id in the entire hierarchy
     findAgentBySessionId(sessionId) {
         return this.leaderAgent.findBySessionId(sessionId);
     }
 
+    // Require an agent by session id, throwing an error if not found
     requireAgentBySessionId(sessionId) {
+        // Check if the session exists
         const agent = this.findAgentBySessionId(sessionId);
         if (!agent) {
             throw new Error(`Unknown session "${sessionId}".`);
         }
 
+        // Return the agent
         return agent;
     }
 }

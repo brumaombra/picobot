@@ -1,5 +1,5 @@
 import { AgentSpec } from './agent-spec.js';
-import { executeToolBatch } from '../runtime/tool-executor.js';
+import { executeToolBatch } from '../tools/tool-executor.js';
 import { RUNNING_STATUS, IDLE_STATUS, DONE_STATUS, FAILED_STATUS } from '../config.js';
 
 const createRuntimeId = prefix => `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -258,7 +258,7 @@ export class Agent {
     }
 
     spawnSubagent(type, { prompt = '' } = {}) {
-        const definition = this.squad.getSubagentSpec(type);
+        const definition = this.squad.getAgentSpec(type);
         if (!definition) {
             const available = this.squad.listSubagentSpecs().map(agent => agent.id).join(', ');
             throw new Error(`Unknown subagent "${type}". Available subagents: ${available}`);
