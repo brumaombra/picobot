@@ -75,6 +75,9 @@ try {
     console.log('Prompt Files:');
     console.log('prompts/SUBAGENTS.md, prompts/TOOLS.md, prompts/SKILLS.md, prompts/SUBAGENT.md');
     console.log('');
+    console.log('Skills:');
+    console.log(squad.listSkills().map(skill => skill.id).join(', ') || '(none)');
+    console.log('');
     console.log('Project Files:');
     console.log('project/package.json, project/src/pricing.js, project/src/checkout.js, project/tests/pricing.test.js');
     console.log('');

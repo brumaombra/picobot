@@ -4,15 +4,16 @@ import { Agent } from './agent.js';
 import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
 import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadToolsFromDirectory } from '../loaders/load-tools.js';
+import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
 import { SessionStore } from '../sessions/session-store.js';
-import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_MAX_ITERATIONS } from '../config.js';
+import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_MAX_ITERATIONS } from '../config.js';
 import { composeAgentPrompt } from '../prompts/prompts.js';
 import { getPredefinedTool, listPredefinedTools } from '../tools/tools.js';
 
 // Squad class
 export class Squad {
     // Constructor
-    constructor({ agentsSpecs = new Map(), tools = new Map(), promptTemplates = null, sessionStore = null, rootDir = null, agentsDir = null, promptsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
+    constructor({ agentsSpecs = new Map(), tools = new Map(), skills = new Map(), promptTemplates = null, sessionStore = null, rootDir = null, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
         // Validate that the leader spec is present
         const leaderSpec = agentsSpecs.get(LEADER_SPEC_ID);
         if (!(leaderSpec instanceof AgentSpec)) {
@@ -24,6 +25,7 @@ export class Squad {
         const resolvedPromptTemplates = promptTemplates || loadPromptTemplatesFromDirectory({
             promptsDir: resolvedPromptsDir
         });
+        const resolvedSkillsDir = skillsDir || (rootDir ? join(rootDir, DEFAULT_SKILLS_DIR_NAME) : DEFAULT_SKILLS_DIR_NAME);
 
         // Resolve the sessions directory and session store
         const resolvedSessionsDir = sessionsDir || (rootDir ? join(rootDir, DEFAULT_SESSIONS_DIR_NAME) : DEFAULT_SESSIONS_DIR_NAME);
@@ -34,11 +36,13 @@ export class Squad {
         // Initialize properties
         this.agentsSpecs = agentsSpecs;
         this.tools = tools;
+        this.skills = skills;
         this.promptTemplates = resolvedPromptTemplates;
         this.sessionStore = resolvedSessionStore;
         this.rootDir = rootDir;
         this.agentsDir = agentsDir;
         this.promptsDir = resolvedPromptsDir;
+        this.skillsDir = resolvedSkillsDir;
         this.toolsDir = toolsDir;
         this.sessionsDir = resolvedSessionsDir;
         this.llm = llm;
@@ -54,21 +58,19 @@ export class Squad {
     }
 
     // Main method to assemble the squad
-    static async assemble({ rootDir, agentsDir = null, promptsDir = null, toolsDir = null, sessionsDir = null, promptTemplates = null, sessionStore = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
+    static async assemble({ rootDir, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
         // Resolve directories
         const resolvedRootDir = rootDir || process.cwd();
         const resolvedAgentsDir = agentsDir || join(resolvedRootDir, DEFAULT_AGENTS_DIR_NAME);
         const resolvedPromptsDir = promptsDir || join(resolvedRootDir, DEFAULT_PROMPTS_DIR_NAME);
+        const resolvedSkillsDir = skillsDir || join(resolvedRootDir, DEFAULT_SKILLS_DIR_NAME);
         const resolvedToolsDir = toolsDir || join(resolvedRootDir, DEFAULT_TOOLS_DIR_NAME);
         const resolvedSessionsDir = sessionsDir || join(resolvedRootDir, DEFAULT_SESSIONS_DIR_NAME);
-        const resolvedPromptTemplates = promptTemplates || loadPromptTemplatesFromDirectory({
-            promptsDir: resolvedPromptsDir
-        });
-        const resolvedSessionStore = sessionStore || new SessionStore({
-            sessionsDir: resolvedSessionsDir
-        });
 
-        // Load the tools and agent specs and validate them
+        // Load or create resources
+        const resolvedPromptTemplates = loadPromptTemplatesFromDirectory({ promptsDir: resolvedPromptsDir });
+        const resolvedSkills = loadSkillsFromDirectory({ skillsDir: resolvedSkillsDir });
+        const resolvedSessionStore = new SessionStore({ sessionsDir: resolvedSessionsDir });
         const tools = await loadToolsFromDirectory({ toolsDir: resolvedToolsDir });
         const agentsSpecs = loadAgentsFromDirectory({ agentsDir: resolvedAgentsDir, availableTools: tools });
 
@@ -76,11 +78,13 @@ export class Squad {
         return new Squad({
             agentsSpecs,
             tools,
+            skills: resolvedSkills,
             promptTemplates: resolvedPromptTemplates,
             sessionStore: resolvedSessionStore,
             rootDir: resolvedRootDir,
             agentsDir: resolvedAgentsDir,
             promptsDir: resolvedPromptsDir,
+            skillsDir: resolvedSkillsDir,
             toolsDir: resolvedToolsDir,
             sessionsDir: resolvedSessionsDir,
             llm,
@@ -153,6 +157,16 @@ export class Squad {
     // List all subagent specs (excluding the leader)
     listSubagentSpecs() {
         return this.listAgentSpecs().filter(agentSpec => agentSpec.id !== LEADER_SPEC_ID);
+    }
+
+    // Get a skill by id
+    getSkill(id) {
+        return this.skills.get(id) || null;
+    }
+
+    // List all skills
+    listSkills() {
+        return [...this.skills.values()];
     }
 
     // Compose the runtime prompt for an agent

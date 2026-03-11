@@ -43,6 +43,32 @@ const readPromptTemplate = ({ promptsDir, fileName }) => {
     return fileContent;
 };
 
+// Validate that prompt templates contain the placeholders required by the framework
+const validatePromptTemplates = promptTemplates => {
+    // Define the required placeholders for each prompt template
+    const requiredPlaceholders = [{
+        templateKey: 'subagents',
+        fileName: SUBAGENTS_FILE_NAME,
+        placeholder: '{subagentsList}'
+    }, {
+        templateKey: 'tools',
+        fileName: TOOLS_FILE_NAME,
+        placeholder: '{toolsList}'
+    }, {
+        templateKey: 'skills',
+        fileName: SKILLS_FILE_NAME,
+        placeholder: '{skillsList}'
+    }];
+
+    // Check that each required placeholder is present
+    for (const requirement of requiredPlaceholders) {
+        const template = promptTemplates[requirement.templateKey] || '';
+        if (!template.includes(requirement.placeholder)) {
+            throw new Error(`Prompt file "${requirement.fileName}" must include the placeholder ${requirement.placeholder}.`);
+        }
+    }
+};
+
 // Load prompt templates from the specified directory
 export const loadPromptTemplatesFromDirectory = ({ promptsDir } = {}) => {
     // Validate the prompts directory path
@@ -54,10 +80,16 @@ export const loadPromptTemplatesFromDirectory = ({ promptsDir } = {}) => {
     ensurePromptTemplatesInDirectory({ promptsDir });
 
     // Load each supported prompt template file
-    return {
+    const promptTemplates = {
         subagents: readPromptTemplate({ promptsDir, fileName: SUBAGENTS_FILE_NAME }),
         tools: readPromptTemplate({ promptsDir, fileName: TOOLS_FILE_NAME }),
         skills: readPromptTemplate({ promptsDir, fileName: SKILLS_FILE_NAME }),
         subagent: readPromptTemplate({ promptsDir, fileName: SUBAGENT_FILE_NAME })
     };
+
+    // Validate the templates required by the framework prompt composer
+    validatePromptTemplates(promptTemplates);
+
+    // Return the valid prompt templates
+    return promptTemplates;
 };

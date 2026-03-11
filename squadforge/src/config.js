@@ -8,6 +8,7 @@ export const SQUADFORGE_ROOT_DIR = join(homedir(), '.squadforge');
 /**************** Filesystem *****************/
 export const DEFAULT_AGENTS_DIR_NAME = 'agents';
 export const DEFAULT_PROMPTS_DIR_NAME = 'prompts';
+export const DEFAULT_SKILLS_DIR_NAME = 'skills';
 export const DEFAULT_TOOLS_DIR_NAME = 'tools';
 export const DEFAULT_SESSIONS_DIR_NAME = 'sessions';
 export const MARKDOWN_EXTENSION = '.md';
@@ -16,6 +17,7 @@ export const TOOLS_FILE_NAME = 'TOOLS.md';
 export const SKILLS_FILE_NAME = 'SKILLS.md';
 export const SUBAGENTS_FILE_NAME = 'SUBAGENTS.md';
 export const SUBAGENT_FILE_NAME = 'SUBAGENT.md';
+export const SKILL_FILE_NAME = 'SKILL.md';
 
 /**************** Agent *****************/
 export const LEADER_FILE_NAME = 'leader.md';

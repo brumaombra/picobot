@@ -36,10 +36,20 @@ const createToolsPromptPart = ({ agent, promptTemplates }) => {
 };
 
 // Create the shared skills prompt fragment
-const createSkillsPromptPart = ({ promptTemplates }) => {
+const createSkillsPromptPart = ({ squad, promptTemplates }) => {
+    // Create a formatted list of available skills
+    const skills = squad.listSkills();
+    const skillsList = skills.length === 0
+        ? 'No skills available.'
+        : skills.map(skill => [
+            `### ${skill.name}`,
+            `- Description: ${skill.description || 'No description provided.'}`,
+            `- Path: ${skill.filePath}`
+        ].join('\n')).join('\n\n');
+
     // Inject the skills list into the prompt template
     return (promptTemplates?.skills || '')
-        .replace('{skillsList}', 'No skills available.')
+        .replace('{skillsList}', skillsList)
         .trim();
 };
 
@@ -56,7 +66,7 @@ const composeLeaderSystemPrompt = ({ squad, agent, promptTemplates }) => {
         createAgentPromptPart({ agent }),
         createSubagentsPromptPart({ squad, promptTemplates }),
         createToolsPromptPart({ agent, promptTemplates }),
-        createSkillsPromptPart({ promptTemplates })
+        createSkillsPromptPart({ squad, promptTemplates })
     ].filter(Boolean).join('\n\n');
 };
 

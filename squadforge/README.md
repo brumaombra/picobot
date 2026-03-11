@@ -8,6 +8,7 @@ This first cut focuses on the core filesystem-driven abstraction layer:
 
 - automatically load `leader.md` plus subagent markdown files from an `agents/` folder during squad initialization
 - automatically compose prompts from shared markdown fragments in a `prompts/` folder during squad initialization
+- automatically load skills from `skills/<skill-id>/SKILL.md` folders during squad initialization
 - parse frontmatter metadata such as `name`, `description`, `model`, and `allowed_tools`
 - automatically load tools from a `tools/` folder during squad initialization
 - expose a single `Squad` class that owns the main agent, loaded subagent definitions, active subagent instances, and session storage
@@ -27,6 +28,9 @@ my-app/
     TOOLS.md
     SKILLS.md
     SUBAGENT.md
+  skills/
+    research-report/
+      SKILL.md
   tools/
     web_search.js
     read_file.js
@@ -60,9 +64,19 @@ The leader personality and orchestration style should live directly in `agents/l
 Supported placeholders inside prompt fragments:
 
 - `{subagentsList}`
-- `{agentsList}`
 - `{toolsList}`
 - `{skillsList}`
+
+## Skills
+
+Each skill lives in its own folder under `skills/` and must contain a `SKILL.md` file.
+
+The skill frontmatter supports:
+
+- `name`
+- `description`
+
+Loaded skills are injected into `prompts/SKILLS.md` and can be listed through the squad runtime.
 
 ## Usage
 
