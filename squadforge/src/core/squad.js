@@ -2,20 +2,28 @@ import { join } from 'path';
 import { AgentSpec } from './agent-spec.js';
 import { Agent } from './agent.js';
 import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
+import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadToolsFromDirectory } from '../loaders/load-tools.js';
 import { SessionStore } from '../sessions/session-store.js';
-import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_MAX_ITERATIONS } from '../config.js';
+import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_MAX_ITERATIONS } from '../config.js';
+import { composeAgentPrompt } from '../prompts/prompts.js';
 import { getPredefinedTool, listPredefinedTools } from '../tools/tools.js';
 
 // Squad class
 export class Squad {
     // Constructor
-    constructor({ agentsSpecs = new Map(), tools = new Map(), sessionStore = null, rootDir = null, agentsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
+    constructor({ agentsSpecs = new Map(), tools = new Map(), promptTemplates = null, sessionStore = null, rootDir = null, agentsDir = null, promptsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
         // Validate that the leader spec is present
         const leaderSpec = agentsSpecs.get(LEADER_SPEC_ID);
         if (!(leaderSpec instanceof AgentSpec)) {
             throw new Error(`Squad requires a leader spec with id "${LEADER_SPEC_ID}".`);
         }
+
+        // Resolve the prompts directory and load prompt templates
+        const resolvedPromptsDir = promptsDir || (rootDir ? join(rootDir, DEFAULT_PROMPTS_DIR_NAME) : DEFAULT_PROMPTS_DIR_NAME);
+        const resolvedPromptTemplates = promptTemplates || loadPromptTemplatesFromDirectory({
+            promptsDir: resolvedPromptsDir
+        });
 
         // Resolve the sessions directory and session store
         const resolvedSessionsDir = sessionsDir || (rootDir ? join(rootDir, DEFAULT_SESSIONS_DIR_NAME) : DEFAULT_SESSIONS_DIR_NAME);
@@ -26,9 +34,11 @@ export class Squad {
         // Initialize properties
         this.agentsSpecs = agentsSpecs;
         this.tools = tools;
+        this.promptTemplates = resolvedPromptTemplates;
         this.sessionStore = resolvedSessionStore;
         this.rootDir = rootDir;
         this.agentsDir = agentsDir;
+        this.promptsDir = resolvedPromptsDir;
         this.toolsDir = toolsDir;
         this.sessionsDir = resolvedSessionsDir;
         this.llm = llm;
@@ -44,12 +54,16 @@ export class Squad {
     }
 
     // Main method to assemble the squad
-    static async assemble({ rootDir, agentsDir = null, toolsDir = null, sessionsDir = null, sessionStore = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
+    static async assemble({ rootDir, agentsDir = null, promptsDir = null, toolsDir = null, sessionsDir = null, promptTemplates = null, sessionStore = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
         // Resolve directories
         const resolvedRootDir = rootDir || process.cwd();
         const resolvedAgentsDir = agentsDir || join(resolvedRootDir, DEFAULT_AGENTS_DIR_NAME);
+        const resolvedPromptsDir = promptsDir || join(resolvedRootDir, DEFAULT_PROMPTS_DIR_NAME);
         const resolvedToolsDir = toolsDir || join(resolvedRootDir, DEFAULT_TOOLS_DIR_NAME);
         const resolvedSessionsDir = sessionsDir || join(resolvedRootDir, DEFAULT_SESSIONS_DIR_NAME);
+        const resolvedPromptTemplates = promptTemplates || loadPromptTemplatesFromDirectory({
+            promptsDir: resolvedPromptsDir
+        });
         const resolvedSessionStore = sessionStore || new SessionStore({
             sessionsDir: resolvedSessionsDir
         });
@@ -62,9 +76,11 @@ export class Squad {
         return new Squad({
             agentsSpecs,
             tools,
+            promptTemplates: resolvedPromptTemplates,
             sessionStore: resolvedSessionStore,
             rootDir: resolvedRootDir,
             agentsDir: resolvedAgentsDir,
+            promptsDir: resolvedPromptsDir,
             toolsDir: resolvedToolsDir,
             sessionsDir: resolvedSessionsDir,
             llm,
@@ -137,6 +153,15 @@ export class Squad {
     // List all subagent specs (excluding the leader)
     listSubagentSpecs() {
         return this.listAgentSpecs().filter(agentSpec => agentSpec.id !== LEADER_SPEC_ID);
+    }
+
+    // Compose the runtime prompt for an agent
+    composePrompt(agent) {
+        return composeAgentPrompt({
+            squad: this,
+            agent,
+            promptTemplates: this.promptTemplates
+        });
     }
 
     // Get a tool by name

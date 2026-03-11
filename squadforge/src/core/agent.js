@@ -39,7 +39,7 @@ export class Agent {
 
     // Get the system prompt
     get prompt() {
-        return this.definition.prompt;
+        return this.squad.composePrompt(this);
     }
 
     // Get the names of allowed tools

@@ -7,6 +7,7 @@ Opinionated JavaScript framework for building a single main-agent entrypoint bac
 This first cut focuses on the core filesystem-driven abstraction layer:
 
 - automatically load `leader.md` plus subagent markdown files from an `agents/` folder during squad initialization
+- automatically compose prompts from shared markdown fragments in a `prompts/` folder during squad initialization
 - parse frontmatter metadata such as `name`, `description`, `model`, and `allowed_tools`
 - automatically load tools from a `tools/` folder during squad initialization
 - expose a single `Squad` class that owns the main agent, loaded subagent definitions, active subagent instances, and session storage
@@ -21,6 +22,11 @@ my-app/
     leader.md
     researcher.md
     coder.md
+  prompts/
+    SUBAGENTS.md
+    TOOLS.md
+    SKILLS.md
+    SUBAGENT.md
   tools/
     web_search.js
     read_file.js
@@ -39,6 +45,24 @@ model: openai/gpt-5-mini
 
 You are a research specialist.
 ```
+
+## Prompt Composition
+
+Squadforge uses the body of each markdown file in `agents/` as the base prompt for that agent.
+
+- The leader prompt is composed from `agents/leader.md` plus `prompts/SUBAGENTS.md`, `prompts/TOOLS.md`, and `prompts/SKILLS.md`.
+- Subagent prompts are composed from `prompts/SUBAGENT.md`, the subagent markdown body, and `prompts/TOOLS.md`.
+
+If the `prompts/` directory or any of its supported prompt files are missing, Squadforge automatically creates them from the framework's bundled defaults.
+
+The leader personality and orchestration style should live directly in `agents/leader.md`.
+
+Supported placeholders inside prompt fragments:
+
+- `{subagentsList}`
+- `{agentsList}`
+- `{toolsList}`
+- `{skillsList}`
 
 ## Usage
 

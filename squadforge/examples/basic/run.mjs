@@ -72,6 +72,9 @@ try {
     console.log('Agents:');
     console.log(squad.listAgentSpecs().map(spec => spec.id).join(', '));
     console.log('');
+    console.log('Prompt Files:');
+    console.log('prompts/SUBAGENTS.md, prompts/TOOLS.md, prompts/SKILLS.md, prompts/SUBAGENT.md');
+    console.log('');
     console.log('Project Files:');
     console.log('project/package.json, project/src/pricing.js, project/src/checkout.js, project/tests/pricing.test.js');
     console.log('');
