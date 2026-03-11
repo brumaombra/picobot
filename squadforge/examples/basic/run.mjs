@@ -1,4 +1,5 @@
 import { dirname, join } from 'path';
+import { createInterface } from 'readline';
 import { fileURLToPath } from 'url';
 import { OpenRouterLlm, Squad } from '../../src/index.js';
 
@@ -11,9 +12,7 @@ if (typeof process.loadEnvFile === 'function') {
 }
 
 const args = process.argv.slice(2);
-const prompt = args
-    .join(' ')
-    || 'Investigate why the sample checkout project computes the wrong total and explain the root cause.';
+const initialPrompt = args.join(' ');
 
 if (!process.env.OPENROUTER_API_KEY) {
     throw new Error('OPENROUTER_API_KEY is required for this example. It is intended to run against a real model over a real project-style folder layout.');
@@ -24,6 +23,79 @@ const llm = new OpenRouterLlm({
 });
 
 const model = process.env.SQUADFORGE_MODEL || 'x-ai/grok-4.1-fast';
+
+const createCliChannel = ({ initialMessage = '', onClose = null } = {}) => {
+    const sessionId = 'cli:local';
+    const rl = createInterface({
+        input: process.stdin,
+        output: process.stdout
+    });
+    let isClosed = false;
+
+    const promptUser = () => {
+        if (!isClosed) {
+            rl.prompt();
+        }
+    };
+
+    return {
+        onMessage(receiveMessage) {
+            rl.setPrompt('You> ');
+            rl.on('line', line => {
+                const content = line.trim();
+
+                if (!content) {
+                    promptUser();
+                    return;
+                }
+
+                if (content === '/exit' || content === '/quit') {
+                    rl.close();
+                    return;
+                }
+
+                receiveMessage({
+                    sessionId,
+                    role: 'user',
+                    content
+                });
+            });
+
+            rl.on('close', () => {
+                isClosed = true;
+                if (typeof onClose === 'function') {
+                    onClose();
+                }
+            });
+
+            queueMicrotask(() => {
+                console.log('Interactive Squadforge CLI started. Type /exit to quit.');
+                if (initialMessage) {
+                    console.log(`You> ${initialMessage}`);
+                    receiveMessage({
+                        sessionId,
+                        role: 'user',
+                        content: initialMessage
+                    });
+                    return;
+                }
+
+                promptUser();
+            });
+
+            return () => {
+                if (!isClosed) {
+                    rl.close();
+                }
+            };
+        },
+        async sendMessage(message) {
+            console.log(`Pico> ${message.content || '(no response)'}`);
+            promptUser();
+            return message;
+        }
+    };
+};
 
 try {
     console.log(`Using model: ${model}`);
@@ -58,46 +130,36 @@ try {
         console.log(`[done] ${event.agentType}`);
     });
 
-    const responsePromise = new Promise(resolve => {
-        squad.onOutbound(message => {
-            resolve(message);
-        });
+    let resolveClosed;
+    const closedPromise = new Promise(resolve => {
+        resolveClosed = resolve;
     });
 
-    console.log('Sending prompt...');
-    console.log('');
+    const channel = createCliChannel({
+        initialMessage: initialPrompt,
+        onClose: () => {
+            resolveClosed();
+        }
+    });
+    squad.onMessage(channel.onMessage);
+    squad.sendMessage(channel.sendMessage);
 
-    squad.start();
-    squad.pushInbound({
-        sessionId: 'example:leader',
-        role: 'user',
-        content: prompt
+    const shutdown = async () => {
+        await squad.stop();
+    };
+
+    process.once('SIGINT', async () => {
+        console.log('\nShutting down...');
+        await shutdown();
+        process.exit(0);
     });
 
-    const outboundMessage = await responsePromise;
-    await squad.stop();
+    console.log('Starting interactive chat...');
+    console.log('');
 
-    console.log('');
-    console.log('Prompt:');
-    console.log(prompt);
-    console.log('');
-    console.log('Response:');
-    console.log(outboundMessage.content || '(no response)');
-    console.log('');
-    console.log('Agents:');
-    console.log(squad.listAgentSpecs().map(spec => spec.id).join(', '));
-    console.log('');
-    console.log('Prompt Files:');
-    console.log('prompts/SUBAGENTS.md, prompts/TOOLS.md, prompts/SKILLS.md, prompts/SUBAGENT.md');
-    console.log('');
-    console.log('Skills:');
-    console.log(squad.listSkills().map(skill => skill.id).join(', ') || '(none)');
-    console.log('');
-    console.log('Project Files:');
-    console.log('project/package.json, project/src/pricing.js, project/src/checkout.js, project/tests/pricing.test.js');
-    console.log('');
-    console.log('Spawned subagents:');
-    console.log(squad.listRunningSubagents().map(agent => `${agent.id}:${agent.definition.id}`).join(', ') || '(none)');
+    await squad.start();
+    await closedPromise;
+    await shutdown();
 } catch (error) {
     console.error('Example run failed.');
     console.error(error instanceof Error ? error.stack || error.message : String(error));

@@ -13,7 +13,7 @@ This first cut focuses on the core filesystem-driven abstraction layer:
 - automatically load tools from a `tools/` folder during squad initialization
 - expose a single `Squad` class that owns the main agent, loaded subagent definitions, active subagent instances, and session storage
 
-The orchestration loop and LLM adapter layer can be added on top of this base without changing the folder conventions.
+The orchestration loop and long-lived chat runtime are built into the framework without changing the folder conventions.
 
 ## Folder Convention
 
@@ -89,41 +89,25 @@ const squad = await Squad.assemble({
   model: 'x-ai/grok-4.1-fast'
 });
 
-squad.onOutbound(message => {
-  console.log(`[${message.sessionId}] ${message.content}`);
-});
-
-squad.start();
-squad.pushInbound({
-  sessionId: 'telegram:123456',
-  role: 'user',
-  content: 'Help me debug my project.'
-});
-```
-
-## Channel Adapter
-
-For Telegram-style integrations, Squadforge can attach a channel adapter directly to the main `Squad` instance.
-
-```js
-const detachChannel = squad.attachChannel({
-  onMessage(handler) {
-    telegram.on('message', update => {
-      handler({
-        sessionId: `telegram:${update.chat.id}`,
-        role: 'user',
-        content: update.text,
-        replyToId: update.message_id
-      });
+squad.onMessage(receiveMessage => {
+  telegram.on('message', update => {
+    receiveMessage({
+      sessionId: `telegram:${update.chat.id}`,
+      role: 'user',
+      content: update.text,
+      replyToId: update.message_id
     });
-  },
-  async sendMessage(message) {
-    await telegram.sendMessage(message.sessionId.split(':')[1], message.content);
-  }
+  });
 });
+
+squad.sendMessage(async message => {
+  await telegram.sendMessage(message.sessionId.split(':')[1], message.content);
+});
+
+await squad.start();
 ```
 
-This makes Squadforge behave much more like Pico: the framework runs as a long-lived chat runtime, channels feed inbound messages into it, and outbound replies are emitted back through your adapter.
+This makes Squadforge behave much more like Pico: the framework runs as a long-lived chat runtime, inbound channel messages are forwarded into it, and assistant replies are sent back out through one configured sender.
 
 ## Runtime Policies
 
@@ -152,7 +136,6 @@ The deadline is checked between agent turns. It nudges the model to wrap up and 
 ## Public Surface
 
 - `Squad`
-- `MessageBus`
 - `AgentSpec`
 - `SessionStore`
 

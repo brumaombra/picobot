@@ -9,12 +9,11 @@ import { SessionStore } from '../sessions/session-store.js';
 import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_RUNTIME_POLL_TIMEOUT_MS, DEFAULT_RUNTIME_TIMEOUT_MESSAGE, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_LLM_CHAT_MAX_RETRIES, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_MAX_RUNTIME_MS, DEFAULT_SESSION_TTL_MS, DEFAULT_WRAP_UP_THRESHOLD_MS } from '../config.js';
 import { composeAgentPrompt } from '../prompts/prompts.js';
 import { getPredefinedTool, listPredefinedTools } from '../tools/tools.js';
-import { MessageBus } from '../runtime/message-bus.js';
 
 // Squad class
 export class Squad {
     // Constructor
-    constructor({ agentsSpecs = new Map(), tools = new Map(), skills = new Map(), promptTemplates = null, sessionStore = null, messageBus = new MessageBus(), rootDir = null, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS, wrapUpThresholdMs = DEFAULT_WRAP_UP_THRESHOLD_MS, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS, llmChatMaxRetries = DEFAULT_LLM_CHAT_MAX_RETRIES, pollTimeoutMs = DEFAULT_RUNTIME_POLL_TIMEOUT_MS, timeoutMessage = DEFAULT_RUNTIME_TIMEOUT_MESSAGE, formatErrorMessage = null } = {}) {
+    constructor({ agentsSpecs = new Map(), tools = new Map(), skills = new Map(), promptTemplates = null, sessionStore = null, rootDir = null, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS, wrapUpThresholdMs = DEFAULT_WRAP_UP_THRESHOLD_MS, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS, llmChatMaxRetries = DEFAULT_LLM_CHAT_MAX_RETRIES, pollTimeoutMs = DEFAULT_RUNTIME_POLL_TIMEOUT_MS, timeoutMessage = DEFAULT_RUNTIME_TIMEOUT_MESSAGE, formatErrorMessage = null } = {}) {
         // Validate that the leader spec is present
         const leaderSpec = agentsSpecs.get(LEADER_SPEC_ID);
         if (!(leaderSpec instanceof AgentSpec)) {
@@ -47,7 +46,6 @@ export class Squad {
         this.maxRuntimeMs = maxRuntimeMs;
         this.wrapUpThresholdMs = wrapUpThresholdMs;
         this.llmChatMaxRetries = llmChatMaxRetries;
-        this.messageBus = messageBus;
         this.pollTimeoutMs = pollTimeoutMs;
         this.timeoutMessage = timeoutMessage;
         this.formatErrorMessage = formatErrorMessage || (error => {
@@ -56,6 +54,11 @@ export class Squad {
         });
         this.running = false;
         this.loopPromise = null;
+        this.inboundQueue = [];
+        this.inboundWaiters = [];
+        this.inboundConnector = null;
+        this.detachInboundConnector = null;
+        this.outboundMessageHandler = null;
         this.eventHandlers = new Map();
         this.sessionAgents = new Map();
         this.leaderAgent = new Agent({
@@ -68,7 +71,7 @@ export class Squad {
     }
 
     // Main method to assemble the squad
-    static async assemble({ rootDir, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS, wrapUpThresholdMs = DEFAULT_WRAP_UP_THRESHOLD_MS, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS, llmChatMaxRetries = DEFAULT_LLM_CHAT_MAX_RETRIES, messageBus = new MessageBus(), pollTimeoutMs = DEFAULT_RUNTIME_POLL_TIMEOUT_MS, timeoutMessage = DEFAULT_RUNTIME_TIMEOUT_MESSAGE, formatErrorMessage = null } = {}) {
+    static async assemble({ rootDir, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS, wrapUpThresholdMs = DEFAULT_WRAP_UP_THRESHOLD_MS, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS, llmChatMaxRetries = DEFAULT_LLM_CHAT_MAX_RETRIES, pollTimeoutMs = DEFAULT_RUNTIME_POLL_TIMEOUT_MS, timeoutMessage = DEFAULT_RUNTIME_TIMEOUT_MESSAGE, formatErrorMessage = null } = {}) {
         // Resolve directories
         const resolvedRootDir = rootDir || process.cwd();
         const resolvedAgentsDir = agentsDir || join(resolvedRootDir, DEFAULT_AGENTS_DIR_NAME);
@@ -99,7 +102,6 @@ export class Squad {
             sessionsDir: resolvedSessionsDir,
             llm,
             model,
-            messageBus,
             maxRuntimeMs,
             wrapUpThresholdMs,
             maxMessagesPerSession,
@@ -112,9 +114,13 @@ export class Squad {
     }
 
     // Start the background chat runtime loop
-    start() {
+    async start() {
         if (this.running) {
             return this;
+        }
+
+        if (this.inboundConnector) {
+            this.detachInboundConnector = await this.inboundConnector(message => this.receiveMessage(message));
         }
 
         this.running = true;
@@ -129,50 +135,52 @@ export class Squad {
         }
 
         this.running = false;
+        this.resolvePendingInboundWaiters();
         await this.loopPromise;
         this.loopPromise = null;
+
+        if (typeof this.detachInboundConnector === 'function') {
+            await this.detachInboundConnector();
+        }
+        this.detachInboundConnector = null;
     }
 
-    // Push an inbound channel message into the runtime queue
-    pushInbound(message) {
-        this.messageBus.pushInbound(message);
-    }
-
-    // Subscribe to outbound messages emitted by the runtime loop
-    onOutbound(handler) {
-        return this.messageBus.onOutbound(handler);
-    }
-
-    // Connect a channel adapter that can receive inbound messages and send outbound ones
-    attachChannel({ onMessage, sendMessage, mapInboundMessage = message => message, mapOutboundMessage = message => message } = {}) {
-        if (typeof onMessage !== 'function') {
-            throw new Error('Squad.attachChannel requires an onMessage function.');
+    // Register how inbound channel messages should be forwarded into the squad
+    onMessage(handler) {
+        if (typeof handler !== 'function') {
+            throw new Error('Squad.onMessage requires a handler function.');
         }
 
-        if (typeof sendMessage !== 'function') {
-            throw new Error('Squad.attachChannel requires a sendMessage function.');
+        this.inboundConnector = handler;
+        return this;
+    }
+
+    // Register how outbound assistant messages should be sent to the channel
+    sendMessage(handler) {
+        if (typeof handler !== 'function') {
+            throw new Error('Squad.sendMessage requires a handler function.');
         }
 
-        const detachOutbound = this.onOutbound(async message => {
-            await sendMessage(mapOutboundMessage(message));
-        });
+        this.outboundMessageHandler = handler;
+        return this;
+    }
 
-        const detachInbound = onMessage(message => {
-            this.pushInbound(mapInboundMessage(message));
-        });
+    // Receive a single inbound channel message
+    receiveMessage(message) {
+        const waiter = this.inboundWaiters.shift();
+        if (waiter) {
+            clearTimeout(waiter.timeoutId);
+            waiter.resolve(message);
+            return;
+        }
 
-        return () => {
-            detachOutbound();
-            if (typeof detachInbound === 'function') {
-                detachInbound();
-            }
-        };
+        this.inboundQueue.push(message);
     }
 
     // Process inbound messages until the runtime is stopped
     async runLoop() {
         while (this.running) {
-            const message = await this.messageBus.pullInbound(this.pollTimeoutMs);
+            const message = await this.pullInboundMessage(this.pollTimeoutMs);
             if (!message) {
                 continue;
             }
@@ -199,7 +207,7 @@ export class Squad {
                     metadata: message?.metadata,
                     timedOut: false
                 };
-                this.messageBus.sendOutbound(outboundMessage);
+                await this.emitOutboundMessage(outboundMessage);
                 return outboundMessage;
             }
 
@@ -212,7 +220,7 @@ export class Squad {
                     metadata: message?.metadata,
                     timedOut: true
                 };
-                this.messageBus.sendOutbound(timeoutOutboundMessage);
+                await this.emitOutboundMessage(timeoutOutboundMessage);
                 return timeoutOutboundMessage;
             }
 
@@ -226,8 +234,53 @@ export class Squad {
                 metadata: message?.metadata,
                 error: error instanceof Error ? error.message : String(error)
             };
-            this.messageBus.sendOutbound(errorOutboundMessage);
+            await this.emitOutboundMessage(errorOutboundMessage);
             return errorOutboundMessage;
+        }
+    }
+
+    // Wait for the next inbound message with a timeout
+    pullInboundMessage(timeoutMs) {
+        if (this.inboundQueue.length > 0) {
+            return Promise.resolve(this.inboundQueue.shift());
+        }
+
+        return new Promise(resolve => {
+            const waiter = {
+                resolve,
+                timeoutId: null
+            };
+
+            waiter.timeoutId = setTimeout(() => {
+                this.removeInboundWaiter(waiter);
+                resolve(null);
+            }, timeoutMs);
+
+            this.inboundWaiters.push(waiter);
+        });
+    }
+
+    // Emit an outbound assistant message through the configured sender
+    async emitOutboundMessage(message) {
+        if (typeof this.outboundMessageHandler === 'function') {
+            await this.outboundMessageHandler(message);
+        }
+    }
+
+    // Remove a pending inbound waiter
+    removeInboundWaiter(waiter) {
+        const index = this.inboundWaiters.indexOf(waiter);
+        if (index >= 0) {
+            this.inboundWaiters.splice(index, 1);
+        }
+    }
+
+    // Resolve any pending inbound waits so shutdown is immediate
+    resolvePendingInboundWaiters() {
+        const waiters = this.inboundWaiters.splice(0);
+        for (const waiter of waiters) {
+            clearTimeout(waiter.timeoutId);
+            waiter.resolve(null);
         }
     }
 
