@@ -6,14 +6,15 @@ import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadToolsFromDirectory } from '../loaders/load-tools.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
 import { SessionStore } from '../sessions/session-store.js';
-import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_LLM_CHAT_MAX_RETRIES, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_MAX_RUNTIME_MS, DEFAULT_SESSION_TTL_MS, DEFAULT_WRAP_UP_THRESHOLD_MS } from '../config.js';
+import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_RUNTIME_POLL_TIMEOUT_MS, DEFAULT_RUNTIME_TIMEOUT_MESSAGE, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_LLM_CHAT_MAX_RETRIES, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_MAX_RUNTIME_MS, DEFAULT_SESSION_TTL_MS, DEFAULT_WRAP_UP_THRESHOLD_MS } from '../config.js';
 import { composeAgentPrompt } from '../prompts/prompts.js';
 import { getPredefinedTool, listPredefinedTools } from '../tools/tools.js';
+import { MessageBus } from '../runtime/message-bus.js';
 
 // Squad class
 export class Squad {
     // Constructor
-    constructor({ agentsSpecs = new Map(), tools = new Map(), skills = new Map(), promptTemplates = null, sessionStore = null, rootDir = null, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS, wrapUpThresholdMs = DEFAULT_WRAP_UP_THRESHOLD_MS, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS, llmChatMaxRetries = DEFAULT_LLM_CHAT_MAX_RETRIES } = {}) {
+    constructor({ agentsSpecs = new Map(), tools = new Map(), skills = new Map(), promptTemplates = null, sessionStore = null, messageBus = new MessageBus(), rootDir = null, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS, wrapUpThresholdMs = DEFAULT_WRAP_UP_THRESHOLD_MS, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS, llmChatMaxRetries = DEFAULT_LLM_CHAT_MAX_RETRIES, pollTimeoutMs = DEFAULT_RUNTIME_POLL_TIMEOUT_MS, timeoutMessage = DEFAULT_RUNTIME_TIMEOUT_MESSAGE, formatErrorMessage = null } = {}) {
         // Validate that the leader spec is present
         const leaderSpec = agentsSpecs.get(LEADER_SPEC_ID);
         if (!(leaderSpec instanceof AgentSpec)) {
@@ -46,17 +47,28 @@ export class Squad {
         this.maxRuntimeMs = maxRuntimeMs;
         this.wrapUpThresholdMs = wrapUpThresholdMs;
         this.llmChatMaxRetries = llmChatMaxRetries;
+        this.messageBus = messageBus;
+        this.pollTimeoutMs = pollTimeoutMs;
+        this.timeoutMessage = timeoutMessage;
+        this.formatErrorMessage = formatErrorMessage || (error => {
+            const message = error instanceof Error ? error.message : String(error);
+            return `Sorry, I encountered an error: ${message}`;
+        });
+        this.running = false;
+        this.loopPromise = null;
         this.eventHandlers = new Map();
+        this.sessionAgents = new Map();
         this.leaderAgent = new Agent({
             id: LEADER_SPEC_ID,
             definition: leaderSpec,
             squad: this,
             sessionId: DEFAULT_LEADER_SESSION_ID
         });
+        this.sessionAgents.set(DEFAULT_LEADER_SESSION_ID, this.leaderAgent);
     }
 
     // Main method to assemble the squad
-    static async assemble({ rootDir, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS, wrapUpThresholdMs = DEFAULT_WRAP_UP_THRESHOLD_MS, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS, llmChatMaxRetries = DEFAULT_LLM_CHAT_MAX_RETRIES } = {}) {
+    static async assemble({ rootDir, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS, wrapUpThresholdMs = DEFAULT_WRAP_UP_THRESHOLD_MS, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS, llmChatMaxRetries = DEFAULT_LLM_CHAT_MAX_RETRIES, messageBus = new MessageBus(), pollTimeoutMs = DEFAULT_RUNTIME_POLL_TIMEOUT_MS, timeoutMessage = DEFAULT_RUNTIME_TIMEOUT_MESSAGE, formatErrorMessage = null } = {}) {
         // Resolve directories
         const resolvedRootDir = rootDir || process.cwd();
         const resolvedAgentsDir = agentsDir || join(resolvedRootDir, DEFAULT_AGENTS_DIR_NAME);
@@ -87,12 +99,136 @@ export class Squad {
             sessionsDir: resolvedSessionsDir,
             llm,
             model,
+            messageBus,
             maxRuntimeMs,
             wrapUpThresholdMs,
             maxMessagesPerSession,
             sessionTtlMs,
-            llmChatMaxRetries
+            llmChatMaxRetries,
+            pollTimeoutMs,
+            timeoutMessage,
+            formatErrorMessage
         });
+    }
+
+    // Start the background chat runtime loop
+    start() {
+        if (this.running) {
+            return this;
+        }
+
+        this.running = true;
+        this.loopPromise = this.runLoop();
+        return this;
+    }
+
+    // Stop the background chat runtime loop
+    async stop() {
+        if (!this.running) {
+            return;
+        }
+
+        this.running = false;
+        await this.loopPromise;
+        this.loopPromise = null;
+    }
+
+    // Push an inbound channel message into the runtime queue
+    pushInbound(message) {
+        this.messageBus.pushInbound(message);
+    }
+
+    // Subscribe to outbound messages emitted by the runtime loop
+    onOutbound(handler) {
+        return this.messageBus.onOutbound(handler);
+    }
+
+    // Connect a channel adapter that can receive inbound messages and send outbound ones
+    attachChannel({ onMessage, sendMessage, mapInboundMessage = message => message, mapOutboundMessage = message => message } = {}) {
+        if (typeof onMessage !== 'function') {
+            throw new Error('Squad.attachChannel requires an onMessage function.');
+        }
+
+        if (typeof sendMessage !== 'function') {
+            throw new Error('Squad.attachChannel requires a sendMessage function.');
+        }
+
+        const detachOutbound = this.onOutbound(async message => {
+            await sendMessage(mapOutboundMessage(message));
+        });
+
+        const detachInbound = onMessage(message => {
+            this.pushInbound(mapInboundMessage(message));
+        });
+
+        return () => {
+            detachOutbound();
+            if (typeof detachInbound === 'function') {
+                detachInbound();
+            }
+        };
+    }
+
+    // Process inbound messages until the runtime is stopped
+    async runLoop() {
+        while (this.running) {
+            const message = await this.messageBus.pullInbound(this.pollTimeoutMs);
+            if (!message) {
+                continue;
+            }
+
+            await this.processMessage(message);
+        }
+    }
+
+    // Process a single inbound message through the Squad and emit an outbound response
+    async processMessage(message) {
+        const sessionId = message?.sessionId || DEFAULT_LEADER_SESSION_ID;
+        const role = message?.role || 'user';
+        const content = message?.content || '';
+
+        try {
+            const result = await this.send(content, { sessionId, role });
+
+            if (result?.response) {
+                const outboundMessage = {
+                    sessionId,
+                    content: result.response,
+                    role: 'assistant',
+                    replyToId: message?.replyToId,
+                    metadata: message?.metadata,
+                    timedOut: false
+                };
+                this.messageBus.sendOutbound(outboundMessage);
+                return outboundMessage;
+            }
+
+            if (result?.timedOut) {
+                const timeoutOutboundMessage = {
+                    sessionId,
+                    content: this.timeoutMessage,
+                    role: 'assistant',
+                    replyToId: message?.replyToId,
+                    metadata: message?.metadata,
+                    timedOut: true
+                };
+                this.messageBus.sendOutbound(timeoutOutboundMessage);
+                return timeoutOutboundMessage;
+            }
+
+            return result;
+        } catch (error) {
+            const errorOutboundMessage = {
+                sessionId,
+                content: this.formatErrorMessage(error),
+                role: 'assistant',
+                replyToId: message?.replyToId,
+                metadata: message?.metadata,
+                error: error instanceof Error ? error.message : String(error)
+            };
+            this.messageBus.sendOutbound(errorOutboundMessage);
+            return errorOutboundMessage;
+        }
     }
 
     // Register an event handler
@@ -137,8 +273,8 @@ export class Squad {
     }
 
     // Get the leader agent
-    getLeaderAgent() {
-        return this.leaderAgent;
+    getLeaderAgent(sessionId = DEFAULT_LEADER_SESSION_ID) {
+        return this.getRootAgentForSession(sessionId) || this.getOrCreateSessionAgent(sessionId);
     }
 
     // Get the leader spec
@@ -209,12 +345,12 @@ export class Squad {
 
     // Get messages for a session
     getMessages(sessionId = DEFAULT_LEADER_SESSION_ID) {
-        return this.requireAgentBySessionId(sessionId).getMessages();
+        return this.getOrCreateSessionAgent(sessionId).getMessages();
     }
 
     // Send a message to an agent in a session
     async send(content, { sessionId = DEFAULT_LEADER_SESSION_ID, role = 'user' } = {}) {
-        return this.requireAgentBySessionId(sessionId).send(content, { role });
+        return this.getOrCreateSessionAgent(sessionId).send(content, { role });
     }
 
     // Spawn a subagent
@@ -229,17 +365,64 @@ export class Squad {
 
     // List all running subagents
     listRunningSubagents() {
-        return this.leaderAgent.listDescendants();
+        return [...this.sessionAgents.values()].flatMap(agent => agent.listDescendants());
     }
 
     // Find an agent by id in the entire hierarchy
     findAgentById(agentId) {
-        return this.leaderAgent.findById(agentId);
+        for (const rootAgent of this.sessionAgents.values()) {
+            const match = rootAgent.findById(agentId);
+            if (match) {
+                return match;
+            }
+        }
+
+        return null;
     }
 
     // Find an agent by session id in the entire hierarchy
     findAgentBySessionId(sessionId) {
-        return this.leaderAgent.findBySessionId(sessionId);
+        for (const rootAgent of this.sessionAgents.values()) {
+            const match = rootAgent.findBySessionId(sessionId);
+            if (match) {
+                return match;
+            }
+        }
+
+        return null;
+    }
+
+    // Find the top-level leader-style agent that owns a session subtree
+    getRootAgentForSession(sessionId) {
+        for (const rootAgent of this.sessionAgents.values()) {
+            if (rootAgent.findBySessionId(sessionId)) {
+                return rootAgent;
+            }
+        }
+
+        return null;
+    }
+
+    // Get or create a top-level chat session agent backed by the leader definition
+    getOrCreateSessionAgent(sessionId = DEFAULT_LEADER_SESSION_ID) {
+        const normalizedSessionId = sessionId || DEFAULT_LEADER_SESSION_ID;
+        const existingAgent = this.findAgentBySessionId(normalizedSessionId);
+        if (existingAgent) {
+            return existingAgent;
+        }
+
+        const existingRootAgent = this.sessionAgents.get(normalizedSessionId);
+        if (existingRootAgent) {
+            return existingRootAgent;
+        }
+
+        const sessionAgent = new Agent({
+            definition: this.getLeaderSpec(),
+            squad: this,
+            sessionId: normalizedSessionId
+        });
+        this.sessionAgents.set(normalizedSessionId, sessionAgent);
+        return sessionAgent;
     }
 
     // Require an agent by session id, throwing an error if not found

@@ -78,18 +78,52 @@ The skill frontmatter supports:
 
 Loaded skills are injected into `prompts/SKILLS.md` and can be listed through the squad runtime.
 
-## Usage
+## Runtime Usage
 
 ```js
-import { Squad } from 'squadforge';
+import { OpenRouterLlm, Squad } from 'squadforge';
 
-const squad = await Squad.assemble();
+const squad = await Squad.assemble({
+  rootDir: process.cwd(),
+  llm: new OpenRouterLlm({ apiKey: process.env.OPENROUTER_API_KEY }),
+  model: 'x-ai/grok-4.1-fast'
+});
 
-await squad.send('Plan a research task for the team.');
-const subagent = squad.spawnSubagent('researcher', {
-    prompt: 'Investigate the latest model releases.'
+squad.onOutbound(message => {
+  console.log(`[${message.sessionId}] ${message.content}`);
+});
+
+squad.start();
+squad.pushInbound({
+  sessionId: 'telegram:123456',
+  role: 'user',
+  content: 'Help me debug my project.'
 });
 ```
+
+## Channel Adapter
+
+For Telegram-style integrations, Squadforge can attach a channel adapter directly to the main `Squad` instance.
+
+```js
+const detachChannel = squad.attachChannel({
+  onMessage(handler) {
+    telegram.on('message', update => {
+      handler({
+        sessionId: `telegram:${update.chat.id}`,
+        role: 'user',
+        content: update.text,
+        replyToId: update.message_id
+      });
+    });
+  },
+  async sendMessage(message) {
+    await telegram.sendMessage(message.sessionId.split(':')[1], message.content);
+  }
+});
+```
+
+This makes Squadforge behave much more like Pico: the framework runs as a long-lived chat runtime, channels feed inbound messages into it, and outbound replies are emitted back through your adapter.
 
 ## Runtime Policies
 
@@ -118,6 +152,7 @@ The deadline is checked between agent turns. It nudges the model to wrap up and 
 ## Public Surface
 
 - `Squad`
+- `MessageBus`
 - `AgentSpec`
 - `SessionStore`
 

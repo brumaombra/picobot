@@ -137,6 +137,8 @@ export class Agent {
             agentId: this.id,
             sessionId: this.sessionId,
             response: result.response,
+            finishReason: result.finishReason || null,
+            timedOut: Boolean(result.timedOut),
             messages: this.getMessages()
         };
     }
@@ -160,11 +162,16 @@ export class Agent {
                     agentId: this.id,
                     agentType: this.definition.id,
                     sessionId: this.sessionId,
-                    error: `Agent run deadline reached after ${this.squad.maxRuntimeMs} ms.`
+                    error: `Agent run deadline reached after ${this.squad.maxRuntimeMs} ms.`,
+                    timedOut: true
                 });
 
-                // Throw an error to indicate the failure
-                throw new Error(`Agent run deadline reached after ${this.squad.maxRuntimeMs} ms.`);
+                // Return a structured timeout result so runtime layers can respond gracefully
+                return {
+                    response: null,
+                    finishReason: 'deadline',
+                    timedOut: true
+                };
             }
 
             // Inject a warning message before the soft deadline to encourage the agent to wrap up
@@ -220,7 +227,8 @@ export class Agent {
                 // Return the final response
                 return {
                     response: content || null,
-                    finishReason: result?.finish_reason || 'stop'
+                    finishReason: result?.finish_reason || 'stop',
+                    timedOut: false
                 };
             }
 

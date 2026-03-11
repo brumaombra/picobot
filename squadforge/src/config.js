@@ -33,6 +33,10 @@ export const IDLE_STATUS = 'idle';
 export const DONE_STATUS = 'done';
 export const FAILED_STATUS = 'failed';
 
+/**************** Runtime *****************/
+export const DEFAULT_RUNTIME_POLL_TIMEOUT_MS = 1000;
+export const DEFAULT_RUNTIME_TIMEOUT_MESSAGE = "I've run out of time for this task. Let me know if you'd like me to continue!";
+
 /**************** LLM *****************/
 export const DEFAULT_REQUEST_TIMEOUT_MS = 60000;
 export const DEFAULT_MAX_TOKENS = 4096;

@@ -57,7 +57,7 @@ export const executeToolCall = async ({ agent, toolCall }) => {
             squad: agent.squad,
             agent,
             parentAgent: agent.parent,
-            leaderAgent: agent.squad.getLeaderAgent(),
+            leaderAgent: agent.squad.getLeaderAgent(agent.sessionId),
             sessionId: agent.sessionId,
             spawnSubagent: (type, options = {}) => agent.spawnSubagent(type, options),
             findAgentById: agentId => agent.squad.findAgentById(agentId),

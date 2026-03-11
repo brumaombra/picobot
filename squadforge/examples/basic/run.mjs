@@ -58,17 +58,31 @@ try {
         console.log(`[done] ${event.agentType}`);
     });
 
+    const responsePromise = new Promise(resolve => {
+        squad.onOutbound(message => {
+            resolve(message);
+        });
+    });
+
     console.log('Sending prompt...');
     console.log('');
 
-    const result = await squad.send(prompt);
+    squad.start();
+    squad.pushInbound({
+        sessionId: 'example:leader',
+        role: 'user',
+        content: prompt
+    });
+
+    const outboundMessage = await responsePromise;
+    await squad.stop();
 
     console.log('');
     console.log('Prompt:');
     console.log(prompt);
     console.log('');
     console.log('Response:');
-    console.log(result.response || '(no response)');
+    console.log(outboundMessage.content || '(no response)');
     console.log('');
     console.log('Agents:');
     console.log(squad.listAgentSpecs().map(spec => spec.id).join(', '));
