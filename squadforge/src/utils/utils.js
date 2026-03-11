@@ -10,6 +10,11 @@ export const generateId = (prefix = 'id') => {
     return `${prefix}_${Date.now()}`;
 };
 
+// Pause execution for the specified number of milliseconds
+export const delay = ms => {
+    return new Promise(resolve => setTimeout(resolve, ms));
+};
+
 // Stringify a JSON object
 export const stringifyJson = value => {
     // If the value is already a string, return it as is

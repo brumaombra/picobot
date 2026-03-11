@@ -1,19 +1,24 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'fs';
 import { basename, join } from 'path';
-import { DEFAULT_SESSIONS_DIR_NAME } from '../config.js';
+import { DEFAULT_LEADER_SESSION_ID, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_SESSION_TTL_MS } from '../config.js';
 
 // Session store with optional disk persistence
 export class SessionStore {
     // Constructor
-    constructor({ sessionsDir = null } = {}) {
+    constructor({ sessionsDir = null, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS } = {}) {
         // Save the properties
         this.sessions = new Map();
         this.sessionsDir = sessionsDir;
+        this.maxMessagesPerSession = maxMessagesPerSession;
+        this.sessionTtlMs = sessionTtlMs;
 
         // Load persisted sessions if a sessions directory is configured
         if (this.sessionsDir) {
             this.loadSessions();
         }
+
+        // Drop expired stale sessions after loading persisted state
+        this.cleanupExpiredSessions();
     }
 
     // Get the file path for a session
@@ -61,6 +66,55 @@ export class SessionStore {
         }
     }
 
+    // Trim a session to the configured maximum number of messages
+    trimSession(session) {
+        // If the session is within the message limit, return it as is
+        if (session.messages.length <= this.maxMessagesPerSession) {
+            return session;
+        }
+
+        // Keep all system messages and the newest non-system messages up to the limit
+        const systemMessages = session.messages.filter(message => message.role === 'system');
+        const otherMessages = session.messages.filter(message => message.role !== 'system');
+        const keepCount = Math.max(0, this.maxMessagesPerSession - systemMessages.length);
+        let trimmedMessages = otherMessages.slice(-keepCount);
+
+        // Avoid starting the trimmed slice with orphaned tool results
+        while (trimmedMessages.length > 0 && trimmedMessages[0].role === 'tool') {
+            trimmedMessages.shift();
+        }
+
+        // Combine the system messages with the trimmed non-system messages and return the session
+        session.messages = [...systemMessages, ...trimmedMessages];
+        return session;
+    }
+
+    // Remove expired stale sessions from memory and disk
+    cleanupExpiredSessions() {
+        // If no session TTL is configured, skip cleanup
+        if (!this.sessionTtlMs || this.sessionTtlMs < 1) {
+            return;
+        }
+
+        // Get the current time and iterate through all sessions to find expired ones
+        const now = Date.now();
+        for (const [sessionId, session] of this.sessions.entries()) {
+            // Keep the leader session alive by default
+            if (sessionId === DEFAULT_LEADER_SESSION_ID) {
+                continue;
+            }
+
+            // If the session's last update time is within the TTL, keep it alive
+            const lastActiveAt = session.updatedAt instanceof Date ? session.updatedAt.getTime() : new Date(session.updatedAt || 0).getTime();
+            if (now - lastActiveAt <= this.sessionTtlMs) {
+                continue;
+            }
+
+            // Clear the expired session from memory and disk
+            this.clearSession(sessionId);
+        }
+    }
+
     // Save a session to disk if persistence is enabled
     saveSession(sessionId) {
         // If no sessions directory is configured, skip saving
@@ -93,6 +147,9 @@ export class SessionStore {
     getOrCreateSession(sessionId) {
         const normalizedSessionId = sessionId || 'leader';
 
+        // Drop expired sessions before serving the requested one
+        this.cleanupExpiredSessions();
+
         // If the session doesn't exist, create a new one
         if (!this.sessions.has(normalizedSessionId)) {
             this.sessions.set(normalizedSessionId, {
@@ -109,10 +166,12 @@ export class SessionStore {
 
     // Append a message to a session
     appendMessage(sessionId, message) {
+        this.cleanupExpiredSessions(); // Drop expired sessions before appending the message
         const session = this.getOrCreateSession(sessionId);
         session.messages.push({ ...message });
+        this.trimSession(session); // Trim the session to the maximum number of messages
         session.updatedAt = new Date();
-        this.saveSession(session.id);
+        this.saveSession(session.id); // Save the session to disk
         return session;
     }
 

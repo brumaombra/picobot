@@ -91,6 +91,30 @@ const subagent = squad.spawnSubagent('researcher', {
 });
 ```
 
+## Runtime Policies
+
+Squadforge now applies a soft run deadline model by default:
+
+- soft run deadline per agent run: 5 minutes
+- wrap-up warning injection before the deadline: 60 seconds remaining
+- session trimming: keep system messages plus the newest messages up to 50 total
+- stale session cleanup: expire non-leader sessions after 24 hours of inactivity
+- transient retries: 2 retries for LLM calls
+
+These can be overridden through `Squad.assemble(...)`:
+
+```js
+const squad = await Squad.assemble({
+  maxRuntimeMs: 5 * 60 * 1000,
+  wrapUpThresholdMs: 60 * 1000,
+  maxMessagesPerSession: 50,
+  sessionTtlMs: 24 * 60 * 60 * 1000,
+  llmChatMaxRetries: 2
+});
+```
+
+The deadline is checked between agent turns. It nudges the model to wrap up and stops the next turn once the budget is exhausted, but it does not cancel an in-flight LLM request or running tool.
+
 ## Public Surface
 
 - `Squad`

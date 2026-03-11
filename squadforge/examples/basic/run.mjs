@@ -34,7 +34,8 @@ try {
         rootDir: exampleRoot,
         llm,
         model,
-        maxIterations: 8
+        maxRuntimeMs: 5 * 60 * 1000,
+        wrapUpThresholdMs: 60 * 1000
     });
 
     squad.on('agentSpawn', event => {

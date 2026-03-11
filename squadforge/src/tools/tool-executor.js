@@ -42,15 +42,15 @@ export const executeToolCall = async ({ agent, toolCall }) => {
         };
     }
 
-    try {
-        // Emit a tool start event
-        agent.squad.emitEvent('toolStart', {
-            agentId: agent.id,
-            agentType: agent.definition.id,
-            toolName,
-            toolCallId
-        });
+    // Emit a tool start event
+    agent.squad.emitEvent('toolStart', {
+        agentId: agent.id,
+        agentType: agent.definition.id,
+        toolName,
+        toolCallId
+    });
 
+    try {
         // Parse the tool call arguments and execute the tool function
         const args = parseJson(toolCall?.function?.arguments);
         const result = await tool.execute(args, {

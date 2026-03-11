@@ -1,7 +1,7 @@
 import { AgentSpec } from './agent-spec.js';
 import { executeToolBatch } from '../tools/tool-executor.js';
 import { RUNNING_STATUS, IDLE_STATUS, DONE_STATUS, FAILED_STATUS } from '../config.js';
-import { generateId } from '../utils/utils.js';
+import { delay, generateId } from '../utils/utils.js';
 
 // Agent class
 export class Agent {
@@ -143,9 +143,40 @@ export class Agent {
 
     // Run the main agent loop
     async runLoop() {
-        // Loop until the agent completes or fails
-        const maxIterations = this.squad.maxIterations;
-        for (let iteration = 0; iteration < maxIterations; iteration++) {
+        const startedAt = Date.now();
+        let wrapUpInjected = false;
+        let iteration = 0;
+
+        // Loop until the agent completes or reaches its soft runtime deadline
+        while (true) {
+            iteration += 1;
+
+            // Check for the soft runtime deadline and fail if exceeded
+            const elapsed = Date.now() - startedAt;
+            if (elapsed >= this.squad.maxRuntimeMs) {
+                // Fail the agent and emit an error event
+                this.fail(`Agent run deadline reached after ${this.squad.maxRuntimeMs} ms.`);
+                this.squad.emitEvent('agentError', {
+                    agentId: this.id,
+                    agentType: this.definition.id,
+                    sessionId: this.sessionId,
+                    error: `Agent run deadline reached after ${this.squad.maxRuntimeMs} ms.`
+                });
+
+                // Throw an error to indicate the failure
+                throw new Error(`Agent run deadline reached after ${this.squad.maxRuntimeMs} ms.`);
+            }
+
+            // Inject a warning message before the soft deadline to encourage the agent to wrap up
+            const remaining = this.squad.maxRuntimeMs - elapsed;
+            if (!wrapUpInjected && remaining <= this.squad.wrapUpThresholdMs) {
+                wrapUpInjected = true;
+                this.appendMessage({
+                    role: 'system',
+                    content: `TIME WARNING: You have approximately ${Math.ceil(remaining / 1000)} seconds remaining before this run times out. Start wrapping up your current work now, finish what you are doing, and avoid starting new complex operations.`
+                });
+            }
+
             // Emit the iteration event
             this.squad.emitEvent('agentIteration', {
                 agentId: this.id,
@@ -154,12 +185,8 @@ export class Agent {
                 sessionId: this.sessionId
             });
 
-            // Ask the LLM for the next response
-            const result = await this.squad.llm.chat(
-                this.getMessages(),
-                this.getToolDefinitions(),
-                this.model
-            );
+            // Ask the LLM for the next response with retry support for transient failures
+            const result = await this.runChatWithRetry();
 
             // Extract content and tool calls from the LLM response
             const content = result?.content || '';
@@ -208,17 +235,40 @@ export class Agent {
                 this.appendMessage(toolMessage);
             }
         }
+    }
 
-        // Fail if the loop exceeds the maximum iterations
-        this.fail(`Agent loop exceeded max iterations (${maxIterations}).`);
-        this.squad.emitEvent('agentError', {
-            agentId: this.id,
-            agentType: this.definition.id,
-            error: `Agent loop exceeded max iterations (${maxIterations}).`
-        });
+    // Ask the LLM for the next response with retry support for transient failures
+    async runChatWithRetry() {
+        const maxRetries = this.squad.llmChatMaxRetries;
+        
+        // Retry loop for transient errors
+        for (let attempt = 0; attempt <= maxRetries; attempt++) {
+            try {
+                // Call the LLM chat method
+                return await this.squad.llm.chat(
+                    this.getMessages(),
+                    this.getToolDefinitions(),
+                    this.model
+                );
+            } catch (error) {
+                // If maximum number of retries reached, rethrow the error
+                if (attempt >= maxRetries) {
+                    throw error;
+                }
 
-        // Throw an error to indicate the failure
-        throw new Error(`Agent loop exceeded max iterations (${maxIterations}).`);
+                // Emit an agent retry event
+                this.squad.emitEvent('agentRetry', {
+                    agentId: this.id,
+                    agentType: this.definition.id,
+                    sessionId: this.sessionId,
+                    attempt: attempt + 1,
+                    error: error instanceof Error ? error.message : error
+                });
+
+                // Exponential backoff before retrying
+                await delay((attempt + 1) * 250);
+            }
+        }
     }
 
     // Run the agent with optional input

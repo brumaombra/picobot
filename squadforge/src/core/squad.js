@@ -6,14 +6,14 @@ import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadToolsFromDirectory } from '../loaders/load-tools.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
 import { SessionStore } from '../sessions/session-store.js';
-import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_MAX_ITERATIONS } from '../config.js';
+import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_LLM_CHAT_MAX_RETRIES, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_MAX_RUNTIME_MS, DEFAULT_SESSION_TTL_MS, DEFAULT_WRAP_UP_THRESHOLD_MS } from '../config.js';
 import { composeAgentPrompt } from '../prompts/prompts.js';
 import { getPredefinedTool, listPredefinedTools } from '../tools/tools.js';
 
 // Squad class
 export class Squad {
     // Constructor
-    constructor({ agentsSpecs = new Map(), tools = new Map(), skills = new Map(), promptTemplates = null, sessionStore = null, rootDir = null, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
+    constructor({ agentsSpecs = new Map(), tools = new Map(), skills = new Map(), promptTemplates = null, sessionStore = null, rootDir = null, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS, wrapUpThresholdMs = DEFAULT_WRAP_UP_THRESHOLD_MS, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS, llmChatMaxRetries = DEFAULT_LLM_CHAT_MAX_RETRIES } = {}) {
         // Validate that the leader spec is present
         const leaderSpec = agentsSpecs.get(LEADER_SPEC_ID);
         if (!(leaderSpec instanceof AgentSpec)) {
@@ -22,16 +22,12 @@ export class Squad {
 
         // Resolve the prompts directory and load prompt templates
         const resolvedPromptsDir = promptsDir || (rootDir ? join(rootDir, DEFAULT_PROMPTS_DIR_NAME) : DEFAULT_PROMPTS_DIR_NAME);
-        const resolvedPromptTemplates = promptTemplates || loadPromptTemplatesFromDirectory({
-            promptsDir: resolvedPromptsDir
-        });
+        const resolvedPromptTemplates = promptTemplates || loadPromptTemplatesFromDirectory({ promptsDir: resolvedPromptsDir });
         const resolvedSkillsDir = skillsDir || (rootDir ? join(rootDir, DEFAULT_SKILLS_DIR_NAME) : DEFAULT_SKILLS_DIR_NAME);
 
         // Resolve the sessions directory and session store
         const resolvedSessionsDir = sessionsDir || (rootDir ? join(rootDir, DEFAULT_SESSIONS_DIR_NAME) : DEFAULT_SESSIONS_DIR_NAME);
-        const resolvedSessionStore = sessionStore || new SessionStore({
-            sessionsDir: resolvedSessionsDir
-        });
+        const resolvedSessionStore = sessionStore || new SessionStore({ sessionsDir: resolvedSessionsDir, maxMessagesPerSession, sessionTtlMs });
 
         // Initialize properties
         this.agentsSpecs = agentsSpecs;
@@ -47,7 +43,9 @@ export class Squad {
         this.sessionsDir = resolvedSessionsDir;
         this.llm = llm;
         this.model = model;
-        this.maxIterations = maxIterations;
+        this.maxRuntimeMs = maxRuntimeMs;
+        this.wrapUpThresholdMs = wrapUpThresholdMs;
+        this.llmChatMaxRetries = llmChatMaxRetries;
         this.eventHandlers = new Map();
         this.leaderAgent = new Agent({
             id: LEADER_SPEC_ID,
@@ -58,7 +56,7 @@ export class Squad {
     }
 
     // Main method to assemble the squad
-    static async assemble({ rootDir, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxIterations = DEFAULT_MAX_ITERATIONS } = {}) {
+    static async assemble({ rootDir, agentsDir = null, promptsDir = null, skillsDir = null, toolsDir = null, sessionsDir = null, llm = null, model = null, maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS, wrapUpThresholdMs = DEFAULT_WRAP_UP_THRESHOLD_MS, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS, llmChatMaxRetries = DEFAULT_LLM_CHAT_MAX_RETRIES } = {}) {
         // Resolve directories
         const resolvedRootDir = rootDir || process.cwd();
         const resolvedAgentsDir = agentsDir || join(resolvedRootDir, DEFAULT_AGENTS_DIR_NAME);
@@ -70,7 +68,7 @@ export class Squad {
         // Load or create resources
         const resolvedPromptTemplates = loadPromptTemplatesFromDirectory({ promptsDir: resolvedPromptsDir });
         const resolvedSkills = loadSkillsFromDirectory({ skillsDir: resolvedSkillsDir });
-        const resolvedSessionStore = new SessionStore({ sessionsDir: resolvedSessionsDir });
+        const resolvedSessionStore = new SessionStore({ sessionsDir: resolvedSessionsDir, maxMessagesPerSession, sessionTtlMs });
         const tools = await loadToolsFromDirectory({ toolsDir: resolvedToolsDir });
         const agentsSpecs = loadAgentsFromDirectory({ agentsDir: resolvedAgentsDir, availableTools: tools });
 
@@ -89,7 +87,11 @@ export class Squad {
             sessionsDir: resolvedSessionsDir,
             llm,
             model,
-            maxIterations
+            maxRuntimeMs,
+            wrapUpThresholdMs,
+            maxMessagesPerSession,
+            sessionTtlMs,
+            llmChatMaxRetries
         });
     }
 
