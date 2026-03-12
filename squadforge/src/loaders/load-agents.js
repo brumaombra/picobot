@@ -3,6 +3,7 @@ import { basename, join } from 'path';
 import { AgentSpec } from '../core/agent-spec.js';
 import { LEADER_FILE_NAME, LEADER_SPEC_ID, MARKDOWN_EXTENSION } from '../config.js';
 import { isMarkdownFile, parseFrontmatter } from '../utils/utils.js';
+import { createPredefinedToolList } from '../tools/tools-catalog.js';
 
 // Validate that the allowed tools frontmatter is a list of non-empty strings
 const validateAllowedToolsStructure = ({ agentId, allowedTools }) => {
@@ -19,37 +20,43 @@ const validateAllowedToolsStructure = ({ agentId, allowedTools }) => {
 };
 
 // Validate that all tools referenced in the agent spec are available
-const validateAllowedTools = ({ agentSpec, availableTools }) => {
-    const { allowedTools } = agentSpec;
-
+const validateAllowedTools = ({ agentId, allowedTools, knownToolNames = null }) => {
     // If no tools are referenced, skip validation
     if (allowedTools.length === 0) {
         return;
     }
 
     // Throw if tools are required but were not provided for validation
-    if (!availableTools) {
-        throw new Error(`Agent "${agentSpec.id}" references tools but no available tools were provided for validation.`);
+    if (!knownToolNames) {
+        throw new Error(`Agent "${agentId}" references tools but no available tools were provided for validation.`);
     }
 
     // Throw if any referenced tools are missing
-    const unknownTools = allowedTools.filter(toolName => !availableTools.has(toolName));
+    const unknownTools = allowedTools.filter(toolName => !knownToolNames.has(toolName));
     if (unknownTools.length > 0) {
-        throw new Error(`Agent "${agentSpec.id}" references unknown tools: ${unknownTools.join(', ')}`);
+        throw new Error(`Agent "${agentId}" references unknown tools: ${unknownTools.join(', ')}`);
     }
 };
 
 // Read and parse an agent spec from a markdown file
-const readAgentSpec = ({ filePath, availableTools }) => {
+const readAgentSpec = ({ filePath, availableTools, hasSubagents }) => {
     // Read the file content and parse the frontmatter
     const fileName = basename(filePath);
     const content = readFileSync(filePath, 'utf-8');
     const { metadata, body } = parseFrontmatter(content);
     const id = basename(fileName, MARKDOWN_EXTENSION);
-    const allowedTools = metadata.allowed_tools || [];
+    const externalToolNames = metadata.allowed_tools || [];
 
     // Validate the allowed tools structure before constructing the spec
-    validateAllowedToolsStructure({ agentId: id, allowedTools });
+    validateAllowedToolsStructure({ agentId: id, allowedTools: externalToolNames });
+
+    // Combine the predefined tools with the external tools
+    const predefinedToolNames = createPredefinedToolList({ agentId: id, hasSubagents });
+    const allowedTools = [...new Set([...predefinedToolNames, ...externalToolNames])];
+    const knownToolNames = new Set([
+        ...predefinedToolNames,
+        ...(availableTools ? [...availableTools.keys()] : [])
+    ]);
 
     // Create the agent spec object
     const agentSpec = new AgentSpec({
@@ -64,7 +71,7 @@ const readAgentSpec = ({ filePath, availableTools }) => {
     });
 
     // Validate that all referenced tools are available
-    validateAllowedTools({ agentSpec, availableTools });
+    validateAllowedTools({ agentId: id, allowedTools, knownToolNames });
 
     // Return the agent spec
     return agentSpec;
@@ -84,12 +91,13 @@ export const loadAgentsFromDirectory = ({ agentsDir, availableTools = null } = {
 
     // Find all markdown files in the agents directory
     const files = readdirSync(agentsDir).filter(isMarkdownFile);
+    const hasSubagents = files.some(fileName => basename(fileName, MARKDOWN_EXTENSION) !== LEADER_SPEC_ID);
 
     // Load each agent spec and store it in a map by id
     const agentsSpecs = new Map();
     for (const fileName of files) {
         const filePath = join(agentsDir, fileName);
-        const agentSpec = readAgentSpec({ filePath, availableTools });
+        const agentSpec = readAgentSpec({ filePath, availableTools, hasSubagents });
         agentsSpecs.set(agentSpec.id, agentSpec);
     }
 

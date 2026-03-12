@@ -1,5 +1,5 @@
 import { randomUUID } from 'crypto';
-import { DEFAULT_LEADER_SESSION_ID, MARKDOWN_EXTENSION } from '../config.js';
+import { DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, MARKDOWN_EXTENSION } from '../config.js';
 
 // Check if the file is a markdown file based on its extension
 export const isMarkdownFile = fileName => {
@@ -14,6 +14,11 @@ export const generateId = (prefix = 'id') => {
 // Normalize a session id, defaulting to the leader session when missing
 export const normalizeSessionId = sessionId => {
     return sessionId || DEFAULT_LEADER_SESSION_ID;
+};
+
+// Resolve the framework role for an agent definition id
+export const getAgentRole = agentId => {
+    return agentId === LEADER_SPEC_ID ? 'leader' : 'subagent';
 };
 
 // Pause execution for the specified number of milliseconds

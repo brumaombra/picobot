@@ -20,7 +20,7 @@ const collectToolFilePaths = directoryPath => {
             continue;
         }
 
-        // If it's a JS/TS file, include it
+        // If it's a supported tool file, include it
         if (SUPPORTED_TOOL_EXTENSIONS.includes(extname(entry.name).toLowerCase())) {
             filePaths.push(fullPath);
         }
@@ -60,8 +60,8 @@ const normalizeTool = ({ rawTool, filePath }) => {
     };
 };
 
-// Load tools from the specified directory
-export const loadToolsFromDirectory = async ({ toolsDir } = {}) => {
+// Load external tools from the specified directory
+export const loadExternalToolsFromDirectory = async ({ toolsDir } = {}) => {
     // Validate the tools directory
     if (!toolsDir) {
         throw new Error('toolsDir is required.');

@@ -310,32 +310,12 @@ export class Agent {
 
     // Get a tool available to this agent by name
     getTool(name) {
-        const normalizedName = name;
-        const builtInTool = this.squad.getBuiltInTool(normalizedName, this);
-
-        // Prefer built-in tools
-        if (builtInTool) {
-            return builtInTool;
-        }
-
-        // Reject tools that are not allowed for this agent
-        if (!this.definition.allowedTools.includes(normalizedName)) {
-            return null;
-        }
-
-        // Return the registered external tool
-        return this.squad.getTool(normalizedName);
+        return this.squad.getAvailableTool(name, this);
     }
 
     // List all tools available to this agent
     listTools() {
-        // Get all external tools
-        const externalTools = this.definition.allowedTools
-            .map(toolName => this.squad.getTool(toolName))
-            .filter(Boolean);
-
-        // Combine built-in tools with allowed external tools
-        return [...this.squad.listBuiltInTools(this), ...externalTools];
+        return this.squad.listAvailableTools(this);
     }
 
     // Spawn a subagent

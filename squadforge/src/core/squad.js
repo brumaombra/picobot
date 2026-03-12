@@ -2,13 +2,13 @@ import { join } from 'path';
 import { AgentSpec } from './agent-spec.js';
 import { Agent } from './agent.js';
 import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
+import { loadExternalToolsFromDirectory } from '../loaders/load-external-tools.js';
 import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
-import { loadToolsFromDirectory } from '../loaders/load-tools.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
 import { SessionStore } from '../sessions/session-store.js';
 import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_RUNTIME_POLL_TIMEOUT_MS, DEFAULT_RUNTIME_TIMEOUT_MESSAGE, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_LLM_CHAT_MAX_RETRIES, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_MAX_RUNTIME_MS, DEFAULT_SESSION_TTL_MS, DEFAULT_WRAP_UP_THRESHOLD_MS } from '../config.js';
 import { composeAgentPrompt } from '../prompts/prompts.js';
-import { getPredefinedTool, listPredefinedTools } from '../tools/tools.js';
+import { getAvailableTool, listAvailableTools } from '../tools/tools-catalog.js';
 
 // Squad class
 export class Squad {
@@ -84,7 +84,7 @@ export class Squad {
         const resolvedPromptTemplates = loadPromptTemplatesFromDirectory({ promptsDir: resolvedPromptsDir });
         const resolvedSkills = loadSkillsFromDirectory({ skillsDir: resolvedSkillsDir });
         const resolvedSessionStore = new SessionStore({ sessionsDir: resolvedSessionsDir, maxMessagesPerSession, sessionTtlMs });
-        const tools = await loadToolsFromDirectory({ toolsDir: resolvedToolsDir });
+        const tools = await loadExternalToolsFromDirectory({ toolsDir: resolvedToolsDir });
         const agentsSpecs = loadAgentsFromDirectory({ agentsDir: resolvedAgentsDir, availableTools: tools });
 
         // Create and return the squad instance
@@ -379,17 +379,17 @@ export class Squad {
         return [...this.tools.values()];
     }
 
-    // List built-in tools available to an agent
-    listBuiltInTools(agent) {
-        return listPredefinedTools({
+    // List all tools available to a specific agent
+    listAvailableTools(agent) {
+        return listAvailableTools({
             squad: this,
             agent
         });
     }
 
-    // Get a built-in tool by name for an agent
-    getBuiltInTool(name, agent) {
-        return getPredefinedTool({
+    // Get a single available tool by name for a specific agent
+    getAvailableTool(name, agent) {
+        return getAvailableTool({
             squad: this,
             agent,
             name
