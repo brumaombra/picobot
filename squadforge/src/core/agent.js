@@ -42,11 +42,6 @@ export class Agent {
         return this.squad.composePrompt(this);
     }
 
-    // Get the names of allowed tools
-    get allowedToolNames() {
-        return [...this.definition.allowedTools];
-    }
-
     // Get the model for this agent
     get model() {
         return this.definition.model || this.squad.model || null;
@@ -263,7 +258,7 @@ export class Agent {
     // Ask the LLM for the next response with retry support for transient failures
     async runChatWithRetry() {
         const maxRetries = this.squad.llmChatMaxRetries;
-
+        
         // Retry loop for transient errors
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {

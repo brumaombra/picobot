@@ -3,29 +3,6 @@ import { join } from 'path';
 import { SKILL_FILE_NAME } from '../config.js';
 import { parseFrontmatter } from '../utils/utils.js';
 
-// Read and parse a skill definition from a skill directory
-const readSkillDefinition = ({ skillsDir, skillDirName }) => {
-    // Check if the skill file exists in the skill directory
-    const skillFilePath = join(skillsDir, skillDirName, SKILL_FILE_NAME);
-    if (!existsSync(skillFilePath)) {
-        return null;
-    }
-
-    // Read the skill file content and parse the frontmatter
-    const content = readFileSync(skillFilePath, 'utf-8');
-    const { metadata, body } = parseFrontmatter(content);
-
-    // Return the skill definition object
-    return {
-        id: skillDirName,
-        name: metadata.name || skillDirName,
-        description: metadata.description || '',
-        prompt: body,
-        filePath: skillFilePath,
-        metadata
-    };
-};
-
 // Load skill definitions from the specified directory
 export const loadSkillsFromDirectory = ({ skillsDir } = {}) => {
     // Validate the skills directory path
@@ -50,19 +27,25 @@ export const loadSkillsFromDirectory = ({ skillsDir } = {}) => {
             continue;
         }
 
-        // Read the skill definition from the skill directory
-        const skill = readSkillDefinition({
-            skillsDir,
-            skillDirName: entry.name
-        });
-
-        // Skip entries that do not contain a valid skill definition
-        if (!skill) {
+        // Skip entries that do not contain a skill definition file
+        const skillFilePath = join(skillsDir, entry.name, SKILL_FILE_NAME);
+        if (!existsSync(skillFilePath)) {
             continue;
         }
 
+        // Read the skill file content and parse the frontmatter
+        const content = readFileSync(skillFilePath, 'utf-8');
+        const { metadata, body } = parseFrontmatter(content);
+
         // Store the skill definition
-        skills.set(skill.id, skill);
+        skills.set(entry.name, {
+            id: entry.name,
+            name: metadata.name || entry.name,
+            description: metadata.description || '',
+            prompt: body,
+            filePath: skillFilePath,
+            metadata
+        });
     }
 
     // Return the skills

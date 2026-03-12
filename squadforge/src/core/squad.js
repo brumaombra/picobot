@@ -29,6 +29,14 @@ export class Squad {
         const resolvedSessionsDir = sessionsDir || (rootDir ? join(rootDir, DEFAULT_SESSIONS_DIR_NAME) : DEFAULT_SESSIONS_DIR_NAME);
         const resolvedSessionStore = sessionStore || new SessionStore({ sessionsDir: resolvedSessionsDir, maxMessagesPerSession, sessionTtlMs });
 
+        // Create the leader agent instance
+        const leaderAgent = new Agent({
+            id: LEADER_SPEC_ID,
+            definition: leaderSpec,
+            squad: this,
+            sessionId: DEFAULT_LEADER_SESSION_ID
+        });
+
         // Initialize properties
         this.agentsSpecs = agentsSpecs;
         this.tools = tools;
@@ -61,13 +69,7 @@ export class Squad {
         this.outboundMessageHandler = null;
         this.eventHandlers = new Map();
         this.sessionAgents = new Map();
-        this.leaderAgent = new Agent({
-            id: LEADER_SPEC_ID,
-            definition: leaderSpec,
-            squad: this,
-            sessionId: DEFAULT_LEADER_SESSION_ID
-        });
-        this.sessionAgents.set(DEFAULT_LEADER_SESSION_ID, this.leaderAgent);
+        this.sessionAgents.set(DEFAULT_LEADER_SESSION_ID, leaderAgent);
     }
 
     // Main method to assemble the squad
