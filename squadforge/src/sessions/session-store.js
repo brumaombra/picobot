@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'fs';
 import { basename, join } from 'path';
 import { DEFAULT_LEADER_SESSION_ID, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_SESSION_TTL_MS } from '../config.js';
+import { normalizeSessionId } from '../utils/utils.js';
 
 // Session store with optional disk persistence
 export class SessionStore {
@@ -23,7 +24,7 @@ export class SessionStore {
 
     // Get the file path for a session
     getSessionFilePath(sessionId) {
-        return join(this.sessionsDir || DEFAULT_SESSIONS_DIR_NAME, `${sessionId}.json`);
+        return join(this.sessionsDir || DEFAULT_SESSIONS_DIR_NAME, `${normalizeSessionId(sessionId)}.json`);
     }
 
     // Ensure the sessions directory exists
@@ -145,7 +146,7 @@ export class SessionStore {
 
     // Get or create a session by its ID
     getOrCreateSession(sessionId) {
-        const normalizedSessionId = sessionId || 'leader';
+        const normalizedSessionId = normalizeSessionId(sessionId);
 
         // Drop expired sessions before serving the requested one
         this.cleanupExpiredSessions();
@@ -184,7 +185,7 @@ export class SessionStore {
     // Clear all messages for a session
     clearSession(sessionId) {
         // Delete the session from memory
-        const normalizedSessionId = sessionId || 'leader';
+        const normalizedSessionId = normalizeSessionId(sessionId);
         this.sessions.delete(normalizedSessionId);
 
         // If no sessions directory is configured, skip deleting from disk

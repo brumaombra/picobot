@@ -5,6 +5,23 @@ import { SKILLS_FILE_NAME, SUBAGENTS_FILE_NAME, SUBAGENT_FILE_NAME, TOOLS_FILE_N
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const DEFAULT_PROMPTS_DIR = join(__dirname, '../files/default-prompts');
+const PROMPT_TEMPLATE_DEFINITIONS = [{
+    templateKey: 'subagents',
+    fileName: SUBAGENTS_FILE_NAME,
+    placeholder: '{subagentsList}'
+}, {
+    templateKey: 'tools',
+    fileName: TOOLS_FILE_NAME,
+    placeholder: '{toolsList}'
+}, {
+    templateKey: 'skills',
+    fileName: SKILLS_FILE_NAME,
+    placeholder: '{skillsList}'
+}, {
+    templateKey: 'subagent',
+    fileName: SUBAGENT_FILE_NAME,
+    placeholder: null
+}];
 
 // Read a bundled default prompt template file from the framework
 const readDefaultPromptTemplate = fileName => {
@@ -12,17 +29,19 @@ const readDefaultPromptTemplate = fileName => {
 };
 
 // Ensure the application prompts directory exists and contains all default prompt files
-const ensurePromptTemplatesInDirectory = ({ promptsDir }) => {
+export const scaffoldPromptTemplates = ({ promptsDir } = {}) => {
+    // Validate the prompts directory path
+    if (!promptsDir) {
+        throw new Error('promptsDir is required.');
+    }
+
     // Create the prompts directory when it does not exist yet
     if (!existsSync(promptsDir)) {
         mkdirSync(promptsDir, { recursive: true });
     }
 
-    // Create the list of prompts files
-    const promptFiles = [SUBAGENTS_FILE_NAME, TOOLS_FILE_NAME, SKILLS_FILE_NAME, SUBAGENT_FILE_NAME];
-
     // Create each missing prompt file from the bundled defaults
-    for (const fileName of promptFiles) {
+    for (const { fileName } of PROMPT_TEMPLATE_DEFINITIONS) {
         const filePath = join(promptsDir, fileName);
         if (!existsSync(filePath)) {
             writeFileSync(filePath, `${readDefaultPromptTemplate(fileName)}\n`);
@@ -45,23 +64,8 @@ const readPromptTemplate = ({ promptsDir, fileName }) => {
 
 // Validate that prompt templates contain the placeholders required by the framework
 const validatePromptTemplates = promptTemplates => {
-    // Define the required placeholders for each prompt template
-    const requiredPlaceholders = [{
-        templateKey: 'subagents',
-        fileName: SUBAGENTS_FILE_NAME,
-        placeholder: '{subagentsList}'
-    }, {
-        templateKey: 'tools',
-        fileName: TOOLS_FILE_NAME,
-        placeholder: '{toolsList}'
-    }, {
-        templateKey: 'skills',
-        fileName: SKILLS_FILE_NAME,
-        placeholder: '{skillsList}'
-    }];
-
     // Check that each required placeholder is present
-    for (const requirement of requiredPlaceholders) {
+    for (const requirement of PROMPT_TEMPLATE_DEFINITIONS.filter(definition => definition.placeholder)) {
         const template = promptTemplates[requirement.templateKey] || '';
         if (!template.includes(requirement.placeholder)) {
             throw new Error(`Prompt file "${requirement.fileName}" must include the placeholder ${requirement.placeholder}.`);
@@ -77,15 +81,16 @@ export const loadPromptTemplatesFromDirectory = ({ promptsDir } = {}) => {
     }
 
     // Ensure the prompts directory and default prompt files exist
-    ensurePromptTemplatesInDirectory({ promptsDir });
+    scaffoldPromptTemplates({ promptsDir });
 
     // Load each supported prompt template file
-    const promptTemplates = {
-        subagents: readPromptTemplate({ promptsDir, fileName: SUBAGENTS_FILE_NAME }),
-        tools: readPromptTemplate({ promptsDir, fileName: TOOLS_FILE_NAME }),
-        skills: readPromptTemplate({ promptsDir, fileName: SKILLS_FILE_NAME }),
-        subagent: readPromptTemplate({ promptsDir, fileName: SUBAGENT_FILE_NAME })
-    };
+    const promptList = PROMPT_TEMPLATE_DEFINITIONS.map(({ templateKey, fileName }) => [
+        templateKey,
+        readPromptTemplate({ promptsDir, fileName })
+    ]);
+
+    // Create the object from the list
+    const promptTemplates = Object.fromEntries(promptList);
 
     // Validate the templates required by the framework prompt composer
     validatePromptTemplates(promptTemplates);

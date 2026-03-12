@@ -1,4 +1,5 @@
-import { MARKDOWN_EXTENSION } from '../config.js';
+import { randomUUID } from 'crypto';
+import { DEFAULT_LEADER_SESSION_ID, MARKDOWN_EXTENSION } from '../config.js';
 
 // Check if the file is a markdown file based on its extension
 export const isMarkdownFile = fileName => {
@@ -7,7 +8,12 @@ export const isMarkdownFile = fileName => {
 
 // Generate a unique ID using a prefix and the current timestamp
 export const generateId = (prefix = 'id') => {
-    return `${prefix}_${Date.now()}`;
+    return `${prefix}_${randomUUID()}`;
+};
+
+// Normalize a session id, defaulting to the leader session when missing
+export const normalizeSessionId = sessionId => {
+    return sessionId || DEFAULT_LEADER_SESSION_ID;
 };
 
 // Pause execution for the specified number of milliseconds

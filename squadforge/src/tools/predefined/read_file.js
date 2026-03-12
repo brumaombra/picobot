@@ -1,5 +1,5 @@
 import { access, readFile } from 'fs/promises';
-import { isAbsolute, normalize, resolve } from 'path';
+import { isAbsolute, normalize, relative, resolve } from 'path';
 
 // Create the built-in read_file tool for the current agent context
 export const createReadFileTool = ({ squad }) => {
@@ -31,9 +31,11 @@ export const createReadFileTool = ({ squad }) => {
             const workspaceRoot = squad.rootDir || process.cwd();
             const normalizedWorkspaceRoot = normalize(resolve(workspaceRoot));
             const fullPath = normalize(isAbsolute(path) ? path : resolve(normalizedWorkspaceRoot, path));
+            const relativePath = relative(normalizedWorkspaceRoot, fullPath);
+            const isInsideWorkspace = relativePath === '' || (!relativePath.startsWith('..') && !isAbsolute(relativePath));
 
             // Restrict reads to the current squad workspace
-            if (!fullPath.startsWith(normalizedWorkspaceRoot)) {
+            if (!isInsideWorkspace) {
                 return {
                     success: false,
                     error: 'Access denied: path must stay inside the squad workspace.'
@@ -61,7 +63,7 @@ export const createReadFileTool = ({ squad }) => {
                 };
             }
 
-            // Validate the requested line range
+            // Validate the line start parameter
             if (line_start !== undefined && (!Number.isInteger(line_start) || line_start < 1)) {
                 return {
                     success: false,
@@ -69,6 +71,7 @@ export const createReadFileTool = ({ squad }) => {
                 };
             }
 
+            // Validate the line end parameter
             if (line_end !== undefined && (!Number.isInteger(line_end) || line_end < -1 || line_end === 0)) {
                 return {
                     success: false,
@@ -81,6 +84,7 @@ export const createReadFileTool = ({ squad }) => {
             const start = (line_start ?? 1) - 1;
             const endExclusive = line_end === -1 || line_end === undefined ? lines.length : line_end;
 
+            // Validate the line range
             if (start >= lines.length) {
                 return {
                     success: false,
@@ -88,6 +92,7 @@ export const createReadFileTool = ({ squad }) => {
                 };
             }
 
+            // Validate that line_end is greater than or equal to line_start
             if (endExclusive < start + 1) {
                 return {
                     success: false,
@@ -95,6 +100,7 @@ export const createReadFileTool = ({ squad }) => {
                 };
             }
 
+            // Return the extracted content
             return {
                 success: true,
                 output: lines.slice(start, Math.min(endExclusive, lines.length)).join('\n')

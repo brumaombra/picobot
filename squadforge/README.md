@@ -10,7 +10,7 @@ This first cut focuses on the core filesystem-driven abstraction layer:
 - automatically compose prompts from shared markdown fragments in a `prompts/` folder during squad initialization
 - automatically load skills from `skills/<skill-id>/SKILL.md` folders during squad initialization
 - parse frontmatter metadata such as `name`, `description`, `model`, and `allowed_tools`
-- automatically load tools from a `tools/` folder during squad initialization
+- automatically load tools from a `tools/` folder during squad initialization, including nested tool folders
 - expose a single `Squad` class that owns the main agent, loaded subagent definitions, active subagent instances, and session storage
 
 The orchestration loop and long-lived chat runtime are built into the framework without changing the folder conventions.
@@ -32,8 +32,10 @@ my-app/
     research-report/
       SKILL.md
   tools/
-    web_search.js
-    read_file.js
+    web/
+      web_search.js
+    filesystem/
+      read_file.js
 ```
 
 ## Agent Markdown
@@ -135,8 +137,10 @@ The deadline is checked between agent turns. It nudges the model to wrap up and 
 
 ## Public Surface
 
+- `Agent`
 - `Squad`
 - `AgentSpec`
 - `SessionStore`
+- `OpenRouterLlm`
 
-The folder loaders are internal implementation details. Consumers initialize a squad through `Squad.assemble(...)`, and squadforge loads the `agents/` and `tools/` folders automatically. When `rootDir` is omitted, squadforge defaults it to the current working directory.
+The folder loaders are internal implementation details. Consumers initialize a squad through `Squad.assemble(...)`, and squadforge loads the `agents/`, `skills/`, and nested `tools/` folders automatically. When `rootDir` is omitted, squadforge defaults it to the current working directory.

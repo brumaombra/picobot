@@ -3,6 +3,33 @@ import { extname, join } from 'path';
 import { pathToFileURL } from 'url';
 import { SUPPORTED_TOOL_EXTENSIONS } from '../config.js';
 
+// Recursively collect all supported tool files from the tools directory
+const collectToolFilePaths = directoryPath => {
+    // Read the list of entries in the directory and sort them by name for consistent loading order
+    const entries = readdirSync(directoryPath, { withFileTypes: true })
+        .sort((left, right) => left.name.localeCompare(right.name));
+
+    // Collect file paths and search recursively in subdirectories
+    const filePaths = [];
+    for (const entry of entries) {
+        const fullPath = join(directoryPath, entry.name);
+
+        // If directory, search recursively for tool files
+        if (entry.isDirectory()) {
+            filePaths.push(...collectToolFilePaths(fullPath));
+            continue;
+        }
+
+        // If it's a JS/TS file, include it
+        if (SUPPORTED_TOOL_EXTENSIONS.includes(extname(entry.name).toLowerCase())) {
+            filePaths.push(fullPath);
+        }
+    }
+
+    // Return the list of paths
+    return filePaths;
+};
+
 // Normalize a loaded tool module into the expected tool shape
 const normalizeTool = ({ rawTool, filePath }) => {
     // Validate the tool shape
@@ -45,17 +72,24 @@ export const loadToolsFromDirectory = async ({ toolsDir } = {}) => {
         return new Map();
     }
 
-    // Find all supported tool files in the tools directory
-    const files = readdirSync(toolsDir).filter(fileName => SUPPORTED_TOOL_EXTENSIONS.includes(extname(fileName).toLowerCase()));
+    // Find all supported tool files in the tools directory tree
+    const filePaths = collectToolFilePaths(toolsDir);
 
     // Load each tool and store it in a map by name
     const tools = new Map();
-    for (const fileName of files) {
-        const filePath = join(toolsDir, fileName);
+    for (const filePath of filePaths) {
+        // Dynamically import the tool module
         const moduleUrl = pathToFileURL(filePath).href;
         const importedModule = await import(moduleUrl);
         const rawTool = importedModule.default || importedModule.tool || importedModule;
         const tool = normalizeTool({ rawTool, filePath });
+
+        // Check for duplicate tool names
+        if (tools.has(tool.name)) {
+            throw new Error(`Duplicate tool name "${tool.name}" found while loading ${filePath}.`);
+        }
+
+        // Store the tool in the map
         tools.set(tool.name, tool);
     }
 

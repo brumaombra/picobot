@@ -188,7 +188,7 @@ export class Agent {
             this.squad.emitEvent('agentIteration', {
                 agentId: this.id,
                 agentType: this.definition.id,
-                iteration: iteration + 1,
+                iteration,
                 sessionId: this.sessionId
             });
 
