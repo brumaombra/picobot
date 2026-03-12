@@ -7,7 +7,8 @@ import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
 import { SessionStore } from '../sessions/session-store.js';
 import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_RUNTIME_POLL_TIMEOUT_MS, DEFAULT_RUNTIME_TIMEOUT_MESSAGE, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_LLM_CHAT_MAX_RETRIES, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_MAX_RUNTIME_MS, DEFAULT_SESSION_TTL_MS, DEFAULT_WRAP_UP_THRESHOLD_MS } from '../config.js';
 import { composeAgentPrompt } from '../prompts/prompts.js';
-import { loadTools, resolveTool } from '../tools/tools-catalog.js';
+import { loadTools } from '../tools/tools-catalog.js';
+import { normalizeSessionId } from '../utils/utils.js';
 
 // Squad class
 export class Squad {
@@ -190,7 +191,7 @@ export class Squad {
 
     // Process a single inbound message through the Squad and emit an outbound response
     async processMessage(message) {
-        const sessionId = message?.sessionId || DEFAULT_LEADER_SESSION_ID;
+        const sessionId = normalizeSessionId(message?.sessionId);
         const role = message?.role || 'user';
         const content = message?.content || '';
 
@@ -326,7 +327,8 @@ export class Squad {
 
     // Get the leader agent
     getLeaderAgent(sessionId = DEFAULT_LEADER_SESSION_ID) {
-        return this.getRootAgentForSession(sessionId) || this.getOrCreateSessionAgent(sessionId);
+        const normalizedSessionId = normalizeSessionId(sessionId);
+        return this.getRootAgentForSession(normalizedSessionId) || this.getOrCreateSessionAgent(normalizedSessionId);
     }
 
     // Get the leader spec
@@ -369,20 +371,8 @@ export class Squad {
     }
 
     // Get a tool by name
-    getTool(name, agent = null) {
-        // Check if the tool is allowed for the agent (if provided) and return it
-        const toolEntry = this.tools.get(name) || null;
-        if (!toolEntry) {
-            return null;
-        }
-
-        // Check if the tool is a factory function that requires the agent context to create the tool definition
-        if (!agent) {
-            return typeof toolEntry.createTool === 'function' ? null : toolEntry;
-        }
-
-        // Return the resolved tool definition
-        return resolveTool({ squad: this, agent, name });
+    getTool(name) {
+        return this.tools.get(name) || null;
     }
 
     // List all tools
@@ -392,17 +382,20 @@ export class Squad {
 
     // Get messages for a session
     getMessages(sessionId = DEFAULT_LEADER_SESSION_ID) {
-        return this.getOrCreateSessionAgent(sessionId).getMessages();
+        const normalizedSessionId = normalizeSessionId(sessionId);
+        return this.getOrCreateSessionAgent(normalizedSessionId).getMessages();
     }
 
     // Send a message to an agent in a session
     async send(content, { sessionId = DEFAULT_LEADER_SESSION_ID, role = 'user' } = {}) {
-        return this.getOrCreateSessionAgent(sessionId).send(content, { role });
+        const normalizedSessionId = normalizeSessionId(sessionId);
+        return this.getOrCreateSessionAgent(normalizedSessionId).send(content, { role });
     }
 
     // Spawn a subagent
     spawnSubagent(type, { prompt = '', parentSessionId = DEFAULT_LEADER_SESSION_ID } = {}) {
-        return this.requireAgentBySessionId(parentSessionId).spawnSubagent(type, { prompt });
+        const normalizedParentSessionId = normalizeSessionId(parentSessionId);
+        return this.requireAgentBySessionId(normalizedParentSessionId).spawnSubagent(type, { prompt });
     }
 
     // Get an agent by id
@@ -417,6 +410,7 @@ export class Squad {
 
     // Find an agent by id in the entire hierarchy
     findAgentById(agentId) {
+        // Check if the agentId matches any root agents first
         for (const rootAgent of this.sessionAgents.values()) {
             const match = rootAgent.findById(agentId);
             if (match) {
@@ -424,50 +418,58 @@ export class Squad {
             }
         }
 
+        // If no match is found, return null
         return null;
     }
 
     // Find an agent by session id in the entire hierarchy
     findAgentBySessionId(sessionId) {
+        const normalizedSessionId = normalizeSessionId(sessionId);
+
+        // Check if the sessionId matches any root agents first
         for (const rootAgent of this.sessionAgents.values()) {
-            const match = rootAgent.findBySessionId(sessionId);
+            const match = rootAgent.findBySessionId(normalizedSessionId);
             if (match) {
                 return match;
             }
         }
 
+        // If no match is found, return null
         return null;
     }
 
     // Find the top-level leader-style agent that owns a session subtree
     getRootAgentForSession(sessionId) {
+        const normalizedSessionId = normalizeSessionId(sessionId);
+
+        // Check if the sessionId matches any root agents first
         for (const rootAgent of this.sessionAgents.values()) {
-            if (rootAgent.findBySessionId(sessionId)) {
+            if (rootAgent.findBySessionId(normalizedSessionId)) {
                 return rootAgent;
             }
         }
 
+        // If no match is found, return null
         return null;
     }
 
     // Get or create a top-level chat session agent backed by the leader definition
     getOrCreateSessionAgent(sessionId = DEFAULT_LEADER_SESSION_ID) {
-        const normalizedSessionId = sessionId || DEFAULT_LEADER_SESSION_ID;
+        // Check if an agent for the session already exists
+        const normalizedSessionId = normalizeSessionId(sessionId);
         const existingAgent = this.findAgentBySessionId(normalizedSessionId);
         if (existingAgent) {
             return existingAgent;
         }
 
-        const existingRootAgent = this.sessionAgents.get(normalizedSessionId);
-        if (existingRootAgent) {
-            return existingRootAgent;
-        }
-
+        // If not, create a new session agent with the leader spec as the definition
         const sessionAgent = new Agent({
             definition: this.getLeaderSpec(),
             squad: this,
             sessionId: normalizedSessionId
         });
+
+        // Cache the session agent for future lookups
         this.sessionAgents.set(normalizedSessionId, sessionAgent);
         return sessionAgent;
     }
@@ -475,9 +477,10 @@ export class Squad {
     // Require an agent by session id, throwing an error if not found
     requireAgentBySessionId(sessionId) {
         // Check if the session exists
-        const agent = this.findAgentBySessionId(sessionId);
+        const normalizedSessionId = normalizeSessionId(sessionId);
+        const agent = this.findAgentBySessionId(normalizedSessionId);
         if (!agent) {
-            throw new Error(`Unknown session "${sessionId}".`);
+            throw new Error(`Unknown session "${normalizedSessionId}".`);
         }
 
         // Return the agent

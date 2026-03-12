@@ -40,7 +40,8 @@ export const loadSkillsFromDirectory = ({ skillsDir } = {}) => {
 
     // Read the list of entries
     const skills = new Map();
-    const entries = readdirSync(skillsDir, { withFileTypes: true });
+    const entries = readdirSync(skillsDir, { withFileTypes: true })
+        .sort((left, right) => left.name.localeCompare(right.name));
 
     // Load each skill definition
     for (const entry of entries) {

@@ -149,106 +149,121 @@ export class Agent {
         let wrapUpInjected = false;
         let iteration = 0;
 
-        // Loop until the agent completes or reaches its soft runtime deadline
-        while (true) {
-            iteration += 1;
+        try {
+            // Loop until the agent completes or reaches its soft runtime deadline
+            while (true) {
+                iteration += 1;
 
-            // Check for the soft runtime deadline and fail if exceeded
-            const elapsed = Date.now() - startedAt;
-            if (elapsed >= this.squad.maxRuntimeMs) {
-                // Fail the agent and emit an error event
-                this.fail(`Agent run deadline reached after ${this.squad.maxRuntimeMs} ms.`);
-                this.squad.emitEvent('agentError', {
+                // Check for the soft runtime deadline and fail if exceeded
+                const elapsed = Date.now() - startedAt;
+                if (elapsed >= this.squad.maxRuntimeMs) {
+                    // Fail the agent and emit an error event
+                    this.fail(`Agent run deadline reached after ${this.squad.maxRuntimeMs} ms.`);
+                    this.squad.emitEvent('agentError', {
+                        agentId: this.id,
+                        agentType: this.definition.id,
+                        sessionId: this.sessionId,
+                        error: `Agent run deadline reached after ${this.squad.maxRuntimeMs} ms.`,
+                        timedOut: true
+                    });
+
+                    // Return a structured timeout result so runtime layers can respond gracefully
+                    return {
+                        response: null,
+                        finishReason: 'deadline',
+                        timedOut: true
+                    };
+                }
+
+                // Inject a warning message before the soft deadline to encourage the agent to wrap up
+                const remaining = this.squad.maxRuntimeMs - elapsed;
+                if (!wrapUpInjected && remaining <= this.squad.wrapUpThresholdMs) {
+                    wrapUpInjected = true;
+                    this.appendMessage({
+                        role: 'system',
+                        content: `TIME WARNING: You have approximately ${Math.ceil(remaining / 1000)} seconds remaining before this run times out. Start wrapping up your current work now, finish what you are doing, and avoid starting new complex operations.`
+                    });
+                }
+
+                // Emit the iteration event
+                this.squad.emitEvent('agentIteration', {
                     agentId: this.id,
                     agentType: this.definition.id,
-                    sessionId: this.sessionId,
-                    error: `Agent run deadline reached after ${this.squad.maxRuntimeMs} ms.`,
-                    timedOut: true
-                });
-
-                // Return a structured timeout result so runtime layers can respond gracefully
-                return {
-                    response: null,
-                    finishReason: 'deadline',
-                    timedOut: true
-                };
-            }
-
-            // Inject a warning message before the soft deadline to encourage the agent to wrap up
-            const remaining = this.squad.maxRuntimeMs - elapsed;
-            if (!wrapUpInjected && remaining <= this.squad.wrapUpThresholdMs) {
-                wrapUpInjected = true;
-                this.appendMessage({
-                    role: 'system',
-                    content: `TIME WARNING: You have approximately ${Math.ceil(remaining / 1000)} seconds remaining before this run times out. Start wrapping up your current work now, finish what you are doing, and avoid starting new complex operations.`
-                });
-            }
-
-            // Emit the iteration event
-            this.squad.emitEvent('agentIteration', {
-                agentId: this.id,
-                agentType: this.definition.id,
-                iteration,
-                sessionId: this.sessionId
-            });
-
-            // Ask the LLM for the next response with retry support for transient failures
-            const result = await this.runChatWithRetry();
-
-            // Extract content and tool calls from the LLM response
-            const content = result?.content || '';
-            const toolCalls = Array.isArray(result?.tool_calls) ? result.tool_calls : [];
-
-            // Append the assistant response
-            this.appendMessage({
-                role: 'assistant',
-                content,
-                tool_calls: toolCalls.length > 0 ? toolCalls : undefined
-            });
-
-            // Emit the assistant event
-            this.squad.emitEvent('agentAssistant', {
-                agentId: this.id,
-                agentType: this.definition.id,
-                toolCalls: toolCalls.length,
-                hasContent: Boolean(content)
-            });
-
-            // Complete if there are no tool calls to execute
-            if (toolCalls.length === 0) {
-                // Mark the agent as completed
-                this.complete(content || null);
-                this.squad.emitEvent('agentComplete', {
-                    agentId: this.id,
-                    agentType: this.definition.id,
+                    iteration,
                     sessionId: this.sessionId
                 });
 
-                // Return the final response
-                return {
-                    response: content || null,
-                    finishReason: result?.finish_reason || 'stop',
-                    timedOut: false
-                };
-            }
+                // Ask the LLM for the next response with retry support for transient failures
+                const result = await this.runChatWithRetry();
 
-            // Execute tool calls and append their messages
-            const toolMessages = await executeToolBatch({
-                agent: this,
-                toolCalls
+                // Extract content and tool calls from the LLM response
+                const content = result?.content || '';
+                const toolCalls = Array.isArray(result?.tool_calls) ? result.tool_calls : [];
+
+                // Append the assistant response
+                this.appendMessage({
+                    role: 'assistant',
+                    content,
+                    tool_calls: toolCalls.length > 0 ? toolCalls : undefined
+                });
+
+                // Emit the assistant event
+                this.squad.emitEvent('agentAssistant', {
+                    agentId: this.id,
+                    agentType: this.definition.id,
+                    toolCalls: toolCalls.length,
+                    hasContent: Boolean(content)
+                });
+
+                // Complete if there are no tool calls to execute
+                if (toolCalls.length === 0) {
+                    // Mark the agent as completed
+                    this.complete(content || null);
+                    this.squad.emitEvent('agentComplete', {
+                        agentId: this.id,
+                        agentType: this.definition.id,
+                        sessionId: this.sessionId
+                    });
+
+                    // Return the final response
+                    return {
+                        response: content || null,
+                        finishReason: result?.finish_reason || 'stop',
+                        timedOut: false
+                    };
+                }
+
+                // Execute tool calls and append their messages
+                const toolMessages = await executeToolBatch({
+                    agent: this,
+                    toolCalls
+                });
+
+                // Append tool response messages to the session
+                for (const toolMessage of toolMessages) {
+                    this.appendMessage(toolMessage);
+                }
+            }
+        } catch (error) {
+            // Mark the agent as failed and emit an error event
+            this.fail(error);
+            this.squad.emitEvent('agentError', {
+                agentId: this.id,
+                agentType: this.definition.id,
+                sessionId: this.sessionId,
+                error: error instanceof Error ? error.message : String(error),
+                timedOut: false
             });
 
-            // Append tool response messages to the session
-            for (const toolMessage of toolMessages) {
-                this.appendMessage(toolMessage);
-            }
+            // Throw the error
+            throw error;
         }
     }
 
     // Ask the LLM for the next response with retry support for transient failures
     async runChatWithRetry() {
         const maxRetries = this.squad.llmChatMaxRetries;
-        
+
         // Retry loop for transient errors
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
@@ -316,7 +331,7 @@ export class Agent {
         }
 
         // Resolve the tool from the squad's tool registry
-        const tool = this.squad.getTool(name, this);
+        const tool = this.squad.getTool(name);
         if (!tool) {
             throw new Error(`Allowed tool "${name}" could not be resolved for agent "${this.definition.id}".`);
         }

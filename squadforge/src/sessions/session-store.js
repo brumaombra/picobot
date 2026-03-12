@@ -47,8 +47,12 @@ export class SessionStore {
             return;
         }
 
-        // Read all JSON files in the sessions directory and load them into memory
-        const files = readdirSync(this.sessionsDir).filter(fileName => fileName.endsWith('.json'));
+        // Read all JSON files in the sessions directory
+        const files = readdirSync(this.sessionsDir)
+            .filter(fileName => fileName.endsWith('.json'))
+            .sort((left, right) => left.localeCompare(right));
+
+        // Iterate through each session file and load its data
         for (const fileName of files) {
             // Get the file path and read the session data
             const filePath = join(this.sessionsDir, fileName);
@@ -167,7 +171,6 @@ export class SessionStore {
 
     // Append a message to a session
     appendMessage(sessionId, message) {
-        this.cleanupExpiredSessions(); // Drop expired sessions before appending the message
         const session = this.getOrCreateSession(sessionId);
         session.messages.push({ ...message });
         this.trimSession(session); // Trim the session to the maximum number of messages

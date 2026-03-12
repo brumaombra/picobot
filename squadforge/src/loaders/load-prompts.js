@@ -51,15 +51,8 @@ export const scaffoldPromptTemplates = ({ promptsDir } = {}) => {
 
 // Read a prompt template file from the prompts directory
 const readPromptTemplate = ({ promptsDir, fileName }) => {
-    // Check if the prompt file exists
-    const filePath = join(promptsDir, fileName);
-    if (!existsSync(filePath)) {
-        return '';
-    }
-
-    // Read and return the prompt template content
-    const fileContent = readFileSync(filePath, 'utf-8').trim();
-    return fileContent;
+    const fullPath = join(promptsDir, fileName);
+    return readFileSync(fullPath, 'utf-8').trim();
 };
 
 // Validate that prompt templates contain the placeholders required by the framework

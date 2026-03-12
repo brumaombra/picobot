@@ -86,7 +86,9 @@ export const loadAgentsFromDirectory = ({ agentsDir, availableTools = null } = {
     }
 
     // Find all markdown files in the agents directory
-    const files = readdirSync(agentsDir).filter(isMarkdownFile);
+    const files = readdirSync(agentsDir)
+        .filter(isMarkdownFile)
+        .sort((left, right) => left.localeCompare(right));
     const hasSubagents = files.some(fileName => basename(fileName, MARKDOWN_EXTENSION) !== LEADER_SPEC_ID);
 
     // Load each agent spec and store it in a map by id

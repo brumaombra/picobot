@@ -21,36 +21,22 @@ const normalizeToolOutput = result => {
 export const executeToolCall = async ({ agent, toolCall }) => {
     const toolName = toolCall?.function?.name;
     const toolCallId = toolCall?.id;
-    const tool = agent.getTool(toolName);
 
-    // If the tool is not found or not allowed, return an error message
-    if (!tool) {
-        // Emit a tool error event
-        agent.squad.emitEvent('toolError', {
+    try {
+        // Get the agent tool by name
+        const tool = agent.getTool(toolName);
+        if (!tool) {
+            throw new Error(`Unknown or disallowed tool "${toolName}".`);
+        }
+
+        // Emit a tool start event
+        agent.squad.emitEvent('toolStart', {
             agentId: agent.id,
             agentType: agent.definition.id,
             toolName,
-            toolCallId,
-            error: `Unknown or disallowed tool "${toolName}".`
+            toolCallId
         });
 
-        // Return an error message as the tool output
-        return {
-            role: 'tool',
-            tool_call_id: toolCallId,
-            content: `Error: Unknown or disallowed tool "${toolName}".`
-        };
-    }
-
-    // Emit a tool start event
-    agent.squad.emitEvent('toolStart', {
-        agentId: agent.id,
-        agentType: agent.definition.id,
-        toolName,
-        toolCallId
-    });
-
-    try {
         // Parse the tool call arguments and execute the tool function
         const args = parseJson(toolCall?.function?.arguments);
         const result = await tool.execute(args, {
@@ -99,22 +85,6 @@ export const executeToolCall = async ({ agent, toolCall }) => {
 
 // Execute a batch of tool calls
 export const executeToolBatch = async ({ agent, toolCalls }) => {
-    // Execute all tool calls in parallel
-    const toolCallsPromises = toolCalls.map(toolCall => executeToolCall({ agent, toolCall }));
-    const settled = await Promise.allSettled(toolCallsPromises);
-
-    // Return the results
-    return settled.map((result, index) => {
-        // If success, return the tool output
-        if (result.status === 'fulfilled') {
-            return result.value;
-        }
-
-        // If rejected, return the error message
-        return {
-            role: 'tool',
-            tool_call_id: toolCalls[index]?.id,
-            content: `Error executing tool: ${result.reason instanceof Error ? result.reason.message : result.reason}`
-        };
-    });
+    const toolCallPromises = toolCalls.map(toolCall => executeToolCall({ agent, toolCall }));
+    return Promise.all(toolCallPromises);
 };
