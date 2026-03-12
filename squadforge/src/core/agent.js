@@ -310,12 +310,24 @@ export class Agent {
 
     // Get a tool available to this agent by name
     getTool(name) {
-        return this.squad.getAvailableTool(name, this);
+        // Check if the tool is allowed for this agent
+        if (!this.definition.allowedTools.includes(name)) {
+            return null;
+        }
+
+        // Resolve the tool from the squad's tool registry
+        const tool = this.squad.getTool(name, this);
+        if (!tool) {
+            throw new Error(`Allowed tool "${name}" could not be resolved for agent "${this.definition.id}".`);
+        }
+
+        // Return the resolved tool
+        return tool;
     }
 
     // List all tools available to this agent
     listTools() {
-        return this.squad.listAvailableTools(this);
+        return this.definition.allowedTools.map(toolName => this.getTool(toolName));
     }
 
     // Spawn a subagent

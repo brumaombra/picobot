@@ -1,5 +1,6 @@
 import { createDelegateToAgentTool } from './predefined/delegate_to_agent.js';
 import { createReadFileTool } from './predefined/read_file.js';
+import { loadExternalToolsFromDirectory } from '../loaders/load-external-tools.js';
 import { getAgentRole } from '../utils/utils.js';
 
 // List of predefined tool names available to each agent role
@@ -28,30 +29,43 @@ export const createPredefinedToolList = ({ agentId, hasSubagents = false } = {})
     return toolNames;
 };
 
-// Resolve a tool name to either a predefined tool or an externally loaded tool
-const resolveTool = ({ squad, agent, name }) => {
-    // Check if the tool name corresponds to a predefined tool and create it if so
-    const createTool = PREDEFINED_TOOL_CREATORS[name];
-    if (createTool) {
-        return createTool({ squad, agent });
+// Load one merged tools catalog containing external tools plus predefined tool factories
+export const loadTools = async ({ toolsDir } = {}) => {
+    // Load external tools
+    const externalTools = await loadExternalToolsFromDirectory({ toolsDir });
+    const tools = new Map(externalTools);
+
+    // Add the predefined tools to the catalog
+    for (const [name, createTool] of Object.entries(PREDEFINED_TOOL_CREATORS)) {
+        // Check for name conflicts
+        if (tools.has(name)) {
+            throw new Error(`Duplicate tool name "${name}" found in the predefined tools catalog.`);
+        }
+
+        // Add the predefined tool
+        tools.set(name, {
+            name,
+            createTool
+        });
     }
 
-    // Otherwise, try to resolve it as an externally loaded tool
-    return squad.getTool(name);
+    // Return the merged tools catalog
+    return tools;
 };
 
-// List all tools available to a specific agent
-export const listAvailableTools = ({ squad, agent }) => {
-    return agent.definition.allowedTools
-        .map(toolName => resolveTool({ squad, agent, name: toolName }))
-        .filter(Boolean);
-};
-
-// Get a single available tool by name for a specific agent
-export const getAvailableTool = ({ squad, agent, name }) => {
-    if (!agent.definition.allowedTools.includes(name)) {
+// Resolve a tool from the merged tools catalog for a specific agent context
+export const resolveTool = ({ squad, agent, name }) => {
+    // Get the tool entry from the squad's tools catalog
+    const toolEntry = squad.tools.get(name);
+    if (!toolEntry) {
         return null;
     }
 
-    return resolveTool({ squad, agent, name });
+    // If the tool entry has a createTool function, call it with the agent context to get the tool definition
+    if (typeof toolEntry.createTool === 'function') {
+        return toolEntry.createTool({ squad, agent });
+    }
+
+    // Otherwise, return the tool entry as the tool definition
+    return toolEntry;
 };

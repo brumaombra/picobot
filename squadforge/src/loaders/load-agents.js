@@ -20,19 +20,19 @@ const validateAllowedToolsStructure = ({ agentId, allowedTools }) => {
 };
 
 // Validate that all tools referenced in the agent spec are available
-const validateAllowedTools = ({ agentId, allowedTools, knownToolNames = null }) => {
+const validateAllowedTools = ({ agentId, allowedTools, availableTools = null }) => {
     // If no tools are referenced, skip validation
     if (allowedTools.length === 0) {
         return;
     }
 
     // Throw if tools are required but were not provided for validation
-    if (!knownToolNames) {
+    if (!availableTools) {
         throw new Error(`Agent "${agentId}" references tools but no available tools were provided for validation.`);
     }
 
     // Throw if any referenced tools are missing
-    const unknownTools = allowedTools.filter(toolName => !knownToolNames.has(toolName));
+    const unknownTools = allowedTools.filter(toolName => !availableTools.has(toolName));
     if (unknownTools.length > 0) {
         throw new Error(`Agent "${agentId}" references unknown tools: ${unknownTools.join(', ')}`);
     }
@@ -53,10 +53,6 @@ const readAgentSpec = ({ filePath, availableTools, hasSubagents }) => {
     // Combine the predefined tools with the external tools
     const predefinedToolNames = createPredefinedToolList({ agentId: id, hasSubagents });
     const allowedTools = [...new Set([...predefinedToolNames, ...externalToolNames])];
-    const knownToolNames = new Set([
-        ...predefinedToolNames,
-        ...(availableTools ? [...availableTools.keys()] : [])
-    ]);
 
     // Create the agent spec object
     const agentSpec = new AgentSpec({
@@ -71,7 +67,7 @@ const readAgentSpec = ({ filePath, availableTools, hasSubagents }) => {
     });
 
     // Validate that all referenced tools are available
-    validateAllowedTools({ agentId: id, allowedTools, knownToolNames });
+    validateAllowedTools({ agentId: id, allowedTools, availableTools });
 
     // Return the agent spec
     return agentSpec;

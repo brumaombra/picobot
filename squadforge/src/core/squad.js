@@ -2,13 +2,12 @@ import { join } from 'path';
 import { AgentSpec } from './agent-spec.js';
 import { Agent } from './agent.js';
 import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
-import { loadExternalToolsFromDirectory } from '../loaders/load-external-tools.js';
 import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
 import { SessionStore } from '../sessions/session-store.js';
 import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_RUNTIME_POLL_TIMEOUT_MS, DEFAULT_RUNTIME_TIMEOUT_MESSAGE, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_LLM_CHAT_MAX_RETRIES, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_MAX_RUNTIME_MS, DEFAULT_SESSION_TTL_MS, DEFAULT_WRAP_UP_THRESHOLD_MS } from '../config.js';
 import { composeAgentPrompt } from '../prompts/prompts.js';
-import { getAvailableTool, listAvailableTools } from '../tools/tools-catalog.js';
+import { loadTools, resolveTool } from '../tools/tools-catalog.js';
 
 // Squad class
 export class Squad {
@@ -84,7 +83,7 @@ export class Squad {
         const resolvedPromptTemplates = loadPromptTemplatesFromDirectory({ promptsDir: resolvedPromptsDir });
         const resolvedSkills = loadSkillsFromDirectory({ skillsDir: resolvedSkillsDir });
         const resolvedSessionStore = new SessionStore({ sessionsDir: resolvedSessionsDir, maxMessagesPerSession, sessionTtlMs });
-        const tools = await loadExternalToolsFromDirectory({ toolsDir: resolvedToolsDir });
+        const tools = await loadTools({ toolsDir: resolvedToolsDir });
         const agentsSpecs = loadAgentsFromDirectory({ agentsDir: resolvedAgentsDir, availableTools: tools });
 
         // Create and return the squad instance
@@ -370,30 +369,25 @@ export class Squad {
     }
 
     // Get a tool by name
-    getTool(name) {
-        return this.tools.get(name);
+    getTool(name, agent = null) {
+        // Check if the tool is allowed for the agent (if provided) and return it
+        const toolEntry = this.tools.get(name) || null;
+        if (!toolEntry) {
+            return null;
+        }
+
+        // Check if the tool is a factory function that requires the agent context to create the tool definition
+        if (!agent) {
+            return typeof toolEntry.createTool === 'function' ? null : toolEntry;
+        }
+
+        // Return the resolved tool definition
+        return resolveTool({ squad: this, agent, name });
     }
 
     // List all tools
     listTools() {
         return [...this.tools.values()];
-    }
-
-    // List all tools available to a specific agent
-    listAvailableTools(agent) {
-        return listAvailableTools({
-            squad: this,
-            agent
-        });
-    }
-
-    // Get a single available tool by name for a specific agent
-    getAvailableTool(name, agent) {
-        return getAvailableTool({
-            squad: this,
-            agent,
-            name
-        });
     }
 
     // Get messages for a session
