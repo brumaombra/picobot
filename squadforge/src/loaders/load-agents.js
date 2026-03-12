@@ -5,39 +5,6 @@ import { LEADER_FILE_NAME, LEADER_SPEC_ID, MARKDOWN_EXTENSION } from '../config.
 import { isMarkdownFile, parseFrontmatter } from '../utils/utils.js';
 import { createPredefinedToolList } from '../tools/tools-catalog.js';
 
-// Validate that the allowed tools frontmatter is a list of non-empty strings
-const validateAllowedToolsStructure = ({ agentId, allowedTools }) => {
-    // Validate that allowedTools is an array
-    if (!Array.isArray(allowedTools)) {
-        throw new Error(`Agent "${agentId}" has invalid allowed_tools. Expected a list of strings.`);
-    }
-
-    // Validate that each entry in allowedTools is a non-empty string
-    const hasInvalidToolName = allowedTools.some(toolName => typeof toolName !== 'string' || !toolName.trim());
-    if (hasInvalidToolName) {
-        throw new Error(`Agent "${agentId}" has invalid allowed_tools. Each entry must be a non-empty string.`);
-    }
-};
-
-// Validate that all tools referenced in the agent spec are available
-const validateAllowedTools = ({ agentId, allowedTools, availableTools = null }) => {
-    // If no tools are referenced, skip validation
-    if (allowedTools.length === 0) {
-        return;
-    }
-
-    // Throw if tools are required but were not provided for validation
-    if (!availableTools) {
-        throw new Error(`Agent "${agentId}" references tools but no available tools were provided for validation.`);
-    }
-
-    // Throw if any referenced tools are missing
-    const unknownTools = allowedTools.filter(toolName => !availableTools.has(toolName));
-    if (unknownTools.length > 0) {
-        throw new Error(`Agent "${agentId}" references unknown tools: ${unknownTools.join(', ')}`);
-    }
-};
-
 // Read and parse an agent spec from a markdown file
 const readAgentSpec = ({ filePath, availableTools, hasSubagents }) => {
     // Read the file content and parse the frontmatter
@@ -47,15 +14,33 @@ const readAgentSpec = ({ filePath, availableTools, hasSubagents }) => {
     const id = basename(fileName, MARKDOWN_EXTENSION);
     const externalToolNames = metadata.allowed_tools || [];
 
-    // Validate the allowed tools structure before constructing the spec
-    validateAllowedToolsStructure({ agentId: id, allowedTools: externalToolNames });
+    // The allowed_tools field must be a list strings
+    if (!Array.isArray(externalToolNames)) {
+        throw new Error(`Agent "${id}" has invalid allowed_tools. Expected a list of strings.`);
+    }
+
+    // Each tool name must be a non-empty string
+    if (externalToolNames.some(toolName => typeof toolName !== 'string' || !toolName.trim())) {
+        throw new Error(`Agent "${id}" has invalid allowed_tools. Each entry must be a non-empty string.`);
+    }
 
     // Combine the predefined tools with the external tools
     const predefinedToolNames = createPredefinedToolList({ agentId: id, hasSubagents });
     const allowedTools = [...new Set([...predefinedToolNames, ...externalToolNames])];
 
+    // If not tools are available, the agent should not reference any tools
+    if (allowedTools.length > 0 && !availableTools) {
+        throw new Error(`Agent "${id}" references tools but no available tools were provided for validation.`);
+    }
+
+    // Validate that all referenced tools are available
+    const unknownTools = allowedTools.filter(toolName => !availableTools?.has(toolName));
+    if (unknownTools.length > 0) {
+        throw new Error(`Agent "${id}" references unknown tools: ${unknownTools.join(', ')}`);
+    }
+
     // Create the agent spec object
-    const agentSpec = new AgentSpec({
+    return new AgentSpec({
         id,
         name: metadata.name || id,
         description: metadata.description || '',
@@ -65,12 +50,6 @@ const readAgentSpec = ({ filePath, availableTools, hasSubagents }) => {
         filePath,
         metadata
     });
-
-    // Validate that all referenced tools are available
-    validateAllowedTools({ agentId: id, allowedTools, availableTools });
-
-    // Return the agent spec
-    return agentSpec;
 };
 
 // Load agent specs from the specified directory

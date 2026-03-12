@@ -1,4 +1,4 @@
-import { access, readFile } from 'fs/promises';
+import { readFile } from 'fs/promises';
 import { isAbsolute, normalize, relative, resolve } from 'path';
 
 // Read file tool
@@ -40,18 +40,16 @@ export const readFileTool = {
             };
         }
 
-        // Validate the file exists
+        // Read the file content
+        let content;
         try {
-            await access(fullPath);
+            content = await readFile(fullPath, 'utf-8');
         } catch {
             return {
                 success: false,
                 error: `File not found: ${path}`
             };
         }
-
-        // Read the file content
-        const content = await readFile(fullPath, 'utf-8');
 
         // Return the full content when no range is requested
         if (line_start === undefined && line_end === undefined) {

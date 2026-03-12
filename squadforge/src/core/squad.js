@@ -327,8 +327,7 @@ export class Squad {
 
     // Get the leader agent
     getLeaderAgent(sessionId = DEFAULT_LEADER_SESSION_ID) {
-        const normalizedSessionId = normalizeSessionId(sessionId);
-        return this.getRootAgentForSession(normalizedSessionId) || this.getOrCreateSessionAgent(normalizedSessionId);
+        return this.getRootAgentForSession(sessionId) || this.getOrCreateSessionAgent(sessionId);
     }
 
     // Get the leader spec
@@ -382,20 +381,17 @@ export class Squad {
 
     // Get messages for a session
     getMessages(sessionId = DEFAULT_LEADER_SESSION_ID) {
-        const normalizedSessionId = normalizeSessionId(sessionId);
-        return this.getOrCreateSessionAgent(normalizedSessionId).getMessages();
+        return this.getOrCreateSessionAgent(sessionId).getMessages();
     }
 
     // Send a message to an agent in a session
     async send(content, { sessionId = DEFAULT_LEADER_SESSION_ID, role = 'user' } = {}) {
-        const normalizedSessionId = normalizeSessionId(sessionId);
-        return this.getOrCreateSessionAgent(normalizedSessionId).send(content, { role });
+        return this.getOrCreateSessionAgent(sessionId).send(content, { role });
     }
 
     // Spawn a subagent
     spawnSubagent(type, { prompt = '', parentSessionId = DEFAULT_LEADER_SESSION_ID } = {}) {
-        const normalizedParentSessionId = normalizeSessionId(parentSessionId);
-        return this.requireAgentBySessionId(normalizedParentSessionId).spawnSubagent(type, { prompt });
+        return this.requireAgentBySessionId(parentSessionId).spawnSubagent(type, { prompt });
     }
 
     // Get an agent by id
@@ -408,11 +404,11 @@ export class Squad {
         return [...this.sessionAgents.values()].flatMap(agent => agent.listDescendants());
     }
 
-    // Find an agent by id in the entire hierarchy
-    findAgentById(agentId) {
-        // Check if the agentId matches any root agents first
+    // Find the first matching agent or root agent across all session trees
+    findSessionAgentMatch(resolveMatch) {
+        // Iterate through all root agents and return the first match found
         for (const rootAgent of this.sessionAgents.values()) {
-            const match = rootAgent.findById(agentId);
+            const match = resolveMatch(rootAgent);
             if (match) {
                 return match;
             }
@@ -420,37 +416,25 @@ export class Squad {
 
         // If no match is found, return null
         return null;
+    }
+
+    // Find an agent by id in the entire hierarchy
+    findAgentById(agentId) {
+        return this.findSessionAgentMatch(rootAgent => rootAgent.findById(agentId));
     }
 
     // Find an agent by session id in the entire hierarchy
     findAgentBySessionId(sessionId) {
         const normalizedSessionId = normalizeSessionId(sessionId);
-
-        // Check if the sessionId matches any root agents first
-        for (const rootAgent of this.sessionAgents.values()) {
-            const match = rootAgent.findBySessionId(normalizedSessionId);
-            if (match) {
-                return match;
-            }
-        }
-
-        // If no match is found, return null
-        return null;
+        return this.findSessionAgentMatch(rootAgent => rootAgent.findBySessionId(normalizedSessionId));
     }
 
     // Find the top-level leader-style agent that owns a session subtree
     getRootAgentForSession(sessionId) {
         const normalizedSessionId = normalizeSessionId(sessionId);
-
-        // Check if the sessionId matches any root agents first
-        for (const rootAgent of this.sessionAgents.values()) {
-            if (rootAgent.findBySessionId(normalizedSessionId)) {
-                return rootAgent;
-            }
-        }
-
-        // If no match is found, return null
-        return null;
+        return this.findSessionAgentMatch(rootAgent => {
+            return rootAgent.findBySessionId(normalizedSessionId) ? rootAgent : null;
+        });
     }
 
     // Get or create a top-level chat session agent backed by the leader definition
