@@ -1,4 +1,4 @@
-import { logger } from '../../utils/common/logger.js';
+import { logger } from '../../../squadforge/src/index.js';
 import { TELEGRAM_TYPING_INTERVAL_MS } from '../../config.js';
 
 // Track active typing indicators by chatId

@@ -2,7 +2,7 @@ import { google } from 'googleapis';
 import { authenticate } from '@google-cloud/local-auth';
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
-import { logger } from '../common/logger.js';
+import { logger } from '../../../squadforge/src/index.js';
 
 // Paths for credentials and token
 const CREDENTIALS_PATH = join(process.cwd(), 'credentials.json');

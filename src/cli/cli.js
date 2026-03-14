@@ -4,6 +4,7 @@ import { registerStartCommand } from './commands/start.js';
 import { registerOnboardCommand } from './commands/onboard.js';
 import { registerStatusCommand } from './commands/status.js';
 import { registerNukeCommand } from './commands/nuke.js';
+import { registerLogsCommand } from './commands/logs.js';
 import { APP_NAME, APP_DESCRIPTION, APP_VERSION } from '../config.js';
 
 // Create CLI program
@@ -20,6 +21,7 @@ registerStartCommand({ program });
 registerOnboardCommand({ program });
 registerStatusCommand({ program });
 registerNukeCommand({ program });
+registerLogsCommand({ program });
 
 // Parse and execute
 program.parse();

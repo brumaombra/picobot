@@ -11,6 +11,7 @@
         "start": "node src/cli/cli.js start",
         "onboard": "node src/cli/cli.js onboard",
         "status": "node src/cli/cli.js status",
+        "logs": "node src/cli/cli.js logs",
         "nuke": "node src/cli/cli.js nuke",
         "install-browsers": "npx agent-browser install",
         "postinstall": "npx agent-browser install"

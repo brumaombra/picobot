@@ -1,5 +1,5 @@
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
-import { logger } from '../../../src/utils/common/logger.js';
+import { logger } from '../../../squadforge/src/index.js';
 import { getNvrDeviceInfo } from '../../../src/utils/camera/camera-client.js';
 
 // Camera information retrieval tool

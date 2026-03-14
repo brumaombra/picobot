@@ -2,7 +2,7 @@ import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
 import { mkdir, writeFile } from 'fs/promises';
 import { basename, extname, join } from 'path';
-import { logger } from '../utils/common/logger.js';
+import { logger } from '../../squadforge/src/index.js';
 import { markdownToTelegramHtml, splitMessageIntoChunks, parseSessionKey, getFileExtensionFromMimeType } from '../utils/common/utils.js';
 import { getConfigValue } from '../config/config.js';
 import { registerStartCommand } from './commands/start.js';

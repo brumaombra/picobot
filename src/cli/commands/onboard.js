@@ -136,6 +136,7 @@ export const registerOnboardCommand = ({ program }) => {
 				info('Setup complete! Next steps:');
 				listItem('Run `picobot status` to verify your configuration', 1);
 				listItem('Run `picobot start` to start the bot', 1);
+				listItem('Run `picobot logs` to inspect framework runtime logs when debugging', 1);
 				newline();
 			} finally {
 				readline.close();

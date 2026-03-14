@@ -111,6 +111,8 @@ const processRuntimeMessage = async (runtime, message) => {
     const role = normalizedMessage.role;
     const content = normalizedMessage.content;
 
+    runtime.logger?.debug(`Processing runtime message for session ${sessionId} with role ${role}`);
+
     try {
         // Send the inbound content to the appropriate session-backed root agent
         const result = await sendToSession(runtime, content, { sessionId, role });
@@ -151,6 +153,7 @@ const processRuntimeMessage = async (runtime, message) => {
         return result;
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
+        runtime.logger?.error(`Runtime message processing failed for session ${sessionId}: ${errorMessage}`);
 
         // Create and emit the outbound error object
         const errorOutboundMessage = await emitRuntimeOutboundMessage(runtime, {
@@ -200,6 +203,7 @@ export const startRuntime = async runtime => {
 
     // Start the runtime loop
     runtime.running = true;
+    runtime.logger?.info('Runtime started');
     runtime.loopPromise = runRuntimeLoop(runtime);
     return runtime;
 };
@@ -229,4 +233,5 @@ export const stopRuntime = async runtime => {
 
     // Clear the inbound connector and detach hook
     runtime.detachInboundConnector = null;
+    runtime.logger?.info('Runtime stopped');
 };

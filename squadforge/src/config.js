@@ -12,6 +12,7 @@ export const DEFAULT_SKILLS_DIR_NAME = 'skills';
 export const DEFAULT_TOOLS_DIR_NAME = 'tools';
 export const DEFAULT_SESSIONS_DIR_NAME = 'sessions';
 export const DEFAULT_CRONS_DIR_NAME = 'crons';
+export const DEFAULT_LOGS_DIR_NAME = 'logs';
 export const MARKDOWN_EXTENSION = '.md';
 export const SUPPORTED_TOOL_EXTENSIONS = ['.js', '.mjs'];
 export const TOOLS_FILE_NAME = 'TOOLS.md';
@@ -38,6 +39,12 @@ export const SUBAGENT_QUESTION_TIMEOUT_MS = 2 * 60 * 1000;
 /**************** Runtime *****************/
 export const DEFAULT_RUNTIME_POLL_TIMEOUT_MS = 1000;
 export const DEFAULT_RUNTIME_TIMEOUT_MESSAGE = "I've run out of time for this task. Let me know if you'd like me to continue!";
+
+/**************** Logging *****************/
+export const DEFAULT_LOG_LEVEL = 'debug';
+export const DEFAULT_LOG_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH:mm:ss';
+export const DEFAULT_LOG_MAX_SIZE = 10 * 1024 * 1024;
+export const DEFAULT_ERROR_LOG_MAX_SIZE = 5 * 1024 * 1024;
 
 /**************** LLM *****************/
 export const DEFAULT_REQUEST_TIMEOUT_MS = 60000;

@@ -1,7 +1,7 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, LOGS_DIR } from '../config.js';
+import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR } from '../config.js';
 import { success, warning, error, newline } from '../utils/common/print.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -15,8 +15,7 @@ const REQUIRED_CONFIG_ITEMS = [
 
 // Default runtime directories created during onboarding for convenience.
 const DEFAULT_RUNTIME_ITEMS = [
-    { path: WORKSPACE_DIR, type: 'directory', name: 'Default workspace directory' },
-    { path: LOGS_DIR, type: 'directory', name: 'Logs directory' }
+    { path: WORKSPACE_DIR, type: 'directory', name: 'Default workspace directory' }
 ];
 
 // Check if all required config files and directories exist

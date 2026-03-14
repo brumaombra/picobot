@@ -1,5 +1,6 @@
 import { rmSync } from 'fs';
-import { CONFIG_DIR, CRONS_DIR, LOGS_DIR, SESSIONS_DIR } from '../../config.js';
+import { resolveLogFiles } from '../../../squadforge/src/index.js';
+import { APP_ROOT_DIR, CONFIG_DIR, CRONS_DIR, SESSIONS_DIR } from '../../config.js';
 import { header, success, error, newline } from '../../utils/common/print.js';
 
 // Register the nuke command
@@ -12,12 +13,14 @@ export const registerNukeCommand = ({ program }) => {
             header('🔥  Picobot nuke - deleting all config files');
 
             try {
+                const { logsDir } = resolveLogFiles({ rootDir: APP_ROOT_DIR });
+
                 // Delete config directory in the user home (config.json + workspace)
                 rmSync(CONFIG_DIR, { recursive: true, force: true });
                 success(`Deleted home config directory and all contents (${CONFIG_DIR})`);
 
                 // Delete project-local runtime storage
-                [SESSIONS_DIR, CRONS_DIR, LOGS_DIR].forEach(directoryPath => {
+                [SESSIONS_DIR, CRONS_DIR, logsDir].forEach(directoryPath => {
                     rmSync(directoryPath, { recursive: true, force: true });
                     success(`Deleted project runtime directory (${directoryPath})`);
                 });

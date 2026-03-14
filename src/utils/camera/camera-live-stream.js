@@ -5,7 +5,7 @@ import { join, normalize } from 'path';
 import { networkInterfaces } from 'os';
 import { getConfigValue } from '../../config/config.js';
 import { rtspUrl } from 'reolink-nvr-api/stream';
-import { logger } from '../common/logger.js';
+import { logger } from '../../../squadforge/src/index.js';
 
 const DEFAULT_STREAM_PORT = 48761;
 const activeStreams = new Map();

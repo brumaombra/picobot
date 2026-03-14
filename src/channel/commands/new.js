@@ -1,5 +1,5 @@
 import { getAgent } from '../../index.js';
-import { logger } from '../../utils/common/logger.js';
+import { logger } from '../../../squadforge/src/index.js';
 
 // Register the /new command handler
 export const registerNewCommand = bot => {

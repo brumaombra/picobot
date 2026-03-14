@@ -21,6 +21,7 @@ Thumbs.db
 
 # Logs
 logs/
+app/logs/
 *.log
 npm-debug.log*
 

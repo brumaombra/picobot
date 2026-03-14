@@ -1,7 +1,7 @@
 import { writeFile, mkdir } from 'fs/promises';
 import { dirname, resolve, isAbsolute, normalize } from 'path';
 import { isSensitivePath, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
-import { logger } from '../../../src/utils/common/logger.js';
+import { logger } from '../../../squadforge/src/index.js';
 
 // Write file tool
 const writeFileTool = {

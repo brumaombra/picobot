@@ -18,7 +18,6 @@ export const CONFIG_PATH = join(CONFIG_DIR, 'config.json');
 export const WORKSPACE_DIR = join(CONFIG_DIR, 'workspace');
 export const SESSIONS_DIR = join(APP_ROOT_DIR, 'sessions');
 export const CRONS_DIR = join(APP_ROOT_DIR, 'crons');
-export const LOGS_DIR = join(PROJECT_ROOT_DIR, 'logs');
 export const DEFAULT_WORKSPACE_PATH = '~/.picobot/workspace';
 
 /**************** Agent *****************/
@@ -95,12 +94,3 @@ export const SCREENSHOTS_DIR = join(WORKSPACE_DIR, 'screenshots');
 
 /**************** Brave Search API *****************/
 export const BRAVE_SEARCH_TIMEOUT_MS = 10000; // 10 seconds
-
-/**************** Logging *****************/
-export const DEFAULT_LOG_LEVEL = 'debug';
-export const LOG_TIMESTAMP_FORMAT = 'YYYY-MM-DD HH:mm:ss';
-export const LOG_FILENAME = join(LOGS_DIR, 'picobot.log');
-export const LOG_MAX_SIZE = 10 * 1024 * 1024; // 10 MB
-export const ERROR_LOG_FILENAME = join(LOGS_DIR, 'picobot-error.log');
-export const ERROR_LOG_MAX_SIZE = 5 * 1024 * 1024; // 5 MB
-export const LOG_LEVELS = ['debug', 'info', 'warn', 'error'];

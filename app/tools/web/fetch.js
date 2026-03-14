@@ -1,4 +1,4 @@
-import { logger } from '../../../src/utils/common/logger.js';
+import { logger } from '../../../squadforge/src/index.js';
 import { extractTextFromHtml, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 import { WEB_MAX_CONTENT_LENGTH, WEB_FETCH_TIMEOUT_MS, WEB_USER_AGENT, WEB_ACCEPT_HEADER, WEB_ACCEPT_LANGUAGE } from '../../../src/config.js';
 

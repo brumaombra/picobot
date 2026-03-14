@@ -138,6 +138,7 @@ The onboarding wizard will walk you through everything. It's friendly, we promis
 npm start          # 🚀 Launch the bot
 npm run onboard    # 🧙 Setup wizard  
 npm run status     # 📊 Check config
+npm run logs       # 📚 Show recent runtime logs
 npm run nuke       # 💥 Reset everything
 ```
 
@@ -187,7 +188,7 @@ Runtime-managed data now lives in the Pico project itself:
 
 - `app/sessions/` — persisted chat sessions managed by Squadforge
 - `app/crons/` — scheduled task definitions managed by Squadforge
-- `logs/` — application logs
+- `app/logs/` — framework-managed runtime logs
 
 Agent definitions, prompts, skills, and app tools are also project-local under `app/`.
 

@@ -29,7 +29,8 @@
     ],
     "dependencies": {
         "node-cron": "4.2.1",
-        "openai": "6.18.0"
+        "openai": "6.18.0",
+        "winston": "3.19.0"
     },
     "license": "MIT"
 }

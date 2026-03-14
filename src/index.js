@@ -1,7 +1,6 @@
 import 'dotenv/config';
-import { OpenRouterLlm, forge } from '../squadforge/src/index.js';
+import { OpenRouterLlm, forge, logger } from '../squadforge/src/index.js';
 import { initTelegram, startTelegram, stopTelegram } from './channel/telegram-squadforge.js';
-import { initLogger, logger } from './utils/common/logger.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google/google-client.js';
 import { APP_ROOT_DIR } from './config.js';
@@ -16,15 +15,6 @@ export const getAgent = () => {
 
 // Start the Picobot agent
 export const startBot = async () => {
-    // Initialize logger
-    initLogger();
-
-    // Initial log message
-    logger.info('Picobot starting up...');
-
-    // Initialize Google API clients
-    await initializeGoogleClients();
-
     // Get config
     const config = getConfig();
 
@@ -40,6 +30,12 @@ export const startBot = async () => {
         llm,
         model: config.agent?.model
     });
+
+    // Initial log message
+    logger.info('Picobot starting up...');
+
+    // Initialize Google API clients after Squadforge logging is ready
+    await initializeGoogleClients();
 
     // Initialize Telegram channel
     initTelegram(agent);
@@ -58,6 +54,7 @@ export const startBot = async () => {
     } catch (error) {
         logger.error(`Fatal error: ${error}`);
         await stopBot();
+        throw error;
     }
 };
 

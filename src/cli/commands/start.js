@@ -1,6 +1,8 @@
 import { startBot } from '../../index.js';
+import { resolveLogFiles } from '../../../squadforge/src/index.js';
+import { APP_ROOT_DIR } from '../../config.js';
 import { loadConfig, validateConfig, setConfig } from '../../config/config.js';
-import { error, header } from '../../utils/common/print.js';
+import { error, header, suggestion } from '../../utils/common/print.js';
 import { checkIfConfigFilesExist } from '../../files/files.js';
 
 // Register the start command
@@ -37,7 +39,9 @@ export const registerStartCommand = ({ program }) => {
             try {
                 await startBot(); // Start the bot
             } catch (err) {
+                const { errorLogFilePath } = resolveLogFiles({ rootDir: APP_ROOT_DIR });
                 error(`Failed to start Picobot: ${err}`);
+                suggestion(`Check ${errorLogFilePath} or run 'picobot logs --errors' for details.`);
                 process.exit(1);
             }
         });

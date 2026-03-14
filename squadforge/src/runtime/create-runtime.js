@@ -1,10 +1,11 @@
 import { join } from 'path';
 import { AgentSpec } from '../core/agent-spec.js';
 import { Agent } from '../core/agent.js';
-import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_CRONS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_RUNTIME_POLL_TIMEOUT_MS, DEFAULT_RUNTIME_TIMEOUT_MESSAGE, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_LLM_CHAT_MAX_RETRIES, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_MAX_RUNTIME_MS, DEFAULT_SESSION_TTL_MS, DEFAULT_WRAP_UP_THRESHOLD_MS } from '../config.js';
+import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_CRONS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_RUNTIME_POLL_TIMEOUT_MS, DEFAULT_RUNTIME_TIMEOUT_MESSAGE, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_LLM_CHAT_MAX_RETRIES, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_MAX_RUNTIME_MS, DEFAULT_SESSION_TTL_MS, DEFAULT_WRAP_UP_THRESHOLD_MS, DEFAULT_LOGS_DIR_NAME, DEFAULT_LOG_LEVEL } from '../config.js';
 import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
 import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
+import { getLogFiles, initializeLogger } from '../logging/logger.js';
 import { createJsonFileSchedulerStore } from '../scheduling/file-store.js';
 import { createSchedulerManager } from '../scheduling/manager.js';
 import { SubagentRegistry } from './subagent-registry.js';
@@ -29,7 +30,10 @@ const beforeLoadChecks = options => {
         toolsDir,
         sessionsDir,
         cronsDir,
+        logsDir,
         model,
+        appName,
+        logLevel,
         maxRuntimeMs,
         wrapUpThresholdMs,
         maxMessagesPerSession,
@@ -48,7 +52,8 @@ const beforeLoadChecks = options => {
         ['skillsDir', skillsDir],
         ['toolsDir', toolsDir],
         ['sessionsDir', sessionsDir],
-        ['cronsDir', cronsDir]
+        ['cronsDir', cronsDir],
+        ['logsDir', logsDir]
     ];
 
     // Validate any provided path-like options
@@ -61,6 +66,14 @@ const beforeLoadChecks = options => {
     // Validate the model option
     if (model !== undefined && model !== null && typeof model !== 'string') {
         throw new Error('Runtime option "model" must be a string when provided.');
+    }
+
+    if (appName !== undefined && appName !== null && typeof appName !== 'string') {
+        throw new Error('Runtime option "appName" must be a string when provided.');
+    }
+
+    if (logLevel !== undefined && logLevel !== null && typeof logLevel !== 'string') {
+        throw new Error('Runtime option "logLevel" must be a string when provided.');
     }
 
     // Validate the timeout message option
@@ -100,10 +113,12 @@ const afterLoadChecks = ({ agentsSpecs }) => {
 
 const createRuntimeSchedulerManager = ({ cronsDir, runtimeAgent }) => {
     const schedulerStore = createJsonFileSchedulerStore({
-        directoryPath: cronsDir
+        directoryPath: cronsDir,
+        logger: runtimeAgent?.runtime?.logger
     });
 
     const schedulerManager = createSchedulerManager({
+        logger: runtimeAgent?.runtime?.logger,
         createEntryId: () => generateId('cron'),
         createIsolatedSessionId: () => generateId('cron'),
         loadEntries: schedulerStore.loadEntries,
@@ -152,8 +167,11 @@ const createRuntime = async (options = {}) => {
         toolsDir = null,
         sessionsDir = null,
         cronsDir = null,
+        logsDir = null,
         llm = null,
         model = null,
+        appName = null,
+        logLevel = DEFAULT_LOG_LEVEL,
         maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS,
         wrapUpThresholdMs = DEFAULT_WRAP_UP_THRESHOLD_MS,
         maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION,
@@ -172,6 +190,14 @@ const createRuntime = async (options = {}) => {
     const resolvedToolsDir = toolsDir || join(resolvedRootDir, DEFAULT_TOOLS_DIR_NAME);
     const resolvedSessionsDir = sessionsDir || join(resolvedRootDir, DEFAULT_SESSIONS_DIR_NAME);
     const resolvedCronsDir = cronsDir || join(resolvedRootDir, DEFAULT_CRONS_DIR_NAME);
+    const resolvedLogsDir = logsDir || join(resolvedRootDir, DEFAULT_LOGS_DIR_NAME);
+
+    const runtimeLogger = initializeLogger({
+        rootDir: resolvedRootDir,
+        logsDir: resolvedLogsDir,
+        appName,
+        level: logLevel
+    });
 
     // Load the components of the runtime from the filesystem
     const promptTemplates = loadPromptTemplatesFromDirectory({ promptsDir: resolvedPromptsDir });
@@ -198,6 +224,9 @@ const createRuntime = async (options = {}) => {
         toolsDir: resolvedToolsDir,
         sessionsDir: resolvedSessionsDir,
         cronsDir: resolvedCronsDir,
+        logsDir: resolvedLogsDir,
+        logFiles: getLogFiles(),
+        logger: runtimeLogger,
         llm,
         model,
         maxRuntimeMs,
@@ -234,6 +263,8 @@ const createRuntime = async (options = {}) => {
         cronsDir: resolvedCronsDir,
         runtimeAgent: leaderAgent
     });
+
+    runtime.logger.info(`Runtime created for root directory: ${resolvedRootDir}`);
 
     // Return the runtime object
     return runtime;

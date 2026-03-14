@@ -1,5 +1,5 @@
 import { handleToolError, handleToolResponse, validateCameraInputDates } from '../../../src/utils/common/utils.js';
-import { logger } from '../../../src/utils/common/logger.js';
+import { logger } from '../../../squadforge/src/index.js';
 import { searchNvrRecordings } from '../../../src/utils/camera/camera-client.js';
 
 // Camera recording search tool
