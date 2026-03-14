@@ -169,6 +169,13 @@ export class SessionStore {
         return this.sessions.get(normalizedSessionId);
     }
 
+    // Get an existing session by its ID without creating a new one
+    getSession(sessionId) {
+        const normalizedSessionId = normalizeSessionId(sessionId);
+        this.cleanupExpiredSessions(); // Drop expired sessions before serving the requested one
+        return this.sessions.get(normalizedSessionId) || null; // Return the existing session when present
+    }
+
     // Append a message to a session
     appendMessage(sessionId, message) {
         const session = this.getOrCreateSession(sessionId);

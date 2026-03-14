@@ -51,6 +51,11 @@ export class Agent {
         return this.definition.model || this.runtime.model || null;
     }
 
+    // Get the session store backing this agent runtime
+    get sessionStore() {
+        return this.runtime.sessionStore || null;
+    }
+
     // Register how inbound channel messages should be forwarded into the runtime
     onMessage(handler) {
         onRuntimeMessage(this.runtime, handler);
@@ -81,12 +86,12 @@ export class Agent {
 
     // Get all messages for the current session
     getMessages() {
-        return this.runtime.sessionStore.getMessages(this.sessionId);
+        return this.sessionStore.getMessages(this.sessionId);
     }
 
     // Append a message to the current session
     appendMessage(message) {
-        this.runtime.sessionStore.appendMessage(this.sessionId, message);
+        this.sessionStore.appendMessage(this.sessionId, message);
         return message;
     }
 
@@ -123,7 +128,7 @@ export class Agent {
         }
 
         // Return the session messages
-        return this.runtime.sessionStore.getOrCreateSession(this.sessionId);
+        return this.sessionStore.getOrCreateSession(this.sessionId);
     }
 
     // Send a message to the agent

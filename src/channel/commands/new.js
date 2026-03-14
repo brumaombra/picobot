@@ -8,21 +8,23 @@ export const registerNewCommand = bot => {
         const chatId = context.chat.id.toString();
         const sessionKey = `telegram_${chatId}`;
         const agent = getAgent();
+        const sessionStore = agent?.sessionStore || null;
 
-        if (!agent?.runtime?.sessionStore) {
-            await context.reply('❌ Agent is not running yet. Start Picobot first, then try again.', {
-                parse_mode: 'HTML'
-            });
+        // Ensure the main agent and session store are available
+        if (!agent || !sessionStore) {
+            await context.reply('❌ Agent is not running yet. Start Picobot first, then try again.', { parse_mode: 'HTML' });
             return;
         }
 
         // Clear the session
-        agent.runtime.sessionStore.clearSession(sessionKey);
+        const existingSession = sessionStore.getSession(sessionKey);
+        if (existingSession) {
+            sessionStore.clearSession(sessionKey);
+        }
 
         // Send confirmation message
-        await context.reply('🆕 Started a new conversation! Previous messages have been cleared.', {
-            parse_mode: 'HTML'
-        });
+        const replyText = existingSession?.messages?.length ? '🆕 Started a new conversation! Previous messages have been cleared.' : '🆕 Started a new conversation!';
+        await context.reply(replyText, { parse_mode: 'HTML' });
 
         // Log the action
         logger.info(`New session started for chat: ${chatId}`);

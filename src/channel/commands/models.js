@@ -8,8 +8,6 @@ export const registerModelsCommand = bot => {
         const message = `<b>Available OpenRouter Models:</b>\n\n${modelsList}\n\nUse <code>/model [number]</code> to switch models.`;
 
         // Send models list
-        await context.reply(message, {
-            parse_mode: 'HTML'
-        });
+        await context.reply(message, { parse_mode: 'HTML' });
     });
 };
