@@ -1,6 +1,3 @@
-import { updateCron } from '../../../src/crons/manager.js';
-import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
-
 // Update existing cron tool
 export const cronUpdateTool = {
     // Tool definition
@@ -35,25 +32,30 @@ export const cronUpdateTool = {
     },
 
     // Main execution function
-    execute: async (args, context) => {
-        try {
-            // Build the updates object with only provided fields
-            const updates = {};
-            if (args.name !== undefined) updates.name = args.name;
-            if (args.schedule !== undefined) updates.schedule = args.schedule;
-            if (args.action_type !== undefined) updates.action = args.action_type;
-            if (args.message !== undefined) {
-                updates.message = args.message;
-                updates.sessionId = context?.sessionKey;
-            }
-
-            // Update the cron
-            const updatedCron = updateCron(args.cronId, updates);
-
-            // Return success response
-            return handleToolResponse(`Cron "${updatedCron.name}" updated successfully`);
-        } catch (error) {
-            return handleToolError({ error, message: 'Cron update failed' });
+    execute: async ({ cronId, name, schedule, action_type, message }, { runtime, sessionId }) => {
+        // Validate scheduler manager
+        const schedulerManager = runtime?.schedulerManager;
+        if (!schedulerManager) {
+            throw new Error('Runtime scheduler manager is not available.');
         }
+
+        // Build the updates object with only provided fields
+        const updates = {};
+        if (name !== undefined) updates.name = name;
+        if (schedule !== undefined) updates.schedule = schedule;
+        if (action_type !== undefined) updates.action = action_type;
+        if (message !== undefined) {
+            updates.message = message;
+            updates.sessionId = sessionId;
+        }
+
+        // Update the cron
+        const updatedEntry = schedulerManager.updateEntry(cronId, updates);
+
+        // Return success response
+        return {
+            success: true,
+            output: `Cron "${updatedEntry.name}" updated successfully`
+        };
     }
 };

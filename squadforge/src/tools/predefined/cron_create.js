@@ -1,6 +1,3 @@
-import { createCron } from '../../../src/crons/manager.js';
-import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
-
 // Create cron tool
 export const cronCreateTool = {
     // Tool definition
@@ -31,27 +28,29 @@ export const cronCreateTool = {
     },
 
     // Main execution function
-    execute: async (args, context) => {
-        try {
-            // Get arguments and context
-            const { name, schedule, action_type, message } = args;
-
-            // Create the cron
-            const createdCron = createCron({
-                name,
-                schedule,
-                action: action_type,
-                message,
-                sessionId: context?.sessionKey
-            });
-
-            // Return success response
-            return handleToolResponse({
-                cronId: createdCron.id,
-                message: `Cron "${name}" created successfully with schedule: ${schedule}`
-            });
-        } catch (error) {
-            return handleToolError({ error, message: 'Cron create failed' });
+    execute: async ({ name, schedule, action_type, message }, { runtime, sessionId }) => {
+        // Validate scheduler manager
+        const schedulerManager = runtime?.schedulerManager;
+        if (!schedulerManager) {
+            throw new Error('Runtime scheduler manager is not available.');
         }
+
+        // Create the cron
+        const createdEntry = schedulerManager.createEntry({
+            name,
+            schedule,
+            action: action_type,
+            message,
+            sessionId
+        });
+
+        // Return success response
+        return {
+            success: true,
+            output: {
+                cronId: createdEntry.id,
+                message: `Cron "${createdEntry.name}" created successfully with schedule: ${createdEntry.schedule}`
+            }
+        };
     }
 };

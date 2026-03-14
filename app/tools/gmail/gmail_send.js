@@ -5,7 +5,7 @@ import { getGmailClient } from '../../../src/utils/google/google-client.js';
 import { chunkBase64, decodeHtmlEntities, getMimeTypeFromFileName, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Gmail send tool
-export const gmailSendTool = {
+const gmailSendTool = {
     // Tool definition
     name: 'gmail_send',
     description: 'Send email via Gmail.',
@@ -183,3 +183,6 @@ const createEmailBody = async ({ to, subject, safeBody, html, cc, bcc, attachmen
         return headers.join('\r\n') + '\r\n\r\n' + safeBody;
     }
 };
+
+// Export the tool as the default export of this module
+export default gmailSendTool;

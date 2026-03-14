@@ -1,7 +1,7 @@
 import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Network traceroute tool
-export const networkTracerouteTool = {
+const networkTracerouteTool = {
     // Tool definition
     name: 'network_traceroute',
     description: 'Trace network hops to a destination host.',
@@ -44,3 +44,6 @@ export const networkTracerouteTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default networkTracerouteTool;

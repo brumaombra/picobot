@@ -2,7 +2,7 @@ import * as os from 'os';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Network information tool
-export const systemInfoNetworkTool = {
+const systemInfoNetworkTool = {
     // Tool definition
     name: 'system_info_network',
     description: 'Get network interface information.',
@@ -32,3 +32,6 @@ export const systemInfoNetworkTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default systemInfoNetworkTool;

@@ -2,7 +2,7 @@ import { existsSync } from 'fs';
 import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Printer file print tool
-export const printerPrintFileTool = {
+const printerPrintFileTool = {
     // Tool definition
     name: 'printer_print_file',
     description: 'Print a local file to a selected printer.',
@@ -77,3 +77,6 @@ export const printerPrintFileTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default printerPrintFileTool;

@@ -4,7 +4,7 @@ import { isSensitivePath, handleToolError, handleToolResponse } from '../../../s
 import { logger } from '../../../src/utils/common/logger.js';
 
 // Regex/literal content search across files
-export const grepSearchTool = {
+const grepSearchTool = {
     // Tool definition
     name: 'grep_search',
     description: 'Search for a pattern across files (like ripgrep). Extremely useful for finding where code is used.',
@@ -118,3 +118,6 @@ export const grepSearchTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default grepSearchTool;

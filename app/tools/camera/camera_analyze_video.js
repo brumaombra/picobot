@@ -2,7 +2,7 @@ import { handleToolError, handleToolResponse } from '../../../src/utils/common/u
 import { analyzeVideoWithGoogleAi } from '../../../src/utils/google/google-ai.js';
 
 // Camera video analysis tool
-export const cameraAnalyzeVideoTool = {
+const cameraAnalyzeVideoTool = {
     // Tool definition
     name: 'camera_analyze_video',
     description: 'Analyze a local video file using AI video understanding capabilities by running a natural-language analysis prompt against it.',
@@ -36,3 +36,6 @@ export const cameraAnalyzeVideoTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default cameraAnalyzeVideoTool;

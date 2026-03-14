@@ -4,7 +4,7 @@ import { isSensitivePath, handleToolError, handleToolResponse } from '../../../s
 import { logger } from '../../../src/utils/common/logger.js';
 
 // List directory tool
-export const listDirectoryTool = {
+const listDirectoryTool = {
     // Tool definition
     name: 'list_directory',
     description: 'List all files and subdirectories in a path. Always use this first to explore the codebase.',
@@ -112,3 +112,6 @@ export const listDirectoryTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default listDirectoryTool;

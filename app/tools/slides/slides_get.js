@@ -3,7 +3,7 @@ import { getSlidesClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Slides get presentation tool
-export const slidesGetTool = {
+const slidesGetTool = {
     // Tool definition
     name: 'slides_get',
     description: 'Get a Google Slides presentation structure with all slides and their text content.',
@@ -78,3 +78,6 @@ export const slidesGetTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default slidesGetTool;

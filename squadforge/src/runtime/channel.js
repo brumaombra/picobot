@@ -188,6 +188,11 @@ export const startRuntime = async runtime => {
         return runtime;
     }
 
+    // Initialize runtime-owned schedulers before processing inbound traffic
+    if (runtime.schedulerManager) {
+        runtime.schedulerManager.initialize();
+    }
+
     // Register the runtime receiver and keep the optional detach hook for shutdown
     if (runtime.inboundConnector) {
         runtime.detachInboundConnector = await runtime.inboundConnector(message => receiveInboundMessage(runtime, message));
@@ -211,6 +216,11 @@ export const stopRuntime = async runtime => {
     resolvePendingInboundWaiters(runtime);
     await runtime.loopPromise;
     runtime.loopPromise = null;
+
+    // Stop any runtime-owned schedulers
+    if (runtime.schedulerManager) {
+        runtime.schedulerManager.stop();
+    }
 
     // Detach the inbound channel when a detach function is provided
     if (typeof runtime.detachInboundConnector === 'function') {

@@ -3,7 +3,7 @@ import { getDriveClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Drive delete file tool
-export const driveDeleteFileTool = {
+const driveDeleteFileTool = {
     // Tool definition
     name: 'drive_delete_file',
     description: 'Delete Google Drive file.',
@@ -41,3 +41,6 @@ export const driveDeleteFileTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default driveDeleteFileTool;

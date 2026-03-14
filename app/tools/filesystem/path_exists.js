@@ -4,7 +4,7 @@ import { isSensitivePath, handleToolError, handleToolResponse } from '../../../s
 import { logger } from '../../../src/utils/common/logger.js';
 
 // Path exists tool
-export const pathExistsTool = {
+const pathExistsTool = {
     // Tool definition
     name: 'path_exists',
     description: 'Check if a file or directory exists.',
@@ -56,3 +56,6 @@ export const pathExistsTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default pathExistsTool;

@@ -3,7 +3,7 @@ import { getSlidesClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Slides create presentation tool
-export const slidesCreateTool = {
+const slidesCreateTool = {
     // Tool definition
     name: 'slides_create',
     description: 'Create a new Google Slides presentation.',
@@ -46,3 +46,6 @@ export const slidesCreateTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default slidesCreateTool;

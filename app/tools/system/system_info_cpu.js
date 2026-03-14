@@ -2,7 +2,7 @@ import * as os from 'os';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // CPU information tool
-export const systemInfoCpuTool = {
+const systemInfoCpuTool = {
     // Tool definition
     name: 'system_info_cpu',
     description: 'Get CPU information.',
@@ -32,3 +32,6 @@ export const systemInfoCpuTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default systemInfoCpuTool;

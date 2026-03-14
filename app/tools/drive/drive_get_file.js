@@ -3,7 +3,7 @@ import { getDriveClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Drive get file tool
-export const driveGetFileTool = {
+const driveGetFileTool = {
     // Tool definition
     name: 'drive_get_file',
     description: 'Get detailed metadata about a specific Google Drive file by ID.',
@@ -58,3 +58,6 @@ export const driveGetFileTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default driveGetFileTool;

@@ -1,4 +1,9 @@
 import { askMainAgentTool } from './predefined/ask_main_agent.js';
+import { cronCreateTool } from './predefined/cron_create.js';
+import { cronDeleteTool } from './predefined/cron_delete.js';
+import { cronGetTool } from './predefined/cron_get.js';
+import { cronListTool } from './predefined/cron_list.js';
+import { cronUpdateTool } from './predefined/cron_update.js';
 import { readFileTool } from './predefined/read_file.js';
 import { sendFileTool } from './predefined/send_file.js';
 import { subagentChatTool } from './predefined/subagent_chat.js';
@@ -6,6 +11,8 @@ import { subagentListTool } from './predefined/subagent_list.js';
 import { subagentStartTool } from './predefined/subagent_start.js';
 import { loadExternalToolsFromDirectory } from '../loaders/load-external-tools.js';
 import { getAgentRole } from '../utils/utils.js';
+
+const OPTIONAL_BUILTIN_TOOLS = [cronCreateTool, cronDeleteTool, cronGetTool, cronListTool, cronUpdateTool];
 
 // Predefined tools grouped by agent role
 const PREDEFINED_TOOLS_BY_ROLE = {
@@ -32,7 +39,7 @@ export const loadTools = async ({ toolsDir } = {}) => {
     // Load external tools
     const externalTools = await loadExternalToolsFromDirectory({ toolsDir });
     const tools = new Map(externalTools);
-    const predefinedTools = Object.values(PREDEFINED_TOOLS_BY_ROLE).flat();
+    const predefinedTools = [...new Map([...Object.values(PREDEFINED_TOOLS_BY_ROLE).flat(), ...OPTIONAL_BUILTIN_TOOLS].map(tool => [tool.name, tool])).values()];
 
     // Add the predefined tools to the catalog
     for (const tool of predefinedTools) {

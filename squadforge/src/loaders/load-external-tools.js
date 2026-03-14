@@ -1,18 +1,7 @@
 import { existsSync, readdirSync } from 'fs';
-import { basename, extname, join } from 'path';
+import { extname, join } from 'path';
 import { pathToFileURL } from 'url';
 import { SUPPORTED_TOOL_EXTENSIONS } from '../config.js';
-
-const EXCLUDED_TOOL_FILE_NAMES = new Set([
-    'ask_main_agent.js',
-    'read_file.js',
-    'send_file.js',
-    'subagent_chat.js',
-    'subagent_list.js',
-    'subagent_start.js',
-    'tools.js',
-    'tools.mjs'
-]);
 
 // Recursively collect all supported tool files from the tools directory
 const collectToolFilePaths = directoryPath => {
@@ -32,7 +21,7 @@ const collectToolFilePaths = directoryPath => {
         }
 
         // If it's a supported tool file, include it
-        if (SUPPORTED_TOOL_EXTENSIONS.includes(extname(entry.name).toLowerCase()) && !EXCLUDED_TOOL_FILE_NAMES.has(basename(entry.name).toLowerCase())) {
+        if (SUPPORTED_TOOL_EXTENSIONS.includes(extname(entry.name).toLowerCase())) {
             filePaths.push(fullPath);
         }
     }
@@ -41,33 +30,11 @@ const collectToolFilePaths = directoryPath => {
     return filePaths;
 };
 
-// Check whether one exported value looks like a tool object.
-const isToolLike = value => {
-    return Boolean(value)
-        && typeof value === 'object'
-        && !Array.isArray(value)
-        && typeof value.name === 'string'
-        && typeof value.execute === 'function';
-};
-
-// Resolve one imported module into the tool object it exposes, if any.
-const resolveRawTool = importedModule => {
-    if (isToolLike(importedModule?.default)) {
-        return importedModule.default;
-    }
-
-    if (isToolLike(importedModule?.tool)) {
-        return importedModule.tool;
-    }
-
-    return Object.values(importedModule || {}).find(isToolLike) || null;
-};
-
 // Normalize a loaded tool module into the expected tool shape
 const normalizeTool = ({ rawTool, filePath }) => {
     // Validate the tool shape
     if (!rawTool || typeof rawTool !== 'object') {
-        throw new Error(`Tool module must export an object: ${filePath}`);
+        throw new Error(`Tool module must default export an object: ${filePath}`);
     }
 
     // Validate required properties
@@ -114,11 +81,7 @@ export const loadExternalToolsFromDirectory = async ({ toolsDir } = {}) => {
         // Dynamically import the tool module
         const moduleUrl = pathToFileURL(filePath).href;
         const importedModule = await import(moduleUrl);
-        const rawTool = resolveRawTool(importedModule);
-        if (!rawTool) {
-            continue;
-        }
-
+        const rawTool = importedModule?.default;
         const tool = normalizeTool({ rawTool, filePath });
 
         // Check for duplicate tool names

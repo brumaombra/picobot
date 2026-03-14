@@ -7,7 +7,6 @@ import { initLogger, logger } from './utils/common/logger.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google/google-client.js';
 import { CRONS_DIR, SESSIONS_DIR } from './config.js';
-import { initializeCronManager, setCronAgent, stopCronManager } from './crons/manager.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -58,9 +57,6 @@ export const startBot = async () => {
         model: config.agent?.model
     });
 
-    setCronAgent(agent);
-    initializeCronManager();
-
     // Initialize Telegram channel
     initTelegram(agent);
 
@@ -89,7 +85,6 @@ export const stopBot = async () => {
 
     try {
         await stopTelegram();
-        stopCronManager();
         await agent?.stop();
     } catch (error) {
         logger.error(`Shutdown error: ${error}`);

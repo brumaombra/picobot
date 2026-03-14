@@ -6,7 +6,7 @@ import { WORKSPACE_DIR } from '../../../src/config.js';
 import { captureSnapshotToPath } from '../../../src/utils/camera/camera-client.js';
 
 // Camera snapshot tool
-export const cameraSnapshotTool = {
+const cameraSnapshotTool = {
     // Tool definition
     name: 'camera_snapshot',
     description: 'Capture a snapshot (JPEG image) from a camera channel. Saves it to the workspace and returns the file path.',
@@ -50,3 +50,6 @@ export const cameraSnapshotTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default cameraSnapshotTool;

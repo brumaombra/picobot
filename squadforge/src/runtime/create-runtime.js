@@ -5,9 +5,12 @@ import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_CRONS_DIR_NAME, DEFAULT_PROMPTS_DIR_NA
 import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
 import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
+import { createJsonFileSchedulerStore } from '../scheduling/file-store.js';
+import { createSchedulerManager } from '../scheduling/manager.js';
 import { SubagentRegistry } from './subagent-registry.js';
 import { SessionStore } from '../sessions/session-store.js';
 import { loadTools } from '../tools/tools-catalog.js';
+import { generateId } from '../utils/utils.js';
 
 // Run validation checks before loading runtime resources from disk
 const beforeLoadChecks = options => {
@@ -93,6 +96,45 @@ const afterLoadChecks = ({ agentsSpecs }) => {
     return leaderSpec;
 };
 
+const createRuntimeSchedulerManager = ({ cronsDir, runtimeAgent }) => {
+    const schedulerStore = createJsonFileSchedulerStore({
+        directoryPath: cronsDir
+    });
+
+    const schedulerManager = createSchedulerManager({
+        createEntryId: () => generateId('cron'),
+        createIsolatedSessionId: () => generateId('cron'),
+        loadEntries: schedulerStore.loadEntries,
+        saveEntry: schedulerStore.saveEntry,
+        deleteEntry: schedulerStore.deleteEntry,
+        buildMessageNotification: entry => ({
+            type: 'scheduled_notification',
+            action: 'message',
+            scheduleId: entry.id,
+            name: entry.name,
+            schedule: entry.schedule,
+            content: entry.message
+        }),
+        buildAgentPromptNotification: (entry, result) => ({
+            type: 'scheduled_notification',
+            action: 'agent_prompt',
+            scheduleId: entry.id,
+            name: entry.name,
+            schedule: entry.schedule,
+            status: result.status,
+            content: result.content,
+            timedOut: Boolean(result.timedOut),
+            error: result.error || null
+        })
+    });
+
+    if (runtimeAgent) {
+        schedulerManager.setRuntimeAgent(runtimeAgent);
+    }
+
+    return schedulerManager;
+};
+
 // Create the main runtime object
 const createRuntime = async (options = {}) => {
     // Validate the runtime options before touching the filesystem
@@ -167,7 +209,8 @@ const createRuntime = async (options = {}) => {
         outboundMessageHandler: null,
         eventHandlers: new Map(),
         subagentRegistry: new SubagentRegistry(),
-        sessionAgents: new Map()
+        sessionAgents: new Map(),
+        schedulerManager: null
     };
 
     // Create the leader agent
@@ -180,6 +223,12 @@ const createRuntime = async (options = {}) => {
 
     // Add the leader agent to the runtime session
     runtime.sessionAgents.set(DEFAULT_LEADER_SESSION_ID, leaderAgent);
+
+    // Create the runtime-owned scheduler manager after the leader agent exists
+    runtime.schedulerManager = createRuntimeSchedulerManager({
+        cronsDir: resolvedCronsDir,
+        runtimeAgent: leaderAgent
+    });
 
     // Return the runtime object
     return runtime;

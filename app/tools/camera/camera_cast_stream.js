@@ -3,7 +3,7 @@ import { castUrlToChromecast } from '../../../src/utils/google/chromecast.js';
 import { getCameraLiveRelay, startCameraLiveRelay, stopCameraLiveRelay } from '../../../src/utils/camera/camera-live-stream.js';
 
 // Camera Chromecast casting tool
-export const cameraCastStreamTool = {
+const cameraCastStreamTool = {
     // Tool definition
     name: 'camera_cast_stream',
     description: 'Cast a camera stream to Chromecast with action-based control: start or stop.',
@@ -91,3 +91,6 @@ export const cameraCastStreamTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default cameraCastStreamTool;

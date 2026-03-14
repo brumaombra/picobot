@@ -2,7 +2,7 @@ import * as os from 'os';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Memory information tool
-export const systemInfoMemoryTool = {
+const systemInfoMemoryTool = {
     // Tool definition
     name: 'system_info_memory',
     description: 'Get memory information.',
@@ -28,3 +28,6 @@ export const systemInfoMemoryTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default systemInfoMemoryTool;

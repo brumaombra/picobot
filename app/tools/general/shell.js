@@ -107,7 +107,7 @@ const COMMAND_ACTIONS = {
 const ACTION_NAMES = Object.keys(COMMAND_ACTIONS);
 
 // Coder-focused shell alias tool
-export const runTerminalCmdTool = {
+const runTerminalCmdTool = {
     // Tool definition
     name: 'run_terminal_cmd',
     description: 'Run a terminal command.',
@@ -187,3 +187,6 @@ export const runTerminalCmdTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default runTerminalCmdTool;

@@ -4,7 +4,7 @@ import { BRAVE_SEARCH_TIMEOUT_MS } from '../../../src/config.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Web search tool using Brave Search API
-export const webSearchTool = {
+const webSearchTool = {
     // Tool definition
     name: 'web_search',
     description: 'Search the web using Brave Search API. Returns relevant search results with titles, URLs, and descriptions.',
@@ -90,3 +90,6 @@ export const webSearchTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default webSearchTool;

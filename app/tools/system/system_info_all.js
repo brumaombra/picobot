@@ -2,7 +2,7 @@ import * as os from 'os';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // All-in-one system information tool
-export const systemInfoAllTool = {
+const systemInfoAllTool = {
     // Tool definition
     name: 'system_info_all',
     description: 'Get complete system information.',
@@ -45,3 +45,6 @@ export const systemInfoAllTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default systemInfoAllTool;

@@ -3,7 +3,7 @@ import { getSlidesClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Slides add slide tool
-export const slidesAddSlideTool = {
+const slidesAddSlideTool = {
     // Tool definition
     name: 'slides_add_slide',
     description: 'Add a new slide to a Google Slides presentation with optional title and body text.',
@@ -115,3 +115,6 @@ export const slidesAddSlideTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default slidesAddSlideTool;

@@ -3,7 +3,7 @@ import { getDriveClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Drive share file tool
-export const driveShareFileTool = {
+const driveShareFileTool = {
     // Tool definition
     name: 'drive_share_file',
     description: 'Share Google Drive file.',
@@ -74,3 +74,6 @@ export const driveShareFileTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default driveShareFileTool;

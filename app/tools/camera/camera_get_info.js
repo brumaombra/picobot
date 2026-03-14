@@ -3,7 +3,7 @@ import { logger } from '../../../src/utils/common/logger.js';
 import { getNvrDeviceInfo } from '../../../src/utils/camera/camera-client.js';
 
 // Camera information retrieval tool
-export const cameraGetInfoTool = {
+const cameraGetInfoTool = {
     // Tool definition
     name: 'camera_get_info',
     description: 'Get NVR device information and the list of connected camera channels.',
@@ -31,3 +31,6 @@ export const cameraGetInfoTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default cameraGetInfoTool;

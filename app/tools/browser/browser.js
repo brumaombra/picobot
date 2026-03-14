@@ -117,7 +117,7 @@ const parseCommand = raw => {
 /******************************** Single Browser Tool ********************************/
 
 // Browser tool
-export const browserTool = {
+const browserTool = {
     // Tool definition
     name: 'browser',
     description: 'Run an agent-browser command for browser automation. Pass a valid command name with its arguments.',
@@ -194,3 +194,6 @@ export const browserTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default browserTool;

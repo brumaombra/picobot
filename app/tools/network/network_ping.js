@@ -1,7 +1,7 @@
 import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Network ping diagnostic tool
-export const networkPingTool = {
+const networkPingTool = {
     // Tool definition
     name: 'network_ping',
     description: 'Ping a host to test network reachability and latency.',
@@ -48,3 +48,6 @@ export const networkPingTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default networkPingTool;

@@ -3,7 +3,7 @@ import { logger } from '../../../src/utils/common/logger.js';
 import { searchNvrRecordings } from '../../../src/utils/camera/camera-client.js';
 
 // Camera recording search tool
-export const cameraSearchRecordingsTool = {
+const cameraSearchRecordingsTool = {
     // Tool definition
     name: 'camera_search_recordings',
     description: 'Search for recorded footage on the NVR within a date/time range for a specific channel.',
@@ -61,3 +61,6 @@ export const cameraSearchRecordingsTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default cameraSearchRecordingsTool;

@@ -3,7 +3,7 @@ import { getGmailClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Gmail read tool
-export const gmailReadTool = {
+const gmailReadTool = {
     // Tool definition
     name: 'gmail_read',
     description: 'Read Gmail message content.',
@@ -90,3 +90,6 @@ export const gmailReadTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default gmailReadTool;

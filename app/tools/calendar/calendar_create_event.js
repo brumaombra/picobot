@@ -3,7 +3,7 @@ import { getCalendarClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Calendar create event tool
-export const calendarCreateEventTool = {
+const calendarCreateEventTool = {
     // Tool definition
     name: 'calendar_create_event',
     description: 'Create Google Calendar event with title, time, location, attendees.',
@@ -91,3 +91,6 @@ export const calendarCreateEventTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default calendarCreateEventTool;

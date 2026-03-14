@@ -4,7 +4,7 @@ import { isSensitivePath, handleToolError, handleToolResponse } from '../../../s
 import { logger } from '../../../src/utils/common/logger.js';
 
 // Precise single-occurrence string replacement tool
-export const strReplaceEditTool = {
+const strReplaceEditTool = {
     // Tool definition
     name: 'str_replace_edit',
     description: 'Make a precise, safe edit by replacing ONE exact occurrence of old_str with new_str. old_str MUST appear exactly once in the file (the model is trained to ensure this). This is the most reliable way to edit code.',
@@ -71,3 +71,6 @@ export const strReplaceEditTool = {
         }
     }
 };
+
+// Export the tool as the default export of this module
+export default strReplaceEditTool;
