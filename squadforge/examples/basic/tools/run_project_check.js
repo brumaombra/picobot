@@ -9,7 +9,7 @@ export default {
         properties: {}
     },
     execute: async (_args, context) => {
-        const modulePath = join(context.squad.rootDir, 'project', 'src', 'pricing.js');
+        const modulePath = join(context.runtime.rootDir, 'project', 'src', 'pricing.js');
         const pricingModule = await import(pathToFileURL(modulePath).href);
         const actual = pricingModule.calculateTotal(12, 3);
 

@@ -1,17 +1,17 @@
 # squadforge
 
-Opinionated JavaScript framework for building a single main-agent entrypoint backed by a team of specialized subagents.
+Opinionated JavaScript framework for building a single main-agent entrypoint backed by a squad of specialized subagents.
 
 ## Current MVP
 
 This first cut focuses on the core filesystem-driven abstraction layer:
 
-- automatically load `leader.md` plus subagent markdown files from an `agents/` folder during squad initialization
-- automatically compose prompts from shared markdown fragments in a `prompts/` folder during squad initialization
-- automatically load skills from `skills/<skill-id>/SKILL.md` folders during squad initialization
+- automatically load `leader.md` plus subagent markdown files from an `agents/` folder during agent runtime assembly
+- automatically compose prompts from shared markdown fragments in a `prompts/` folder during agent runtime assembly
+- automatically load skills from `skills/<skill-id>/SKILL.md` folders during agent runtime assembly
 - parse frontmatter metadata such as `name`, `description`, `model`, and `allowed_tools`
-- automatically load tools from a `tools/` folder during squad initialization, including nested tool folders
-- expose a single `Squad` class that owns the main agent, loaded subagent definitions, active subagent instances, and session storage
+- automatically load tools from a `tools/` folder during agent runtime assembly, including nested tool folders
+- expose a single `Agent` entrypoint that owns the main agent behavior while the framework runtime manages loaded definitions, active subagents, and session storage
 
 The orchestration loop and long-lived chat runtime are built into the framework without changing the folder conventions.
 
@@ -78,20 +78,20 @@ The skill frontmatter supports:
 - `name`
 - `description`
 
-Loaded skills are injected into `prompts/SKILLS.md` and can be listed through the squad runtime.
+Loaded skills are injected into `prompts/SKILLS.md` and can be listed through the runtime.
 
 ## Runtime Usage
 
 ```js
-import { OpenRouterLlm, Squad } from 'squadforge';
+import { Agent, OpenRouterLlm } from 'squadforge';
 
-const squad = await Squad.assemble({
+const agent = await Agent.assemble({
   rootDir: process.cwd(),
   llm: new OpenRouterLlm({ apiKey: process.env.OPENROUTER_API_KEY }),
   model: 'x-ai/grok-4.1-fast'
 });
 
-squad.onMessage(receiveMessage => {
+agent.onMessage(receiveMessage => {
   telegram.on('message', update => {
     receiveMessage({
       sessionId: `telegram:${update.chat.id}`,
@@ -102,11 +102,11 @@ squad.onMessage(receiveMessage => {
   });
 });
 
-squad.sendMessage(async message => {
+agent.sendMessage(async message => {
   await telegram.sendMessage(message.sessionId.split(':')[1], message.content);
 });
 
-await squad.start();
+await agent.start();
 ```
 
 This makes Squadforge behave much more like Pico: the framework runs as a long-lived chat runtime, inbound channel messages are forwarded into it, and assistant replies are sent back out through one configured sender.
@@ -121,10 +121,10 @@ Squadforge now applies a soft run deadline model by default:
 - stale session cleanup: expire non-leader sessions after 24 hours of inactivity
 - transient retries: 2 retries for LLM calls
 
-These can be overridden through `Squad.assemble(...)`:
+These can be overridden through `Agent.assemble(...)`:
 
 ```js
-const squad = await Squad.assemble({
+const agent = await Agent.assemble({
   maxRuntimeMs: 5 * 60 * 1000,
   wrapUpThresholdMs: 60 * 1000,
   maxMessagesPerSession: 50,
@@ -138,9 +138,8 @@ The deadline is checked between agent turns. It nudges the model to wrap up and 
 ## Public Surface
 
 - `Agent`
-- `Squad`
 - `AgentSpec`
 - `SessionStore`
 - `OpenRouterLlm`
 
-The folder loaders are internal implementation details. Consumers initialize a squad through `Squad.assemble(...)`, and squadforge loads the `agents/`, `skills/`, and nested `tools/` folders automatically. When `rootDir` is omitted, squadforge defaults it to the current working directory.
+The folder loaders are internal implementation details. Consumers initialize a root agent through `Agent.assemble(...)`, and squadforge loads the `agents/`, `skills/`, and nested `tools/` folders automatically. When `rootDir` is omitted, squadforge defaults it to the current working directory.

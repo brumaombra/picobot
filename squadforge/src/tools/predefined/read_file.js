@@ -10,7 +10,7 @@ export const readFileTool = {
         properties: {
             path: {
                 type: 'string',
-                description: 'File path, relative to the squad root or absolute inside the squad workspace.'
+                description: 'File path, relative to the runtime root or absolute inside the runtime workspace.'
             },
             line_start: {
                 type: 'integer',
@@ -25,18 +25,18 @@ export const readFileTool = {
     },
 
     // Main execution function
-    execute: async ({ path, line_start, line_end }, { squad }) => {
-        const workspaceRoot = squad.rootDir || process.cwd();
+    execute: async ({ path, line_start, line_end }, { runtime }) => {
+        const workspaceRoot = runtime.rootDir || process.cwd();
         const normalizedWorkspaceRoot = normalize(resolve(workspaceRoot));
         const fullPath = normalize(isAbsolute(path) ? path : resolve(normalizedWorkspaceRoot, path));
         const relativePath = relative(normalizedWorkspaceRoot, fullPath);
         const isInsideWorkspace = relativePath === '' || (!relativePath.startsWith('..') && !isAbsolute(relativePath));
 
-        // Restrict reads to the current squad workspace
+        // Restrict reads to the current runtime workspace
         if (!isInsideWorkspace) {
             return {
                 success: false,
-                error: 'Access denied: path must stay inside the squad workspace.'
+                error: 'Access denied: path must stay inside the runtime workspace.'
             };
         }
 

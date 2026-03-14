@@ -8,9 +8,9 @@ const createAgentPromptPart = ({ agent }) => {
 };
 
 // Create the shared subagents prompt fragment for the leader
-const createSubagentsPromptPart = ({ squad, promptTemplates }) => {
+const createSubagentsPromptPart = ({ runtime, promptTemplates }) => {
     // Create a bulleted list of subagents available to the leader
-    const subagentSpecs = squad.listSubagentSpecs();
+    const subagentSpecs = [...runtime.agentsSpecs.values()].filter(spec => spec.id !== LEADER_SPEC_ID);
     const subagentsList = subagentSpecs.length === 0
         ? 'No specialized agents available.'
         : subagentSpecs.map(spec => `- ${spec.id}: ${spec.description || spec.name}`).join('\n');
@@ -36,9 +36,9 @@ const createToolsPromptPart = ({ agent, promptTemplates }) => {
 };
 
 // Create the shared skills prompt fragment
-const createSkillsPromptPart = ({ squad, promptTemplates }) => {
+const createSkillsPromptPart = ({ runtime, promptTemplates }) => {
     // Create a formatted list of available skills
-    const skills = squad.listSkills();
+    const skills = [...runtime.skills.values()];
     const skillsList = skills.length === 0
         ? 'No skills available.'
         : skills.map(skill => [
@@ -61,12 +61,12 @@ const createSubagentPromptPart = ({ promptTemplates }) => {
 /******************************* Compose the system prompts (For the leader and the various subagents) *******************************/
 
 // Compose the leader system prompt
-const composeLeaderSystemPrompt = ({ squad, agent, promptTemplates }) => {
+const composeLeaderSystemPrompt = ({ runtime, agent, promptTemplates }) => {
     return [
         createAgentPromptPart({ agent }),
-        createSubagentsPromptPart({ squad, promptTemplates }),
+        createSubagentsPromptPart({ runtime, promptTemplates }),
         createToolsPromptPart({ agent, promptTemplates }),
-        createSkillsPromptPart({ squad, promptTemplates })
+        createSkillsPromptPart({ runtime, promptTemplates })
     ].filter(Boolean).join('\n\n');
 };
 
@@ -80,10 +80,10 @@ const composeSubagentSystemPrompt = ({ agent, promptTemplates }) => {
 };
 
 // Compose the final prompt for an agent
-export const composeAgentPrompt = ({ squad, agent, promptTemplates }) => {
+export const composeAgentPrompt = ({ runtime, agent, promptTemplates }) => {
     // Check the agent type
     if (agent.definition.id === LEADER_SPEC_ID) {
-        return composeLeaderSystemPrompt({ squad, agent, promptTemplates }); // Compose the leader
+        return composeLeaderSystemPrompt({ runtime, agent, promptTemplates }); // Compose the leader
     } else {
         return composeSubagentSystemPrompt({ agent, promptTemplates }); // Compose the subagent prompt
     }

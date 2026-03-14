@@ -1,7 +1,7 @@
 {
     "name": "squadforge",
     "version": "0.1.0",
-    "description": "Opinionated JavaScript framework for main-agent and subagent teams",
+    "description": "Opinionated JavaScript framework for main-agent and subagent squads",
     "type": "module",
     "main": "./src/index.js",
     "exports": {

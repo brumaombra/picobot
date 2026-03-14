@@ -1,4 +1,6 @@
 import { parseJson, stringifyJson } from '../utils/utils.js';
+import { emitRuntimeEvent } from '../runtime/events.js';
+import { findAgentById, findAgentBySessionId, getLeaderAgent } from '../runtime/lookup.js';
 
 // Normalize the output of a tool execution into a string format
 const normalizeToolOutput = result => {
@@ -30,7 +32,7 @@ export const executeToolCall = async ({ agent, toolCall }) => {
         }
 
         // Emit a tool start event
-        agent.squad.emitEvent('toolStart', {
+        emitRuntimeEvent(agent.runtime, 'toolStart', {
             agentId: agent.id,
             agentType: agent.definition.id,
             toolName,
@@ -40,18 +42,18 @@ export const executeToolCall = async ({ agent, toolCall }) => {
         // Parse the tool call arguments and execute the tool function
         const args = parseJson(toolCall?.function?.arguments);
         const result = await tool.execute(args, {
-            squad: agent.squad,
+            runtime: agent.runtime,
             agent,
             parentAgent: agent.parent,
-            leaderAgent: agent.squad.getLeaderAgent(agent.sessionId),
+            leaderAgent: getLeaderAgent(agent.runtime, agent.sessionId),
             sessionId: agent.sessionId,
             spawnSubagent: (type, options = {}) => agent.spawnSubagent(type, options),
-            findAgentById: agentId => agent.squad.findAgentById(agentId),
-            findAgentBySessionId: sessionId => agent.squad.findAgentBySessionId(sessionId)
+            findAgentById: agentId => findAgentById(agent.runtime, agentId),
+            findAgentBySessionId: sessionId => findAgentBySessionId(agent.runtime, sessionId)
         });
 
         // Emit a tool finish event
-        agent.squad.emitEvent('toolFinish', {
+        emitRuntimeEvent(agent.runtime, 'toolFinish', {
             agentId: agent.id,
             agentType: agent.definition.id,
             toolName,
@@ -66,7 +68,7 @@ export const executeToolCall = async ({ agent, toolCall }) => {
         };
     } catch (error) {
         // Emit a tool error event
-        agent.squad.emitEvent('toolError', {
+        emitRuntimeEvent(agent.runtime, 'toolError', {
             agentId: agent.id,
             agentType: agent.definition.id,
             toolName,

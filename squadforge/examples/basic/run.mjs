@@ -1,7 +1,7 @@
 import { dirname, join } from 'path';
 import { createInterface } from 'readline';
 import { fileURLToPath } from 'url';
-import { OpenRouterLlm, Squad } from '../../src/index.js';
+import { Agent, OpenRouterLlm } from '../../src/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const exampleRoot = __dirname;
@@ -100,9 +100,9 @@ const createCliChannel = ({ initialMessage = '', onClose = null } = {}) => {
 try {
     console.log(`Using model: ${model}`);
     console.log(`Project root: ${exampleRoot}`);
-    console.log('Booting squad...');
+    console.log('Booting root agent...');
 
-    const squad = await Squad.assemble({
+    const agent = await Agent.assemble({
         rootDir: exampleRoot,
         llm,
         model,
@@ -110,23 +110,23 @@ try {
         wrapUpThresholdMs: 60 * 1000
     });
 
-    squad.on('agentSpawn', event => {
+    agent.on('agentSpawn', event => {
         console.log(`[spawn] ${event.parentAgentType} -> ${event.agentType}`);
     });
 
-    squad.on('agentIteration', event => {
+    agent.on('agentIteration', event => {
         console.log(`[thinking] ${event.agentType} iteration ${event.iteration}`);
     });
 
-    squad.on('toolStart', event => {
+    agent.on('toolStart', event => {
         console.log(`[tool] ${event.agentType} -> ${event.toolName}`);
     });
 
-    squad.on('toolError', event => {
+    agent.on('toolError', event => {
         console.log(`[tool-error] ${event.agentType} -> ${event.toolName}: ${event.error}`);
     });
 
-    squad.on('agentComplete', event => {
+    agent.on('agentComplete', event => {
         console.log(`[done] ${event.agentType}`);
     });
 
@@ -141,11 +141,11 @@ try {
             resolveClosed();
         }
     });
-    squad.onMessage(channel.onMessage);
-    squad.sendMessage(channel.sendMessage);
+    agent.onMessage(channel.onMessage);
+    agent.sendMessage(channel.sendMessage);
 
     const shutdown = async () => {
-        await squad.stop();
+        await agent.stop();
     };
 
     process.once('SIGINT', async () => {
@@ -157,7 +157,7 @@ try {
     console.log('Starting interactive chat...');
     console.log('');
 
-    await squad.start();
+    await agent.start();
     await closedPromise;
     await shutdown();
 } catch (error) {

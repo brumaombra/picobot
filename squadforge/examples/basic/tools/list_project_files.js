@@ -25,7 +25,7 @@ export default {
         properties: {}
     },
     execute: async (_args, context) => {
-        const projectDir = join(context.squad.rootDir, 'project');
+        const projectDir = join(context.runtime.rootDir, 'project');
         return {
             success: true,
             output: walk(projectDir, projectDir)

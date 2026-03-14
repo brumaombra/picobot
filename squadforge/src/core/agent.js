@@ -2,25 +2,34 @@ import { AgentSpec } from './agent-spec.js';
 import { executeToolBatch } from '../tools/tool-executor.js';
 import { RUNNING_STATUS, IDLE_STATUS, DONE_STATUS, FAILED_STATUS } from '../config.js';
 import { delay, generateId } from '../utils/utils.js';
+import { onRuntimeMessage, sendRuntimeMessage, startRuntime, stopRuntime } from '../runtime/channel.js';
+import { onRuntimeEvent, emitRuntimeEvent } from '../runtime/events.js';
+import { composePrompt, getTool, getAgentSpec, listSubagentSpecs } from '../runtime/lookup.js';
 
 // Agent class
 export class Agent {
+    // Assemble a root agent from the filesystem-driven project structure
+    static async assemble(options = {}) {
+        const { assembleRootAgent } = await import('../runtime/create-runtime.js');
+        return assembleRootAgent(options);
+    }
+
     // Constructor
-    constructor({ id = null, definition, squad, parent = null, sessionId = null, initialPrompt = '' } = {}) {
+    constructor({ id = null, definition, runtime, parent = null, sessionId = null, initialPrompt = '' } = {}) {
         // Validate the definition
         if (!(definition instanceof AgentSpec)) {
             throw new Error('Agent requires an AgentSpec.');
         }
 
-        // Validate the squad instance
-        if (!squad) {
-            throw new Error('Agent requires a squad instance.');
+        // Validate the runtime object
+        if (!runtime) {
+            throw new Error('Agent requires a runtime object.');
         }
 
         // Initialize properties
         this.id = id || generateId(definition.id);
         this.definition = definition;
-        this.squad = squad;
+        this.runtime = runtime;
         this.parent = parent;
         this.sessionId = sessionId || this.id;
         this.initialPrompt = initialPrompt;
@@ -39,22 +48,50 @@ export class Agent {
 
     // Get the system prompt
     get prompt() {
-        return this.squad.composePrompt(this);
+        return composePrompt(this.runtime, this);
     }
 
     // Get the model for this agent
     get model() {
-        return this.definition.model || this.squad.model || null;
+        return this.definition.model || this.runtime.model || null;
+    }
+
+    // Register how inbound channel messages should be forwarded into the runtime
+    onMessage(handler) {
+        onRuntimeMessage(this.runtime, handler);
+        return this;
+    }
+
+    // Register how outbound assistant messages should be sent to the channel
+    sendMessage(handler) {
+        sendRuntimeMessage(this.runtime, handler);
+        return this;
+    }
+
+    // Register a runtime event handler
+    on(eventId, handler) {
+        return onRuntimeEvent(this.runtime, eventId, handler);
+    }
+
+    // Start the background chat runtime loop
+    async start() {
+        await startRuntime(this.runtime);
+        return this;
+    }
+
+    // Stop the background chat runtime loop
+    async stop() {
+        return stopRuntime(this.runtime);
     }
 
     // Get all messages for the current session
     getMessages() {
-        return this.squad.sessionStore.getMessages(this.sessionId);
+        return this.runtime.sessionStore.getMessages(this.sessionId);
     }
 
     // Append a message to the current session
     appendMessage(message) {
-        this.squad.sessionStore.appendMessage(this.sessionId, message);
+        this.runtime.sessionStore.appendMessage(this.sessionId, message);
         return message;
     }
 
@@ -91,7 +128,7 @@ export class Agent {
         }
 
         // Return the session messages
-        return this.squad.sessionStore.getOrCreateSession(this.sessionId);
+        return this.runtime.sessionStore.getOrCreateSession(this.sessionId);
     }
 
     // Send a message to the agent
@@ -101,7 +138,7 @@ export class Agent {
         this.status = RUNNING_STATUS;
 
         // Emit the message event
-        this.squad.emitEvent('agentMessage', {
+        emitRuntimeEvent(this.runtime, 'agentMessage', {
             agentId: this.id,
             agentType: this.definition.id,
             role,
@@ -115,7 +152,7 @@ export class Agent {
         });
 
         // Return early if no LLM is configured
-        if (!this.squad.llm) {
+        if (!this.runtime.llm) {
             return {
                 agentId: this.id,
                 sessionId: this.sessionId,
@@ -151,14 +188,14 @@ export class Agent {
 
                 // Check for the soft runtime deadline and fail if exceeded
                 const elapsed = Date.now() - startedAt;
-                if (elapsed >= this.squad.maxRuntimeMs) {
+                if (elapsed >= this.runtime.maxRuntimeMs) {
                     // Fail the agent and emit an error event
-                    this.fail(`Agent run deadline reached after ${this.squad.maxRuntimeMs} ms.`);
-                    this.squad.emitEvent('agentError', {
+                    this.fail(`Agent run deadline reached after ${this.runtime.maxRuntimeMs} ms.`);
+                    emitRuntimeEvent(this.runtime, 'agentError', {
                         agentId: this.id,
                         agentType: this.definition.id,
                         sessionId: this.sessionId,
-                        error: `Agent run deadline reached after ${this.squad.maxRuntimeMs} ms.`,
+                        error: `Agent run deadline reached after ${this.runtime.maxRuntimeMs} ms.`,
                         timedOut: true
                     });
 
@@ -171,8 +208,8 @@ export class Agent {
                 }
 
                 // Inject a warning message before the soft deadline to encourage the agent to wrap up
-                const remaining = this.squad.maxRuntimeMs - elapsed;
-                if (!wrapUpInjected && remaining <= this.squad.wrapUpThresholdMs) {
+                const remaining = this.runtime.maxRuntimeMs - elapsed;
+                if (!wrapUpInjected && remaining <= this.runtime.wrapUpThresholdMs) {
                     wrapUpInjected = true;
                     this.appendMessage({
                         role: 'system',
@@ -181,7 +218,7 @@ export class Agent {
                 }
 
                 // Emit the iteration event
-                this.squad.emitEvent('agentIteration', {
+                emitRuntimeEvent(this.runtime, 'agentIteration', {
                     agentId: this.id,
                     agentType: this.definition.id,
                     iteration,
@@ -203,7 +240,7 @@ export class Agent {
                 });
 
                 // Emit the assistant event
-                this.squad.emitEvent('agentAssistant', {
+                emitRuntimeEvent(this.runtime, 'agentAssistant', {
                     agentId: this.id,
                     agentType: this.definition.id,
                     toolCalls: toolCalls.length,
@@ -214,7 +251,7 @@ export class Agent {
                 if (toolCalls.length === 0) {
                     // Mark the agent as completed
                     this.complete(content || null);
-                    this.squad.emitEvent('agentComplete', {
+                    emitRuntimeEvent(this.runtime, 'agentComplete', {
                         agentId: this.id,
                         agentType: this.definition.id,
                         sessionId: this.sessionId
@@ -242,7 +279,7 @@ export class Agent {
         } catch (error) {
             // Mark the agent as failed and emit an error event
             this.fail(error);
-            this.squad.emitEvent('agentError', {
+            emitRuntimeEvent(this.runtime, 'agentError', {
                 agentId: this.id,
                 agentType: this.definition.id,
                 sessionId: this.sessionId,
@@ -257,13 +294,13 @@ export class Agent {
 
     // Ask the LLM for the next response with retry support for transient failures
     async runChatWithRetry() {
-        const maxRetries = this.squad.llmChatMaxRetries;
+        const maxRetries = this.runtime.llmChatMaxRetries;
         
         // Retry loop for transient errors
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {
                 // Call the LLM chat method
-                return await this.squad.llm.chat(
+                return await this.runtime.llm.chat(
                     this.getMessages(),
                     this.getToolDefinitions(),
                     this.model
@@ -275,7 +312,7 @@ export class Agent {
                 }
 
                 // Emit an agent retry event
-                this.squad.emitEvent('agentRetry', {
+                emitRuntimeEvent(this.runtime, 'agentRetry', {
                     agentId: this.id,
                     agentType: this.definition.id,
                     sessionId: this.sessionId,
@@ -325,8 +362,8 @@ export class Agent {
             return null;
         }
 
-        // Resolve the tool from the squad's tool registry
-        const tool = this.squad.getTool(name);
+        // Resolve the tool from the runtime tool registry
+        const tool = getTool(this.runtime, name);
         if (!tool) {
             throw new Error(`Allowed tool "${name}" could not be resolved for agent "${this.definition.id}".`);
         }
@@ -343,16 +380,15 @@ export class Agent {
     // Spawn a subagent
     spawnSubagent(type, { prompt = '' } = {}) {
         // Look up the subagent definition
-        const definition = this.squad.getAgentSpec(type);
+        const definition = getAgentSpec(this.runtime, type);
         if (!definition) {
-            const available = this.squad.listSubagentSpecs().map(agent => agent.id).join(', ');
+            const available = listSubagentSpecs(this.runtime).map(agent => agent.id).join(', ');
             throw new Error(`Unknown subagent "${type}". Available subagents: ${available}`);
         }
 
         // Create the child agent
-        const agent = new Agent({
+        const agent = this.runtime.createAgent({
             definition,
-            squad: this.squad,
             parent: this,
             initialPrompt: prompt
         });
@@ -362,7 +398,7 @@ export class Agent {
         this.subagents.set(agent.id, agent);
 
         // Emit the spawn event
-        this.squad.emitEvent('agentSpawn', {
+        emitRuntimeEvent(this.runtime, 'agentSpawn', {
             parentAgentId: this.id,
             parentAgentType: this.definition.id,
             agentId: agent.id,

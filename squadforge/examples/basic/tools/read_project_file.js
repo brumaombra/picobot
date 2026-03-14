@@ -15,7 +15,7 @@ export default {
         required: ['path']
     },
     execute: async ({ path }, context) => {
-        const filePath = join(context.squad.rootDir, 'project', String(path || ''));
+        const filePath = join(context.runtime.rootDir, 'project', String(path || ''));
         return {
             success: true,
             output: readFileSync(filePath, 'utf-8')
