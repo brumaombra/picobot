@@ -8,12 +8,6 @@ import { composePrompt, getTool, getAgentSpec, listSubagentSpecs } from '../runt
 
 // Agent class
 export class Agent {
-    // Assemble a root agent from the filesystem-driven project structure
-    static async assemble(options = {}) {
-        const { assembleRootAgent } = await import('../runtime/create-runtime.js');
-        return assembleRootAgent(options);
-    }
-
     // Constructor
     constructor({ id = null, definition, runtime, parent = null, sessionId = null, initialPrompt = '' } = {}) {
         // Validate the definition
@@ -295,7 +289,7 @@ export class Agent {
     // Ask the LLM for the next response with retry support for transient failures
     async runChatWithRetry() {
         const maxRetries = this.runtime.llmChatMaxRetries;
-        
+
         // Retry loop for transient errors
         for (let attempt = 0; attempt <= maxRetries; attempt++) {
             try {

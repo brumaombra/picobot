@@ -104,7 +104,7 @@ export const assembleRuntime = async ({ rootDir, agentsDir = null, promptsDir = 
     });
 };
 
-export const assembleRootAgent = async options => {
+export const forge = async options => {
     const runtime = await assembleRuntime(options);
     return runtime.sessionAgents.get(DEFAULT_LEADER_SESSION_ID);
 };

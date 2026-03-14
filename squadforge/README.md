@@ -83,9 +83,9 @@ Loaded skills are injected into `prompts/SKILLS.md` and can be listed through th
 ## Runtime Usage
 
 ```js
-import { Agent, OpenRouterLlm } from 'squadforge';
+import { forge, OpenRouterLlm } from 'squadforge';
 
-const agent = await Agent.assemble({
+const agent = await forge({
   rootDir: process.cwd(),
   llm: new OpenRouterLlm({ apiKey: process.env.OPENROUTER_API_KEY }),
   model: 'x-ai/grok-4.1-fast'
@@ -121,10 +121,10 @@ Squadforge now applies a soft run deadline model by default:
 - stale session cleanup: expire non-leader sessions after 24 hours of inactivity
 - transient retries: 2 retries for LLM calls
 
-These can be overridden through `Agent.assemble(...)`:
+These can be overridden through `forge(...)`:
 
 ```js
-const agent = await Agent.assemble({
+const agent = await forge({
   maxRuntimeMs: 5 * 60 * 1000,
   wrapUpThresholdMs: 60 * 1000,
   maxMessagesPerSession: 50,
@@ -137,9 +137,9 @@ The deadline is checked between agent turns. It nudges the model to wrap up and 
 
 ## Public Surface
 
-- `Agent`
 - `AgentSpec`
 - `SessionStore`
 - `OpenRouterLlm`
+- `forge`
 
-The folder loaders are internal implementation details. Consumers initialize a root agent through `Agent.assemble(...)`, and squadforge loads the `agents/`, `skills/`, and nested `tools/` folders automatically. When `rootDir` is omitted, squadforge defaults it to the current working directory.
+The folder loaders are internal implementation details. Consumers initialize a root agent through `forge(...)`, and squadforge loads the `agents/`, `skills/`, and nested `tools/` folders automatically. When `rootDir` is omitted, squadforge defaults it to the current working directory.

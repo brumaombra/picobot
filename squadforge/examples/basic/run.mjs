@@ -1,7 +1,7 @@
 import { dirname, join } from 'path';
 import { createInterface } from 'readline';
 import { fileURLToPath } from 'url';
-import { Agent, OpenRouterLlm } from '../../src/index.js';
+import { forge, OpenRouterLlm } from '../../src/index.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const exampleRoot = __dirname;
@@ -102,7 +102,7 @@ try {
     console.log(`Project root: ${exampleRoot}`);
     console.log('Booting root agent...');
 
-    const agent = await Agent.assemble({
+    const agent = await forge({
         rootDir: exampleRoot,
         llm,
         model,
