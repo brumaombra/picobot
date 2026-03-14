@@ -3,7 +3,6 @@ import { basename, extname, join } from 'path';
 import { pathToFileURL } from 'url';
 import { SUPPORTED_TOOL_EXTENSIONS } from '../config.js';
 
-const EXCLUDED_TOOL_ROOT_DIRECTORIES = new Set(['cron']);
 const EXCLUDED_TOOL_FILE_NAMES = new Set([
     'ask_main_agent.js',
     'read_file.js',
@@ -25,10 +24,6 @@ const collectToolFilePaths = directoryPath => {
     const filePaths = [];
     for (const entry of entries) {
         const fullPath = join(directoryPath, entry.name);
-
-        if (entry.isDirectory() && EXCLUDED_TOOL_ROOT_DIRECTORIES.has(entry.name.toLowerCase())) {
-            continue;
-        }
 
         // If directory, search recursively for tool files
         if (entry.isDirectory()) {

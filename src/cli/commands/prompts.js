@@ -1,7 +1,7 @@
 import { writeFileSync } from 'fs';
 import { join } from 'path';
 import { Agent } from '../../../squadforge/src/core/agent.js';
-import { createPicoSquadforgeLeader } from '../../squadforge/pico-runtime.js';
+import { createPicoSquadforgeLeader } from '../../index.js';
 import { loadConfig, validateConfig } from '../../config/config.js';
 import { header, success, basicLog } from '../../utils/common/print.js';
 import { initLogger } from '../../utils/common/logger.js';

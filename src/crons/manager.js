@@ -1,10 +1,9 @@
 import cron from 'node-cron';
 import { logger } from '../utils/common/logger.js';
 import { loadCronsFromFiles } from './persistent.js';
-import { pushInbound } from '../bus/message-bus.js';
-import { Agent } from '../agent/agent.js';
-import { buildSystemPrompt } from '../agent/prompts.js';
 import { generateUniqueId } from '../utils/common/utils.js';
+import { queueRuntimeMessage } from '../../squadforge/src/runtime/channel.js';
+import { sendToSession } from '../../squadforge/src/runtime/lookup.js';
 
 // In-memory storage for scheduled crons
 export const crons = new Map();
@@ -16,6 +15,34 @@ let cronAgent = null;
 export const setCronAgent = agent => {
     cronAgent = agent;
     logger.debug('Agent reference set for cron manager');
+};
+
+// Queue one system notification back into the user's active session.
+const queueCronNotification = (cronEntry, payload) => {
+    if (!cronAgent?.runtime) {
+        logger.error(`Cannot queue cron notification for "${cronEntry.name}": agent not set`);
+        return;
+    }
+
+    queueRuntimeMessage(cronAgent.runtime, {
+        sessionId: `${cronEntry.channel}_${cronEntry.chatId}`,
+        role: 'system',
+        content: JSON.stringify(payload)
+    });
+};
+
+// Stop and clear all currently scheduled cron tasks.
+const clearScheduledCrons = () => {
+    for (const cronEntry of crons.values()) {
+        try {
+            cronEntry.task?.stop();
+            cronEntry.task?.destroy();
+        } catch (error) {
+            logger.warn(`Failed to stop cron ${cronEntry.id}: ${error.message}`);
+        }
+    }
+
+    crons.clear();
 };
 
 // Serialize cron for external use (excludes task reference)
@@ -32,6 +59,8 @@ export const serializeCron = cronEntry => ({
 // Initialize cron manager - loads crons from disk and schedules them
 export const initializeCronManager = () => {
     try {
+        clearScheduledCrons();
+
         // Load crons from persistent storage
         const loadedCrons = loadCronsFromFiles();
 
@@ -69,6 +98,12 @@ export const initializeCronManager = () => {
     }
 };
 
+// Stop all scheduled crons and clear in-memory state.
+export const stopCronManager = () => {
+    clearScheduledCrons();
+    logger.info('Cron manager stopped');
+};
+
 // Execute a cron by ID
 export const executeCron = async cronId => {
     // Get cron details
@@ -86,17 +121,13 @@ export const executeCron = async cronId => {
         switch (cronEntry.action) {
             // Message action - push through the main agent as a system notification
             case 'message':
-                pushInbound({
-                    sessionKey: `${cronEntry.channel}_${cronEntry.chatId}`,
-                    role: 'system',
-                    content: JSON.stringify({
-                        type: 'cron_notification',
-                        action: 'message',
-                        cron: cronEntry.name,
-                        schedule: cronEntry.schedule,
-                        content: cronEntry.message,
-                        instruction: 'This is a simple scheduled message. Forward this message to the user as-is.'
-                    })
+                queueCronNotification(cronEntry, {
+                    type: 'cron_notification',
+                    action: 'message',
+                    cron: cronEntry.name,
+                    schedule: cronEntry.schedule,
+                    content: cronEntry.message,
+                    instruction: 'This is a simple scheduled message. Forward this message to the user as-is.'
                 });
                 break;
 
@@ -131,49 +162,31 @@ const executeAgentPromptCron = async cronEntry => {
     logger.info(`Running agent_prompt cron "${cronEntry.name}" in isolated session: ${cronSessionKey}`);
 
     try {
-        // Create a temporary agent instance with same LLM/model as the main agent
-        const agent = new Agent({ llm: cronAgent.llm, model: cronAgent.model });
-
-        // Build context from the main agent, scoped to the user's session
-        const context = cronAgent.buildContext({ sessionKey: userSessionKey });
-
-        // Run the cron task using the unified runTask flow
-        const result = await agent.runTask({
-            sessionKey: cronSessionKey,
-            systemPromptBuilder: () => buildSystemPrompt(),
-            userMessage: cronEntry.message,
-            messageRole: 'system',
-            tools: cronAgent.mainToolDefs,
-            context
+        // Run the cron task in an isolated Squadforge leader session.
+        const result = await sendToSession(cronAgent.runtime, cronEntry.message, {
+            sessionId: cronSessionKey,
+            role: 'system'
         });
 
-        // Push the result into the main agent's session as a system message
+        // Push the result into the user's session as a system message.
         if (result.response) {
-            pushInbound({
-                sessionKey: userSessionKey,
-                role: 'system',
-                content: JSON.stringify({
-                    type: 'cron_notification',
-                    action: 'agent_prompt',
-                    cron: cronEntry.name,
-                    schedule: cronEntry.schedule,
-                    content: result.response,
-                    instruction: 'A scheduled agent task has completed. Relay the result to the user.'
-                })
+            queueCronNotification(cronEntry, {
+                type: 'cron_notification',
+                action: 'agent_prompt',
+                cron: cronEntry.name,
+                schedule: cronEntry.schedule,
+                content: result.response,
+                instruction: 'A scheduled agent task has completed. Relay the result to the user.'
             });
         } else if (result.timedOut) {
             logger.warn(`Agent_prompt cron "${cronEntry.name}" timed out`);
-            pushInbound({
-                sessionKey: userSessionKey,
-                role: 'system',
-                content: JSON.stringify({
-                    type: 'cron_notification',
-                    action: 'agent_prompt',
-                    cron: cronEntry.name,
-                    schedule: cronEntry.schedule,
-                    content: 'Timed out before completing.',
-                    instruction: 'A scheduled agent task ran out of time before completing. Inform the user.'
-                })
+            queueCronNotification(cronEntry, {
+                type: 'cron_notification',
+                action: 'agent_prompt',
+                cron: cronEntry.name,
+                schedule: cronEntry.schedule,
+                content: 'Timed out before completing.',
+                instruction: 'A scheduled agent task ran out of time before completing. Inform the user.'
             });
         }
 
@@ -183,18 +196,14 @@ const executeAgentPromptCron = async cronEntry => {
         const errorMessage = error instanceof Error ? error.message : String(error);
         logger.error(`Agent_prompt cron "${cronEntry.name}" failed: ${errorMessage}`);
 
-        // Notify main agent of the failure
-        pushInbound({
-            sessionKey: userSessionKey,
-            role: 'system',
-            content: JSON.stringify({
-                type: 'cron_notification',
-                action: 'agent_prompt',
-                cron: cronEntry.name,
-                schedule: cronEntry.schedule,
-                content: `Error: ${errorMessage}`,
-                instruction: 'A scheduled agent task failed. Inform the user of the error.'
-            })
+        // Notify the user session of the failure.
+        queueCronNotification(cronEntry, {
+            type: 'cron_notification',
+            action: 'agent_prompt',
+            cron: cronEntry.name,
+            schedule: cronEntry.schedule,
+            content: `Error: ${errorMessage}`,
+            instruction: 'A scheduled agent task failed. Inform the user of the error.'
         });
     }
 };
