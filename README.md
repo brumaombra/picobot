@@ -139,7 +139,6 @@ npm start          # 🚀 Launch the bot
 npm run onboard    # 🧙 Setup wizard  
 npm run status     # 📊 Check config
 npm run nuke       # 💥 Reset everything
-npm run prompts    # ✏️ Preview the prompts
 ```
 
 **Telegram:** `/start` (new conversation) · `/model` (switch model) · `/models` (list models)

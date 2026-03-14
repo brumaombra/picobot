@@ -26,33 +26,6 @@ export const getAgent = () => {
     return agent;
 };
 
-// Resolve the committed Pico app directories used by Squadforge.
-export const getPicoAppPaths = () => {
-    return {
-        rootDir: APP_ROOT_DIR,
-        agentsDir: APP_AGENTS_DIR,
-        promptsDir: APP_PROMPTS_DIR,
-        skillsDir: APP_SKILLS_DIR,
-        toolsDir: APP_TOOLS_DIR
-    };
-};
-
-// Create the Squadforge leader agent configured to run Pico's committed app content.
-export const createPicoSquadforgeLeader = async ({ llm, model, workspacePath }) => {
-    const picoApp = getPicoAppPaths();
-
-    return forge({
-        rootDir: workspacePath,
-        agentsDir: picoApp.agentsDir,
-        promptsDir: picoApp.promptsDir,
-        skillsDir: picoApp.skillsDir,
-        toolsDir: picoApp.toolsDir,
-        sessionsDir: SESSIONS_DIR,
-        llm,
-        model
-    });
-};
-
 // Start the Picobot agent
 export const startBot = async () => {
     // Initialize logger
@@ -73,10 +46,15 @@ export const startBot = async () => {
     });
 
     // Create Squadforge-backed leader agent
-    agent = await createPicoSquadforgeLeader({
+    agent = await forge({
+        rootDir: config.workspace,
+        agentsDir: APP_AGENTS_DIR,
+        promptsDir: APP_PROMPTS_DIR,
+        skillsDir: APP_SKILLS_DIR,
+        toolsDir: APP_TOOLS_DIR,
+        sessionsDir: SESSIONS_DIR,
         llm,
-        model: config.agent?.model,
-        workspacePath: config.workspace
+        model: config.agent?.model
     });
 
     setCronAgent(agent);
