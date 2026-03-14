@@ -1,7 +1,19 @@
 import { existsSync, readdirSync } from 'fs';
-import { extname, join } from 'path';
+import { basename, extname, join } from 'path';
 import { pathToFileURL } from 'url';
 import { SUPPORTED_TOOL_EXTENSIONS } from '../config.js';
+
+const EXCLUDED_TOOL_ROOT_DIRECTORIES = new Set(['cron']);
+const EXCLUDED_TOOL_FILE_NAMES = new Set([
+    'ask_main_agent.js',
+    'read_file.js',
+    'send_file.js',
+    'subagent_chat.js',
+    'subagent_list.js',
+    'subagent_start.js',
+    'tools.js',
+    'tools.mjs'
+]);
 
 // Recursively collect all supported tool files from the tools directory
 const collectToolFilePaths = directoryPath => {
@@ -14,6 +26,10 @@ const collectToolFilePaths = directoryPath => {
     for (const entry of entries) {
         const fullPath = join(directoryPath, entry.name);
 
+        if (entry.isDirectory() && EXCLUDED_TOOL_ROOT_DIRECTORIES.has(entry.name.toLowerCase())) {
+            continue;
+        }
+
         // If directory, search recursively for tool files
         if (entry.isDirectory()) {
             filePaths.push(...collectToolFilePaths(fullPath));
@@ -21,13 +37,35 @@ const collectToolFilePaths = directoryPath => {
         }
 
         // If it's a supported tool file, include it
-        if (SUPPORTED_TOOL_EXTENSIONS.includes(extname(entry.name).toLowerCase())) {
+        if (SUPPORTED_TOOL_EXTENSIONS.includes(extname(entry.name).toLowerCase()) && !EXCLUDED_TOOL_FILE_NAMES.has(basename(entry.name).toLowerCase())) {
             filePaths.push(fullPath);
         }
     }
 
     // Return the list of paths
     return filePaths;
+};
+
+// Check whether one exported value looks like a tool object.
+const isToolLike = value => {
+    return Boolean(value)
+        && typeof value === 'object'
+        && !Array.isArray(value)
+        && typeof value.name === 'string'
+        && typeof value.execute === 'function';
+};
+
+// Resolve one imported module into the tool object it exposes, if any.
+const resolveRawTool = importedModule => {
+    if (isToolLike(importedModule?.default)) {
+        return importedModule.default;
+    }
+
+    if (isToolLike(importedModule?.tool)) {
+        return importedModule.tool;
+    }
+
+    return Object.values(importedModule || {}).find(isToolLike) || null;
 };
 
 // Normalize a loaded tool module into the expected tool shape
@@ -81,7 +119,11 @@ export const loadExternalToolsFromDirectory = async ({ toolsDir } = {}) => {
         // Dynamically import the tool module
         const moduleUrl = pathToFileURL(filePath).href;
         const importedModule = await import(moduleUrl);
-        const rawTool = importedModule.default || importedModule.tool || importedModule;
+        const rawTool = resolveRawTool(importedModule);
+        if (!rawTool) {
+            continue;
+        }
+
         const tool = normalizeTool({ rawTool, filePath });
 
         // Check for duplicate tool names

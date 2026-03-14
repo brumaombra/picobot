@@ -1,8 +1,8 @@
 import { writeFileSync } from 'fs';
 import { join } from 'path';
-import { loadAgents, getAgents } from '../../agent/agents.js';
-import { loadSkills } from '../../agent/skills.js';
-import { buildSystemPrompt, buildSubagentSystemPrompt } from '../../agent/prompts.js';
+import { Agent } from '../../../squadforge/src/core/agent.js';
+import { createPicoSquadforgeLeader } from '../../squadforge/pico-runtime.js';
+import { loadConfig, validateConfig } from '../../config/config.js';
 import { header, success, basicLog } from '../../utils/common/print.js';
 import { initLogger } from '../../utils/common/logger.js';
 import { CONFIG_DIR } from '../../config.js';
@@ -12,29 +12,36 @@ export const registerPromptsCommand = ({ program }) => {
     program
         .command('prompts')
         .description('Export all rendered system prompts to a markdown file')
-        .action(() => {
+        .action(async () => {
             header('📝  Exporting system prompts...');
 
-            // Initialize logger (required by agents/prompts modules)
+            // Initialize logger before building the Squadforge runtime.
             initLogger();
 
-            // Load agent definitions (required before building prompts)
-            loadAgents();
-
-            // Load skill definitions (required before building main agent prompt)
-            loadSkills();
+            const loadedConfig = loadConfig();
+            const validatedConfig = loadedConfig ? validateConfig({ config: loadedConfig }) : null;
+            const workspacePath = validatedConfig?.workspace || process.cwd();
+            const model = validatedConfig?.agent?.model || null;
+            const leader = await createPicoSquadforgeLeader({
+                llm: null,
+                model,
+                workspacePath
+            });
 
             const sections = [];
 
-            // Build main agent system prompt
-            const mainPrompt = buildSystemPrompt();
-            sections.push('# Main Agent System Prompt\n\n' + mainPrompt);
+            // Build the leader prompt from the committed app structure.
+            sections.push('# Main Agent System Prompt\n\n' + leader.prompt);
 
-            // Build each subagent system prompt
-            const agents = getAgents();
-            for (const [id, agentDef] of agents) {
-                const subPrompt = buildSubagentSystemPrompt(agentDef);
-                sections.push(`# Subagent: ${agentDef.name} (\`${id}\`)\n\n` + subPrompt);
+            // Build each subagent prompt from the same runtime so export matches real startup behavior.
+            const subagentSpecs = [...leader.runtime.agentsSpecs.values()].filter(spec => spec.id !== 'leader');
+            for (const spec of subagentSpecs) {
+                const subagent = new Agent({
+                    runtime: leader.runtime,
+                    definition: spec,
+                    sessionId: `prompt_export_${spec.id}`
+                });
+                sections.push(`# Subagent: ${spec.name} (\`${spec.id}\`)\n\n` + subagent.prompt);
             }
 
             // Write to file
@@ -44,6 +51,6 @@ export const registerPromptsCommand = ({ program }) => {
 
             success(`Prompts exported to ${outputPath}`);
             basicLog(`  Main agent: 1 prompt`);
-            basicLog(`  Subagents: ${agents.size} prompt(s)`);
+            basicLog(`  Subagents: ${subagentSpecs.length} prompt(s)`);
         });
 };
