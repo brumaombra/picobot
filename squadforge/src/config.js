@@ -32,6 +32,7 @@ export const RUNNING_STATUS = 'running';
 export const IDLE_STATUS = 'idle';
 export const DONE_STATUS = 'done';
 export const FAILED_STATUS = 'failed';
+export const SUBAGENT_QUESTION_TIMEOUT_MS = 2 * 60 * 1000;
 
 /**************** Runtime *****************/
 export const DEFAULT_RUNTIME_POLL_TIMEOUT_MS = 1000;

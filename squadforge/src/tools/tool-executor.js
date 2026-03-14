@@ -47,7 +47,11 @@ const executeToolCall = async ({ agent, toolCall }) => {
             parentAgent: agent.parent,
             leaderAgent: getLeaderAgent(agent.runtime, agent.sessionId),
             sessionId: agent.sessionId,
-            spawnSubagent: (type, options = {}) => agent.spawnSubagent(type, options),
+            subagentId: agent.parent ? agent.id : null,
+            launchSubagent: (type, prompt) => agent.launchSubagent(type, prompt),
+            chatSubagent: (subagentId, message) => agent.chatSubagent(subagentId, message),
+            listActiveSubagents: () => agent.listActiveSubagents(),
+            askMainAgent: question => agent.askMainAgent(question),
             findAgentById: agentId => findAgentById(agent.runtime, agentId),
             findAgentBySessionId: sessionId => findAgentBySessionId(agent.runtime, sessionId)
         });

@@ -26,6 +26,12 @@ export const sendRuntimeMessage = (runtime, handler) => {
     return runtime;
 };
 
+// Queue a message directly into the runtime without going through an external channel connector
+export const queueRuntimeMessage = (runtime, message) => {
+    receiveInboundMessage(runtime, message);
+    return message;
+};
+
 // Receive an inbound message and resolve any waiting pull requests
 const receiveInboundMessage = (runtime, message) => {
     // Validate the message

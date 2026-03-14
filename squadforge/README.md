@@ -11,7 +11,7 @@ This first cut focuses on the core filesystem-driven abstraction layer:
 - automatically load skills from `skills/<skill-id>/SKILL.md` folders during agent runtime assembly
 - parse frontmatter metadata such as `name`, `description`, `model`, and `allowed_tools`
 - automatically load tools from a `tools/` folder during agent runtime assembly, including nested tool folders
-- expose a single `Agent` entrypoint that owns the main agent behavior while the framework runtime manages loaded definitions, active subagents, and session storage
+- expose a single `forge(...)` entrypoint while the framework runtime manages loaded definitions, active subagents, and session storage
 
 The orchestration loop and long-lived chat runtime are built into the framework without changing the folder conventions.
 
@@ -111,6 +111,14 @@ await agent.start();
 
 This makes Squadforge behave much more like Pico: the framework runs as a long-lived chat runtime, inbound channel messages are forwarded into it, and assistant replies are sent back out through one configured sender.
 
+Leader agents also get Pico-style subagent primitives out of the box:
+
+- `subagent_start` launches a specialized subagent in the background.
+- `subagent_chat` sends a follow-up or answers a waiting subagent question.
+- `subagent_list` shows the active subagents for the current session.
+
+Subagents automatically receive `ask_main_agent` so they can pause and request clarification from the leader when needed.
+
 ## Runtime Policies
 
 Squadforge now applies a soft run deadline model by default:
@@ -137,8 +145,6 @@ The deadline is checked between agent turns. It nudges the model to wrap up and 
 
 ## Public Surface
 
-- `AgentSpec`
-- `SessionStore`
 - `OpenRouterLlm`
 - `forge`
 

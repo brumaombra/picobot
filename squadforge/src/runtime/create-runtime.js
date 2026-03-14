@@ -5,6 +5,7 @@ import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_RUNTIME_POLL
 import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
 import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
+import { SubagentRegistry } from './subagent-registry.js';
 import { SessionStore } from '../sessions/session-store.js';
 import { loadTools } from '../tools/tools-catalog.js';
 
@@ -160,6 +161,7 @@ const createRuntime = async (options = {}) => {
         detachInboundConnector: null,
         outboundMessageHandler: null,
         eventHandlers: new Map(),
+        subagentRegistry: new SubagentRegistry(),
         sessionAgents: new Map()
     };
 

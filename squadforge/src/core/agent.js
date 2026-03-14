@@ -4,7 +4,8 @@ import { RUNNING_STATUS, IDLE_STATUS, DONE_STATUS, FAILED_STATUS } from '../conf
 import { delay, generateId } from '../utils/utils.js';
 import { onRuntimeMessage, sendRuntimeMessage, startRuntime, stopRuntime } from '../runtime/channel.js';
 import { onRuntimeEvent, emitRuntimeEvent } from '../runtime/events.js';
-import { composePrompt, getTool, getAgentSpec, listSubagentSpecs } from '../runtime/lookup.js';
+import { composePrompt, getTool } from '../runtime/lookup.js';
+import { askMainAgent, chatSubagent, launchSubagent, listActiveSubagents, spawnSubagent } from '../runtime/subagents.js';
 
 // Agent class
 export class Agent {
@@ -372,61 +373,28 @@ export class Agent {
     }
 
     // Spawn a subagent
-    spawnSubagent(type, { prompt = '' } = {}) {
-        // Look up the subagent definition
-        const definition = getAgentSpec(this.runtime, type);
-        if (!definition) {
-            const available = listSubagentSpecs(this.runtime).map(agent => agent.id).join(', ');
-            throw new Error(`Unknown subagent "${type}". Available subagents: ${available}`);
-        }
-
-        // Create the child agent
-        const agent = new Agent({
-            runtime: this.runtime,
-            definition,
-            parent: this,
-            initialPrompt: prompt
-        });
-
-        // Initialize the child session and register it
-        agent.ensureSession();
-        this.subagents.set(agent.id, agent);
-
-        // Emit the spawn event
-        emitRuntimeEvent(this.runtime, 'agentSpawn', {
-            parentAgentId: this.id,
-            parentAgentType: this.definition.id,
-            agentId: agent.id,
-            agentType: agent.definition.id,
-            sessionId: agent.sessionId
-        });
-
-        // Return the child agent
-        return agent;
+    async spawnSubagent(type, { prompt = '' } = {}) {
+        return spawnSubagent(this, type, { prompt });
     }
 
-    // Get a subagent by id
-    getSubagent(agentId) {
-        return this.subagents.get(agentId);
+    // Launch a subagent in the background and return immediately with its metadata
+    async launchSubagent(type, prompt = '') {
+        return launchSubagent(this, type, prompt);
     }
 
-    // List direct child subagents
-    listSubagents() {
-        return [...this.subagents.values()];
+    // Ask the leader agent a question from inside a running subagent and wait for the reply
+    askMainAgent(question) {
+        return askMainAgent(this, question);
     }
 
-    // List all descendant subagents recursively
-    listDescendants() {
-        const descendants = [];
+    // Chat with a tracked subagent by id, either answering a pending question or resuming its session
+    async chatSubagent(subagentId, message) {
+        return chatSubagent(this, subagentId, message);
+    }
 
-        // Recursively collect descendants from subagents
-        for (const agent of this.subagents.values()) {
-            descendants.push(agent);
-            descendants.push(...agent.listDescendants());
-        }
-
-        // Return the list of descendants
-        return descendants;
+    // List all currently active subagents for the current leader session
+    listActiveSubagents() {
+        return listActiveSubagents(this);
     }
 
     // Find an agent by id in this subtree
