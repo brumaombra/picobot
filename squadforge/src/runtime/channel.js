@@ -27,7 +27,7 @@ export const sendRuntimeMessage = (runtime, handler) => {
 };
 
 // Receive an inbound message and resolve any waiting pull requests
-export const receiveInboundMessage = (runtime, message) => {
+const receiveInboundMessage = (runtime, message) => {
     // Validate the message
     if (!message || typeof message !== 'object') {
         throw new Error('Runtime received invalid message.');
@@ -46,7 +46,7 @@ export const receiveInboundMessage = (runtime, message) => {
 };
 
 // Remove a waiter from the list of pending inbound waiters
-export const removeInboundWaiter = (runtime, waiter) => {
+const removeInboundWaiter = (runtime, waiter) => {
     const index = runtime.inboundWaiters.indexOf(waiter);
     if (index >= 0) {
         runtime.inboundWaiters.splice(index, 1);
@@ -54,7 +54,7 @@ export const removeInboundWaiter = (runtime, waiter) => {
 };
 
 // Resolve all pending inbound waiters with null (used when stopping the runtime)
-export const resolvePendingInboundWaiters = runtime => {
+const resolvePendingInboundWaiters = runtime => {
     const waiters = runtime.inboundWaiters.splice(0);
     for (const waiter of waiters) {
         clearTimeout(waiter.timeoutId);
@@ -63,7 +63,7 @@ export const resolvePendingInboundWaiters = runtime => {
 };
 
 // Pull an inbound message, waiting up to the specified timeout if no messages are currently available
-export const pullInboundMessage = (runtime, timeoutMs) => {
+const pullInboundMessage = (runtime, timeoutMs) => {
     // If there are messages in the inbound queue, return the next one immediately
     if (runtime.inboundQueue.length > 0) {
         return Promise.resolve(runtime.inboundQueue.shift());
@@ -89,14 +89,14 @@ export const pullInboundMessage = (runtime, timeoutMs) => {
 };
 
 // Forward the outbound message to the configured channel sender
-export const emitOutboundMessage = async (runtime, message) => {
+const emitOutboundMessage = async (runtime, message) => {
     if (typeof runtime.outboundMessageHandler === 'function') {
         await runtime.outboundMessageHandler(message);
     }
 };
 
 // Process one inbound channel message by routing it through the session runtime and emitting the reply
-export const processRuntimeMessage = async (runtime, message) => {
+const processRuntimeMessage = async (runtime, message) => {
     const sessionId = normalizeSessionId(message?.sessionId);
     const role = message?.role || 'user';
     const content = message?.content || '';
@@ -161,7 +161,7 @@ export const processRuntimeMessage = async (runtime, message) => {
 };
 
 // Continuously pull inbound messages and process them until the runtime is stopped
-export const runRuntimeLoop = async runtime => {
+const runRuntimeLoop = async runtime => {
     while (runtime.running) {
         // Pull the next inbound message
         const message = await pullInboundMessage(runtime, runtime.pollTimeoutMs);

@@ -20,7 +20,7 @@ const normalizeToolOutput = result => {
 };
 
 // Execute a single tool call
-export const executeToolCall = async ({ agent, toolCall }) => {
+const executeToolCall = async ({ agent, toolCall }) => {
     const toolName = toolCall?.function?.name;
     const toolCallId = toolCall?.id;
 

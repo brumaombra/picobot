@@ -29,7 +29,7 @@ const readDefaultPromptTemplate = fileName => {
 };
 
 // Ensure the application prompts directory exists and contains all default prompt files
-export const scaffoldPromptTemplates = ({ promptsDir } = {}) => {
+const scaffoldPromptTemplates = ({ promptsDir } = {}) => {
     // Validate the prompts directory path
     if (!promptsDir) {
         throw new Error('promptsDir is required.');
