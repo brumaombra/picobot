@@ -16,9 +16,14 @@ export const normalizeSessionId = sessionId => {
     return sessionId || DEFAULT_LEADER_SESSION_ID;
 };
 
+// Check whether an agent definition id refers to the leader
+export const isLeaderAgent = agentId => {
+    return agentId === LEADER_SPEC_ID;
+};
+
 // Resolve the framework role for an agent definition id
 export const getAgentRole = agentId => {
-    return agentId === LEADER_SPEC_ID ? 'leader' : 'subagent';
+    return isLeaderAgent(agentId) ? 'leader' : 'subagent';
 };
 
 // Pause execution for the specified number of milliseconds

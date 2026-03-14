@@ -381,7 +381,8 @@ export class Agent {
         }
 
         // Create the child agent
-        const agent = this.runtime.createAgent({
+        const agent = new Agent({
+            runtime: this.runtime,
             definition,
             parent: this,
             initialPrompt: prompt

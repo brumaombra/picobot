@@ -1,4 +1,4 @@
-import { LEADER_SPEC_ID } from '../config.js';
+import { isLeaderAgent } from '../utils/utils.js';
 
 /******************************* Create the system prompts parts *******************************/
 
@@ -10,7 +10,7 @@ const createAgentPromptPart = ({ agent }) => {
 // Create the shared subagents prompt fragment for the leader
 const createSubagentsPromptPart = ({ runtime, promptTemplates }) => {
     // Create a bulleted list of subagents available to the leader
-    const subagentSpecs = [...runtime.agentsSpecs.values()].filter(spec => spec.id !== LEADER_SPEC_ID);
+    const subagentSpecs = [...runtime.agentsSpecs.values()].filter(spec => !isLeaderAgent(spec.id));
     const subagentsList = subagentSpecs.length === 0
         ? 'No specialized agents available.'
         : subagentSpecs.map(spec => `- ${spec.id}: ${spec.description || spec.name}`).join('\n');
@@ -82,7 +82,7 @@ const composeSubagentSystemPrompt = ({ agent, promptTemplates }) => {
 // Compose the final prompt for an agent
 export const composeAgentPrompt = ({ runtime, agent, promptTemplates }) => {
     // Check the agent type
-    if (agent.definition.id === LEADER_SPEC_ID) {
+    if (isLeaderAgent(agent.definition.id)) {
         return composeLeaderSystemPrompt({ runtime, agent, promptTemplates }); // Compose the leader
     } else {
         return composeSubagentSystemPrompt({ agent, promptTemplates }); // Compose the subagent prompt

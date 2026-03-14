@@ -1,26 +1,39 @@
-import { DEFAULT_LEADER_SESSION_ID, DEFAULT_RUNTIME_TIMEOUT_MESSAGE } from '../config.js';
+import { DEFAULT_RUNTIME_TIMEOUT_MESSAGE } from '../config.js';
 import { normalizeSessionId } from '../utils/utils.js';
 import { sendToSession } from './lookup.js';
 
+// Runtime message handling
 export const onRuntimeMessage = (runtime, handler) => {
+    // Validate the handler
     if (typeof handler !== 'function') {
         throw new Error('Runtime inbound registration requires a handler function.');
     }
 
+    // Set the inbound message handler
     runtime.inboundConnector = handler;
     return runtime;
 };
 
+// Emit a message into the runtime
 export const sendRuntimeMessage = (runtime, handler) => {
+    // Validate the handler 
     if (typeof handler !== 'function') {
         throw new Error('Runtime outbound registration requires a handler function.');
     }
 
+    // Set the outbound message handler
     runtime.outboundMessageHandler = handler;
     return runtime;
 };
 
+// Receive an inbound message and resolve any waiting pull requests
 export const receiveInboundMessage = (runtime, message) => {
+    // Validate the message
+    if (!message || typeof message !== 'object') {
+        throw new Error('Runtime received invalid message.');
+    }
+
+    // Try to resolve any pending pull requests for inbound messages
     const waiter = runtime.inboundWaiters.shift();
     if (waiter) {
         clearTimeout(waiter.timeoutId);
@@ -28,9 +41,11 @@ export const receiveInboundMessage = (runtime, message) => {
         return;
     }
 
+    // If no pending pull requests, queue the message for processing in the runtime loop
     runtime.inboundQueue.push(message);
 };
 
+// Remove a waiter from the list of pending inbound waiters
 export const removeInboundWaiter = (runtime, waiter) => {
     const index = runtime.inboundWaiters.indexOf(waiter);
     if (index >= 0) {
@@ -38,6 +53,7 @@ export const removeInboundWaiter = (runtime, waiter) => {
     }
 };
 
+// Resolve all pending inbound waiters with null (used when stopping the runtime)
 export const resolvePendingInboundWaiters = runtime => {
     const waiters = runtime.inboundWaiters.splice(0);
     for (const waiter of waiters) {
@@ -46,41 +62,52 @@ export const resolvePendingInboundWaiters = runtime => {
     }
 };
 
+// Pull an inbound message, waiting up to the specified timeout if no messages are currently available
 export const pullInboundMessage = (runtime, timeoutMs) => {
+    // If there are messages in the inbound queue, return the next one immediately
     if (runtime.inboundQueue.length > 0) {
         return Promise.resolve(runtime.inboundQueue.shift());
     }
 
+    // Otherwise, return a promise that will resolve when a new message is received or the timeout is reached
     return new Promise(resolve => {
+        // Create a waiter object
         const waiter = {
             resolve,
             timeoutId: null
         };
 
+        // Set a timeout to resolve the waiter
         waiter.timeoutId = setTimeout(() => {
             removeInboundWaiter(runtime, waiter);
             resolve(null);
         }, timeoutMs);
 
+        // Add the waiter to the list of pending inbound waiters
         runtime.inboundWaiters.push(waiter);
     });
 };
 
+// Forward the outbound message to the configured channel sender
 export const emitOutboundMessage = async (runtime, message) => {
     if (typeof runtime.outboundMessageHandler === 'function') {
         await runtime.outboundMessageHandler(message);
     }
 };
 
+// Process one inbound channel message by routing it through the session runtime and emitting the reply
 export const processRuntimeMessage = async (runtime, message) => {
     const sessionId = normalizeSessionId(message?.sessionId);
     const role = message?.role || 'user';
     const content = message?.content || '';
 
     try {
+        // Send the inbound content to the appropriate session-backed root agent
         const result = await sendToSession(runtime, content, { sessionId, role });
 
+        // Emit a normal assistant reply when the agent completed successfully
         if (result?.response) {
+            // Create the outbound message with the agent's response
             const outboundMessage = {
                 sessionId,
                 content: result.response,
@@ -89,11 +116,15 @@ export const processRuntimeMessage = async (runtime, message) => {
                 metadata: message?.metadata,
                 timedOut: false
             };
+
+            // Emit the outbound message
             await emitOutboundMessage(runtime, outboundMessage);
             return outboundMessage;
         }
 
+        // Emit the configured timeout message when the agent hit its soft deadline
         if (result?.timedOut) {
+            // Create the outbound timeout message
             const timeoutOutboundMessage = {
                 sessionId,
                 content: runtime.timeoutMessage || DEFAULT_RUNTIME_TIMEOUT_MESSAGE,
@@ -102,62 +133,83 @@ export const processRuntimeMessage = async (runtime, message) => {
                 metadata: message?.metadata,
                 timedOut: true
             };
+
+            // Emit the timeout message
             await emitOutboundMessage(runtime, timeoutOutboundMessage);
             return timeoutOutboundMessage;
         }
 
+        // Return the raw result
         return result;
     } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error);
+
+        // Create the outbound error object
         const errorOutboundMessage = {
             sessionId,
-            content: runtime.formatErrorMessage(error),
+            content: `Sorry, I encountered an error: ${errorMessage}`,
             role: 'assistant',
             replyToId: message?.replyToId,
             metadata: message?.metadata,
-            error: error instanceof Error ? error.message : String(error)
+            error: errorMessage
         };
+
+        // Emit the error message
         await emitOutboundMessage(runtime, errorOutboundMessage);
         return errorOutboundMessage;
     }
 };
 
+// Continuously pull inbound messages and process them until the runtime is stopped
 export const runRuntimeLoop = async runtime => {
     while (runtime.running) {
+        // Pull the next inbound message
         const message = await pullInboundMessage(runtime, runtime.pollTimeoutMs);
         if (!message) {
             continue;
         }
 
+        // Process the message and emit any outbound replies
         await processRuntimeMessage(runtime, message);
     }
 };
 
+// Start the background runtime loop and connect the external inbound channel if one is configured
 export const startRuntime = async runtime => {
+    // If the runtime is already running, do nothing
     if (runtime.running) {
         return runtime;
     }
 
+    // Register the runtime receiver and keep the optional detach hook for shutdown
     if (runtime.inboundConnector) {
         runtime.detachInboundConnector = await runtime.inboundConnector(message => receiveInboundMessage(runtime, message));
     }
 
+    // Start the runtime loop
     runtime.running = true;
     runtime.loopPromise = runRuntimeLoop(runtime);
     return runtime;
 };
 
+// Stop the runtime loop, release pending waits, and disconnect the external inbound channel
 export const stopRuntime = async runtime => {
+    // If the runtime is not running, do nothing
     if (!runtime.running) {
         return;
     }
 
+    // Signal the runtime loop to stop and wait for it to finish
     runtime.running = false;
     resolvePendingInboundWaiters(runtime);
     await runtime.loopPromise;
     runtime.loopPromise = null;
 
+    // Detach the inbound channel when a detach function is provided
     if (typeof runtime.detachInboundConnector === 'function') {
         await runtime.detachInboundConnector();
     }
+
+    // Clear the inbound connector and detach hook
     runtime.detachInboundConnector = null;
 };
