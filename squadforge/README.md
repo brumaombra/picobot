@@ -119,6 +119,41 @@ Leader agents also get Pico-style subagent primitives out of the box:
 
 Subagents automatically receive `ask_main_agent` so they can pause and request clarification from the leader when needed.
 
+## Channel Contract
+
+Squadforge keeps channel integration outside the core runtime, but it now exposes a minimal shared message contract so adapters like Pico can plug in cleanly.
+
+Inbound messages accepted by `onMessage(...)`:
+
+- `sessionId` or `sessionKey`: required session identifier. Both are accepted and normalized internally.
+- `role`: optional message role, defaults to `user`.
+- `content`: optional text content, defaults to an empty string.
+- `replyToId`: optional transport-specific reply target.
+- `metadata`: optional adapter-defined metadata object.
+- `file`: optional transport-defined file payload for inbound adapters that want to pass media context through.
+
+Outbound messages emitted through `sendMessage(...)` and direct runtime sends:
+
+- `sessionId`: normalized session identifier.
+- `sessionKey`: alias of `sessionId` for Pico-style adapters.
+- `role`: usually `assistant`.
+- `content`: text content.
+- `replyToId`: optional reply target.
+- `metadata`: passthrough adapter metadata.
+- `timedOut`: optional timeout flag.
+- `error`: optional error string.
+- `file`: optional outbound file payload.
+
+Outbound file payload shape:
+
+- `path`: absolute or workspace-resolved file path.
+- `caption`: optional caption text.
+- `name`: optional display name.
+- `mimeType`: optional MIME type.
+- `metadata`: optional adapter-specific file metadata.
+
+The framework now exposes `send_file` as a generic predefined leader tool and exports the normalization helpers from the package entrypoint so adapters can reuse the same envelope shape.
+
 ## Runtime Policies
 
 Squadforge now applies a soft run deadline model by default:

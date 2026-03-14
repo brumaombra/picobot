@@ -1,4 +1,5 @@
 import { parseJson, stringifyJson } from '../utils/utils.js';
+import { emitRuntimeOutboundMessage } from '../runtime/channel.js';
 import { emitRuntimeEvent } from '../runtime/events.js';
 import { findAgentById, findAgentBySessionId, getLeaderAgent } from '../runtime/lookup.js';
 
@@ -47,11 +48,13 @@ const executeToolCall = async ({ agent, toolCall }) => {
             parentAgent: agent.parent,
             leaderAgent: getLeaderAgent(agent.runtime, agent.sessionId),
             sessionId: agent.sessionId,
+            sessionKey: agent.sessionId,
             subagentId: agent.parent ? agent.id : null,
             launchSubagent: (type, prompt) => agent.launchSubagent(type, prompt),
             chatSubagent: (subagentId, message) => agent.chatSubagent(subagentId, message),
             listActiveSubagents: () => agent.listActiveSubagents(),
             askMainAgent: question => agent.askMainAgent(question),
+            emitOutboundMessage: message => emitRuntimeOutboundMessage(agent.runtime, message),
             findAgentById: agentId => findAgentById(agent.runtime, agentId),
             findAgentBySessionId: sessionId => findAgentBySessionId(agent.runtime, sessionId)
         });

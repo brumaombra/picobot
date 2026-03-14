@@ -1,5 +1,6 @@
 import { askMainAgentTool } from './predefined/ask_main_agent.js';
 import { readFileTool } from './predefined/read_file.js';
+import { sendFileTool } from './predefined/send_file.js';
 import { subagentChatTool } from './predefined/subagent_chat.js';
 import { subagentListTool } from './predefined/subagent_list.js';
 import { subagentStartTool } from './predefined/subagent_start.js';
@@ -8,7 +9,7 @@ import { getAgentRole } from '../utils/utils.js';
 
 // Predefined tools grouped by agent role
 const PREDEFINED_TOOLS_BY_ROLE = {
-    leader: [readFileTool, subagentStartTool, subagentChatTool, subagentListTool],
+    leader: [readFileTool, sendFileTool, subagentStartTool, subagentChatTool, subagentListTool],
     subagent: [askMainAgentTool]
 };
 

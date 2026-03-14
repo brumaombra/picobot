@@ -1,5 +1,5 @@
 import { DEFAULT_RUNTIME_TIMEOUT_MESSAGE } from '../config.js';
-import { normalizeSessionId } from '../utils/utils.js';
+import { normalizeRuntimeMessage } from './messages.js';
 import { sendToSession } from './lookup.js';
 
 // Runtime message handling
@@ -28,17 +28,20 @@ export const sendRuntimeMessage = (runtime, handler) => {
 
 // Queue a message directly into the runtime without going through an external channel connector
 export const queueRuntimeMessage = (runtime, message) => {
-    receiveInboundMessage(runtime, message);
-    return message;
+    const normalizedMessage = normalizeRuntimeMessage(message);
+    receiveInboundMessage(runtime, normalizedMessage);
+    return normalizedMessage;
+};
+
+// Emit a normalized outbound message directly through the configured channel sender
+export const emitRuntimeOutboundMessage = async (runtime, message) => {
+    const normalizedMessage = normalizeRuntimeMessage(message);
+    await emitOutboundMessage(runtime, normalizedMessage);
+    return normalizedMessage;
 };
 
 // Receive an inbound message and resolve any waiting pull requests
 const receiveInboundMessage = (runtime, message) => {
-    // Validate the message
-    if (!message || typeof message !== 'object') {
-        throw new Error('Runtime received invalid message.');
-    }
-
     // Try to resolve any pending pull requests for inbound messages
     const waiter = runtime.inboundWaiters.shift();
     if (waiter) {
@@ -103,9 +106,10 @@ const emitOutboundMessage = async (runtime, message) => {
 
 // Process one inbound channel message by routing it through the session runtime and emitting the reply
 const processRuntimeMessage = async (runtime, message) => {
-    const sessionId = normalizeSessionId(message?.sessionId);
-    const role = message?.role || 'user';
-    const content = message?.content || '';
+    const normalizedMessage = normalizeRuntimeMessage(message);
+    const sessionId = normalizedMessage.sessionId;
+    const role = normalizedMessage.role;
+    const content = normalizedMessage.content;
 
     try {
         // Send the inbound content to the appropriate session-backed root agent
@@ -113,35 +117,33 @@ const processRuntimeMessage = async (runtime, message) => {
 
         // Emit a normal assistant reply when the agent completed successfully
         if (result?.response) {
-            // Create the outbound message with the agent's response
-            const outboundMessage = {
+            // Create and emit the outbound message with the agent's response
+            const outboundMessage = await emitRuntimeOutboundMessage(runtime, {
                 sessionId,
                 content: result.response,
                 role: 'assistant',
-                replyToId: message?.replyToId,
-                metadata: message?.metadata,
+                replyToId: normalizedMessage.replyToId,
+                metadata: normalizedMessage.metadata,
                 timedOut: false
-            };
+            });
 
-            // Emit the outbound message
-            await emitOutboundMessage(runtime, outboundMessage);
+            // Return the outbound message
             return outboundMessage;
         }
 
         // Emit the configured timeout message when the agent hit its soft deadline
         if (result?.timedOut) {
-            // Create the outbound timeout message
-            const timeoutOutboundMessage = {
+            // Create and emit the outbound timeout message
+            const timeoutOutboundMessage = await emitRuntimeOutboundMessage(runtime, {
                 sessionId,
                 content: runtime.timeoutMessage || DEFAULT_RUNTIME_TIMEOUT_MESSAGE,
                 role: 'assistant',
-                replyToId: message?.replyToId,
-                metadata: message?.metadata,
+                replyToId: normalizedMessage.replyToId,
+                metadata: normalizedMessage.metadata,
                 timedOut: true
-            };
+            });
 
-            // Emit the timeout message
-            await emitOutboundMessage(runtime, timeoutOutboundMessage);
+            // Return the outbound timeout message
             return timeoutOutboundMessage;
         }
 
@@ -150,18 +152,17 @@ const processRuntimeMessage = async (runtime, message) => {
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
 
-        // Create the outbound error object
-        const errorOutboundMessage = {
+        // Create and emit the outbound error object
+        const errorOutboundMessage = await emitRuntimeOutboundMessage(runtime, {
             sessionId,
             content: `Sorry, I encountered an error: ${errorMessage}`,
             role: 'assistant',
-            replyToId: message?.replyToId,
-            metadata: message?.metadata,
+            replyToId: normalizedMessage.replyToId,
+            metadata: normalizedMessage.metadata,
             error: errorMessage
-        };
+        });
 
-        // Emit the error message
-        await emitOutboundMessage(runtime, errorOutboundMessage);
+        // Return the outbound error message
         return errorOutboundMessage;
     }
 };
