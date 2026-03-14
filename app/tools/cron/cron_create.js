@@ -1,8 +1,5 @@
-import cron from 'node-cron';
-import { logger } from '../../utils/common/logger.js';
-import { crons, executeCron } from '../../crons/manager.js';
-import { saveCronToFile } from '../../crons/persistent.js';
-import { generateUniqueId, handleToolError, handleToolResponse, parseSessionKey } from '../../utils/common/utils.js';
+import { createCron } from '../../crons/manager.js';
+import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 
 // Create cron tool
 export const cronCreateTool = {
@@ -38,43 +35,19 @@ export const cronCreateTool = {
         try {
             // Get arguments and context
             const { name, schedule, action_type, message } = args;
-            const { channel, chatId } = parseSessionKey(context?.sessionKey || '');
 
-            // Validate cron expression
-            if (!cron.validate(schedule)) {
-                return handleToolError({ message: `Invalid cron schedule: ${schedule}. Use standard cron syntax (e.g., "0 0 * * *" for daily at midnight).` });
-            }
-
-            // Generate unique ID
-            const cronId = generateUniqueId('cron');
-
-            // Create cron object
-            const cronEntry = {
-                id: cronId,
+            // Create the cron
+            const createdCron = createCron({
                 name,
                 schedule,
                 action: action_type,
-                chatId,
-                channel,
                 message,
-                task: null
-            };
-
-            // Create the scheduled task
-            cronEntry.task = cron.schedule(schedule, async () => {
-                await executeCron(cronId);
+                sessionId: context?.sessionKey
             });
-
-            // Store in memory
-            crons.set(cronId, cronEntry);
-
-            // Save to disk
-            saveCronToFile(cronId, cronEntry);
-            logger.info(`Created cron: ${name} (${schedule})`);
 
             // Return success response
             return handleToolResponse({
-                cronId,
+                cronId: createdCron.id,
                 message: `Cron "${name}" created successfully with schedule: ${schedule}`
             });
         } catch (error) {

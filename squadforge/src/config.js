@@ -11,6 +11,7 @@ export const DEFAULT_PROMPTS_DIR_NAME = 'prompts';
 export const DEFAULT_SKILLS_DIR_NAME = 'skills';
 export const DEFAULT_TOOLS_DIR_NAME = 'tools';
 export const DEFAULT_SESSIONS_DIR_NAME = 'sessions';
+export const DEFAULT_CRONS_DIR_NAME = 'crons';
 export const MARKDOWN_EXTENSION = '.md';
 export const SUPPORTED_TOOL_EXTENSIONS = ['.js', '.mjs'];
 export const TOOLS_FILE_NAME = 'TOOLS.md';

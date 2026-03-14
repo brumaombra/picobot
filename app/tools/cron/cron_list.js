@@ -1,4 +1,4 @@
-import { crons, serializeCron } from '../../crons/manager.js';
+import { listCrons } from '../../crons/manager.js';
 import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 
 // List all crons tool
@@ -16,7 +16,7 @@ export const cronListTool = {
     execute: async () => {
         try {
             // List all crons
-            const cronsList = [...crons.values()].map(serializeCron);
+            const cronsList = listCrons();
             if (cronsList.length === 0) {
                 return handleToolResponse('No scheduled crons found.');
             }

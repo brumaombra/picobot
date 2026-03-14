@@ -6,7 +6,7 @@ import { initTelegram, startTelegram, stopTelegram } from './channel/telegram-sq
 import { initLogger, logger } from './utils/common/logger.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google/google-client.js';
-import { SESSIONS_DIR } from './config.js';
+import { CRONS_DIR, SESSIONS_DIR } from './config.js';
 import { initializeCronManager, setCronAgent, stopCronManager } from './crons/manager.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -53,6 +53,7 @@ export const startBot = async () => {
         skillsDir: APP_SKILLS_DIR,
         toolsDir: APP_TOOLS_DIR,
         sessionsDir: SESSIONS_DIR,
+        cronsDir: CRONS_DIR,
         llm,
         model: config.agent?.model
     });

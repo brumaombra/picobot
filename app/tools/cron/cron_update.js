@@ -1,8 +1,5 @@
-import cron from 'node-cron';
-import { logger } from '../../utils/common/logger.js';
-import { crons, executeCron } from '../../crons/manager.js';
-import { saveCronToFile } from '../../crons/persistent.js';
-import { handleToolError, handleToolResponse, parseSessionKey } from '../../utils/common/utils.js';
+import { updateCron } from '../../crons/manager.js';
+import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 
 // Update existing cron tool
 export const cronUpdateTool = {
@@ -40,45 +37,21 @@ export const cronUpdateTool = {
     // Main execution function
     execute: async (args, context) => {
         try {
-            // Get cron details
-            const cronEntry = crons.get(args.cronId);
-            if (!cronEntry) {
-                return handleToolError({ message: `Cron not found: ${args.cronId}` });
-            }
-
             // Build the updates object with only provided fields
             const updates = {};
             if (args.name !== undefined) updates.name = args.name;
             if (args.schedule !== undefined) updates.schedule = args.schedule;
             if (args.action_type !== undefined) updates.action = args.action_type;
             if (args.message !== undefined) {
-                const { channel, chatId } = parseSessionKey(context?.sessionKey || '');
-                updates.chatId = chatId;
-                updates.channel = channel;
                 updates.message = args.message;
+                updates.sessionId = context?.sessionKey;
             }
 
-            // Validate new schedule if provided
-            if (updates.schedule && !cron.validate(updates.schedule)) {
-                return handleToolError({ message: `Invalid cron schedule: ${updates.schedule}` });
-            }
-
-            // Apply updates
-            Object.assign(cronEntry, updates);
-
-            // Always recreate task to ensure schedule is current
-            cronEntry.task.stop();
-            cronEntry.task.destroy();
-            cronEntry.task = cron.schedule(cronEntry.schedule, async () => {
-                await executeCron(args.cronId);
-            });
-
-            // Save to disk
-            saveCronToFile(args.cronId, cronEntry);
-            logger.info(`Updated cron: ${cronEntry.name}`);
+            // Update the cron
+            const updatedCron = updateCron(args.cronId, updates);
 
             // Return success response
-            return handleToolResponse(`Cron "${cronEntry.name}" updated successfully`);
+            return handleToolResponse(`Cron "${updatedCron.name}" updated successfully`);
         } catch (error) {
             return handleToolError({ error, message: 'Cron update failed' });
         }

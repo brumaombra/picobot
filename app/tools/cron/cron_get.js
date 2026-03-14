@@ -1,4 +1,4 @@
-import { crons, serializeCron } from '../../crons/manager.js';
+import { getCron, serializeCron } from '../../crons/manager.js';
 import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
 
 // Get specific cron details tool
@@ -21,7 +21,7 @@ export const cronGetTool = {
     execute: async args => {
         try {
             // Get the cron details
-            const cronEntry = crons.get(args.cronId);
+            const cronEntry = getCron(args.cronId);
             if (!cronEntry) {
                 return handleToolError({ message: `Cron not found: ${args.cronId}` });
             }

@@ -1,7 +1,7 @@
 import { join } from 'path';
 import { AgentSpec } from '../core/agent-spec.js';
 import { Agent } from '../core/agent.js';
-import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_RUNTIME_POLL_TIMEOUT_MS, DEFAULT_RUNTIME_TIMEOUT_MESSAGE, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_LLM_CHAT_MAX_RETRIES, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_MAX_RUNTIME_MS, DEFAULT_SESSION_TTL_MS, DEFAULT_WRAP_UP_THRESHOLD_MS } from '../config.js';
+import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_CRONS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_RUNTIME_POLL_TIMEOUT_MS, DEFAULT_RUNTIME_TIMEOUT_MESSAGE, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_LLM_CHAT_MAX_RETRIES, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_MAX_RUNTIME_MS, DEFAULT_SESSION_TTL_MS, DEFAULT_WRAP_UP_THRESHOLD_MS } from '../config.js';
 import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
 import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
@@ -24,6 +24,7 @@ const beforeLoadChecks = options => {
         skillsDir,
         toolsDir,
         sessionsDir,
+        cronsDir,
         model,
         maxRuntimeMs,
         wrapUpThresholdMs,
@@ -41,7 +42,8 @@ const beforeLoadChecks = options => {
         ['promptsDir', promptsDir],
         ['skillsDir', skillsDir],
         ['toolsDir', toolsDir],
-        ['sessionsDir', sessionsDir]
+        ['sessionsDir', sessionsDir],
+        ['cronsDir', cronsDir]
     ];
 
     // Validate any provided path-like options
@@ -104,6 +106,7 @@ const createRuntime = async (options = {}) => {
         skillsDir = null,
         toolsDir = null,
         sessionsDir = null,
+        cronsDir = null,
         llm = null,
         model = null,
         maxRuntimeMs = DEFAULT_MAX_RUNTIME_MS,
@@ -122,6 +125,7 @@ const createRuntime = async (options = {}) => {
     const resolvedSkillsDir = skillsDir || join(resolvedRootDir, DEFAULT_SKILLS_DIR_NAME);
     const resolvedToolsDir = toolsDir || join(resolvedRootDir, DEFAULT_TOOLS_DIR_NAME);
     const resolvedSessionsDir = sessionsDir || join(resolvedRootDir, DEFAULT_SESSIONS_DIR_NAME);
+    const resolvedCronsDir = cronsDir || join(resolvedRootDir, DEFAULT_CRONS_DIR_NAME);
 
     // Load the components of the runtime from the filesystem
     const promptTemplates = loadPromptTemplatesFromDirectory({ promptsDir: resolvedPromptsDir });
@@ -146,6 +150,7 @@ const createRuntime = async (options = {}) => {
         skillsDir: resolvedSkillsDir,
         toolsDir: resolvedToolsDir,
         sessionsDir: resolvedSessionsDir,
+        cronsDir: resolvedCronsDir,
         llm,
         model,
         maxRuntimeMs,
