@@ -1,5 +1,5 @@
-import { deleteCron } from '../../crons/manager.js';
-import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
+import { deleteCron } from '../../../src/crons/manager.js';
+import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Delete cron tool
 export const cronDeleteTool = {

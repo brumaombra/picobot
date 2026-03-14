@@ -1,5 +1,5 @@
 import * as os from 'os';
-import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
+import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // CPU information tool
 export const systemInfoCpuTool = {

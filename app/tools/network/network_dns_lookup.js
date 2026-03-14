@@ -1,4 +1,4 @@
-import { executeCommand, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
+import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Network DNS lookup tool
 export const networkDnsLookupTool = {

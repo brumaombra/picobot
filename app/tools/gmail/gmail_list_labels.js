@@ -1,6 +1,6 @@
-import { logger } from '../../utils/common/logger.js';
-import { getGmailClient } from '../../utils/google/google-client.js';
-import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
+import { logger } from '../../../src/utils/common/logger.js';
+import { getGmailClient } from '../../../src/utils/google/google-client.js';
+import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Gmail labels tool
 export const gmailLabelsTool = {

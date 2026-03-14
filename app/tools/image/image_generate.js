@@ -1,9 +1,9 @@
 import { writeFile, mkdir } from 'fs/promises';
 import { dirname, normalize, resolve } from 'path';
-import { WORKSPACE_DIR } from '../../config.js';
-import { logger } from '../../utils/common/logger.js';
-import { generateImageWithGoogleAi } from '../../utils/google/google-ai.js';
-import { getFileExtensionFromMimeType, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
+import { WORKSPACE_DIR } from '../../../src/config.js';
+import { logger } from '../../../src/utils/common/logger.js';
+import { generateImageWithGoogleAi } from '../../../src/utils/google/google-ai.js';
+import { getFileExtensionFromMimeType, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Generate image tool
 export const imageGenerateTool = {

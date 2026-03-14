@@ -1,5 +1,5 @@
 import { existsSync } from 'fs';
-import { executeCommand, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
+import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Printer file print tool
 export const printerPrintFileTool = {

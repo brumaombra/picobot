@@ -1,8 +1,8 @@
 import { readFile } from 'fs/promises';
 import { basename, isAbsolute } from 'path';
-import { logger } from '../../utils/common/logger.js';
-import { getGmailClient } from '../../utils/google/google-client.js';
-import { chunkBase64, decodeHtmlEntities, getMimeTypeFromFileName, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
+import { logger } from '../../../src/utils/common/logger.js';
+import { getGmailClient } from '../../../src/utils/google/google-client.js';
+import { chunkBase64, decodeHtmlEntities, getMimeTypeFromFileName, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Gmail send tool
 export const gmailSendTool = {

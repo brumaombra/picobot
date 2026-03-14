@@ -1,5 +1,5 @@
-import { updateCron } from '../../crons/manager.js';
-import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
+import { updateCron } from '../../../src/crons/manager.js';
+import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Update existing cron tool
 export const cronUpdateTool = {

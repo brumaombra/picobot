@@ -1,5 +1,5 @@
-import { handleToolError, handleToolResponse } from '../../utils/common/utils.js';
-import { analyzeVideoWithGoogleAi } from '../../utils/google/google-ai.js';
+import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
+import { analyzeVideoWithGoogleAi } from '../../../src/utils/google/google-ai.js';
 
 // Camera video analysis tool
 export const cameraAnalyzeVideoTool = {

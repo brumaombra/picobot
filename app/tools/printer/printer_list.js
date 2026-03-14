@@ -1,4 +1,4 @@
-import { executeCommand, handleToolError, handleToolResponse } from '../../utils/common/utils.js';
+import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Printer discovery/list tool
 export const printerListTool = {
