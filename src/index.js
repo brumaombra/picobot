@@ -1,21 +1,10 @@
 import 'dotenv/config';
-import { dirname, join } from 'path';
-import { fileURLToPath } from 'url';
 import { OpenRouterLlm, forge } from '../squadforge/src/index.js';
 import { initTelegram, startTelegram, stopTelegram } from './channel/telegram-squadforge.js';
 import { initLogger, logger } from './utils/common/logger.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google/google-client.js';
-import { CRONS_DIR, SESSIONS_DIR } from './config.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
-const REPOSITORY_ROOT_DIR = join(__dirname, '..');
-const APP_ROOT_DIR = join(REPOSITORY_ROOT_DIR, 'app');
-const APP_AGENTS_DIR = join(APP_ROOT_DIR, 'agents');
-const APP_PROMPTS_DIR = join(APP_ROOT_DIR, 'prompts');
-const APP_SKILLS_DIR = join(APP_ROOT_DIR, 'skills');
-const APP_TOOLS_DIR = join(APP_ROOT_DIR, 'tools');
+import { APP_ROOT_DIR } from './config.js';
 
 let agent = null; // Active agent instance (accessible for commands like /model)
 let stopping = false; // Flag to prevent multiple stop attempts
@@ -46,13 +35,8 @@ export const startBot = async () => {
 
     // Create Squadforge-backed leader agent
     agent = await forge({
-        rootDir: config.workspace,
-        agentsDir: APP_AGENTS_DIR,
-        promptsDir: APP_PROMPTS_DIR,
-        skillsDir: APP_SKILLS_DIR,
-        toolsDir: APP_TOOLS_DIR,
-        sessionsDir: SESSIONS_DIR,
-        cronsDir: CRONS_DIR,
+        rootDir: APP_ROOT_DIR,
+        workspaceDir: config.workspace,
         llm,
         model: config.agent?.model
     });

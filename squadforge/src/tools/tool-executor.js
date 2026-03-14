@@ -49,7 +49,7 @@ const executeToolCall = async ({ agent, toolCall }) => {
             leaderAgent: getLeaderAgent(agent.runtime, agent.sessionId),
             sessionId: agent.sessionId,
             sessionKey: agent.sessionId,
-            workingDir: agent.runtime.rootDir || process.cwd(),
+            workingDir: agent.runtime.workspaceDir || agent.runtime.rootDir || process.cwd(),
             subagentId: agent.parent ? agent.id : null,
             launchSubagent: (type, prompt) => agent.launchSubagent(type, prompt),
             chatSubagent: (subagentId, message) => agent.chatSubagent(subagentId, message),

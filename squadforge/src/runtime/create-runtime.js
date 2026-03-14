@@ -22,6 +22,7 @@ const beforeLoadChecks = options => {
     // Destructure the options for validation
     const {
         rootDir,
+        workspaceDir,
         agentsDir,
         promptsDir,
         skillsDir,
@@ -41,6 +42,7 @@ const beforeLoadChecks = options => {
     // Validate the paths
     const pathOptions = [
         ['rootDir', rootDir],
+        ['workspaceDir', workspaceDir],
         ['agentsDir', agentsDir],
         ['promptsDir', promptsDir],
         ['skillsDir', skillsDir],
@@ -143,6 +145,7 @@ const createRuntime = async (options = {}) => {
     // Destructure and resolve the configuration options with defaults
     const {
         rootDir,
+        workspaceDir = null,
         agentsDir = null,
         promptsDir = null,
         skillsDir = null,
@@ -162,6 +165,7 @@ const createRuntime = async (options = {}) => {
 
     // Resolve the directory paths
     const resolvedRootDir = rootDir || process.cwd();
+    const resolvedWorkspaceDir = workspaceDir || resolvedRootDir;
     const resolvedAgentsDir = agentsDir || join(resolvedRootDir, DEFAULT_AGENTS_DIR_NAME);
     const resolvedPromptsDir = promptsDir || join(resolvedRootDir, DEFAULT_PROMPTS_DIR_NAME);
     const resolvedSkillsDir = skillsDir || join(resolvedRootDir, DEFAULT_SKILLS_DIR_NAME);
@@ -187,6 +191,7 @@ const createRuntime = async (options = {}) => {
         promptTemplates,
         sessionStore,
         rootDir: resolvedRootDir,
+        workspaceDir: resolvedWorkspaceDir,
         agentsDir: resolvedAgentsDir,
         promptsDir: resolvedPromptsDir,
         skillsDir: resolvedSkillsDir,

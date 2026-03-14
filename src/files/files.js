@@ -1,26 +1,28 @@
 import { existsSync, mkdirSync, writeFileSync, readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
-import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, SESSIONS_DIR, CRONS_DIR, LOGS_DIR } from '../config.js';
+import { CONFIG_PATH, CONFIG_DIR, WORKSPACE_DIR, LOGS_DIR } from '../config.js';
 import { success, warning, error, newline } from '../utils/common/print.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Configuration files and directories to check and create
-const CONFIG_ITEMS = [
+// Bootstrap-level files and directories required before config can be loaded.
+const REQUIRED_CONFIG_ITEMS = [
     { path: CONFIG_DIR, type: 'directory', name: 'Config directory' },
-    { path: WORKSPACE_DIR, type: 'directory', name: 'Workspace directory' },
-    { path: SESSIONS_DIR, type: 'directory', name: 'Sessions directory' },
-    { path: CRONS_DIR, type: 'directory', name: 'Crons directory' },
-    { path: LOGS_DIR, type: 'directory', name: 'Logs directory' },
     { path: CONFIG_PATH, type: 'file', name: 'Config file', source: join(__dirname, 'examples/config.json') }
+];
+
+// Default runtime directories created during onboarding for convenience.
+const DEFAULT_RUNTIME_ITEMS = [
+    { path: WORKSPACE_DIR, type: 'directory', name: 'Default workspace directory' },
+    { path: LOGS_DIR, type: 'directory', name: 'Logs directory' }
 ];
 
 // Check if all required config files and directories exist
 export const checkIfConfigFilesExist = () => {
     // Check each config item and log results
-    const missing = CONFIG_ITEMS.filter(item => {
+    const missing = REQUIRED_CONFIG_ITEMS.filter(item => {
         const exists = existsSync(item.path);
         exists ? success(`${item.name} exists (${item.path})`) : error(`${item.name} does not exist (${item.path})`);
         return !exists;
@@ -39,7 +41,7 @@ export const checkIfConfigFilesExist = () => {
 
 // Create missing config files and directories with default content
 export const createConfigFiles = () => {
-    CONFIG_ITEMS.forEach(item => {
+    [...REQUIRED_CONFIG_ITEMS, ...DEFAULT_RUNTIME_ITEMS].forEach(item => {
         // Check if item already exists
         const exists = existsSync(item.path);
 

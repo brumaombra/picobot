@@ -11,7 +11,7 @@ import { registerModelCommand } from './commands/model.js';
 import { registerNewCommand } from './commands/new.js';
 import { stopTyping, startTyping } from './helpers/typing.js';
 import { authMiddleware } from './helpers/auth.js';
-import { TELEGRAM_MAX_MESSAGE_LENGTH, WORKSPACE_DIR } from '../config.js';
+import { TELEGRAM_MAX_MESSAGE_LENGTH } from '../config.js';
 
 let bot = null;
 let running = false;
@@ -31,7 +31,7 @@ const downloadTelegramFile = async ({ fileId, fileName, mimeType }) => {
     }
 
     const bytes = Buffer.from(await response.arrayBuffer());
-    const uploadDir = join(WORKSPACE_DIR, 'uploads');
+    const uploadDir = join(getConfigValue('workspace'), 'uploads');
     await mkdir(uploadDir, { recursive: true });
 
     const safeName = sanitizeFileName(fileName || basename(fileLink.pathname) || fileId);

@@ -1,5 +1,6 @@
+import { mkdirSync } from 'fs';
 import winston from 'winston';
-import { DEFAULT_LOG_LEVEL, LOG_TIMESTAMP_FORMAT, LOG_FILENAME, LOG_MAX_SIZE, ERROR_LOG_FILENAME, ERROR_LOG_MAX_SIZE } from '../../config.js';
+import { DEFAULT_LOG_LEVEL, LOG_TIMESTAMP_FORMAT, LOG_FILENAME, LOG_MAX_SIZE, ERROR_LOG_FILENAME, ERROR_LOG_MAX_SIZE, LOGS_DIR } from '../../config.js';
 
 // Destructure format components
 const { combine, timestamp, printf, colorize } = winston.format;
@@ -17,6 +18,9 @@ let loggerInstance = null;
 export const initLogger = () => {
     // Use default log level
     const level = DEFAULT_LOG_LEVEL;
+
+    // Ensure the log directory exists before Winston opens file transports.
+    mkdirSync(LOGS_DIR, { recursive: true });
 
     // Create the logger instance
     loggerInstance = winston.createLogger({

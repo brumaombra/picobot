@@ -1,5 +1,11 @@
 import { homedir } from 'os';
-import { join } from 'path';
+import { dirname, join } from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const PROJECT_ROOT_DIR = join(__dirname, '..');
+export const APP_ROOT_DIR = join(PROJECT_ROOT_DIR, 'app');
 
 /**************** Application *****************/
 export const APP_NAME = 'picobot';
@@ -10,12 +16,9 @@ export const APP_DESCRIPTION = 'Ultra-lightweight AI agent with Telegram and Ope
 export const CONFIG_DIR = join(homedir(), '.picobot');
 export const CONFIG_PATH = join(CONFIG_DIR, 'config.json');
 export const WORKSPACE_DIR = join(CONFIG_DIR, 'workspace');
-export const PROMPTS_DIR = join(CONFIG_DIR, 'prompts');
-export const AGENTS_DIR = join(CONFIG_DIR, 'agents');
-export const SKILLS_DIR = join(CONFIG_DIR, 'skills');
-export const SESSIONS_DIR = join(CONFIG_DIR, 'sessions');
-export const CRONS_DIR = join(CONFIG_DIR, 'crons');
-export const LOGS_DIR = join(CONFIG_DIR, 'logs');
+export const SESSIONS_DIR = join(APP_ROOT_DIR, 'sessions');
+export const CRONS_DIR = join(APP_ROOT_DIR, 'crons');
+export const LOGS_DIR = join(PROJECT_ROOT_DIR, 'logs');
 export const DEFAULT_WORKSPACE_PATH = '~/.picobot/workspace';
 
 /**************** Agent *****************/

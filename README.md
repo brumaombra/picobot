@@ -54,7 +54,7 @@ The main agent only has one real tool: **`subagent`**. It reads your message, pi
 
 ## 🧬 Prompt Architecture
 
-Picobot's behavior is fully driven by markdown prompt files that live in `~/.picobot/prompts/`. Here's how they compose:
+Picobot's behavior is fully driven by markdown files committed in the project itself. Here's how they compose:
 
 ### Main Agent Prompt
 
@@ -83,7 +83,7 @@ TOOLS.md          →  Tool usage guidelines + agent-specific tools list
 ```
 
 - **`SUBAGENT.md`** — Shared instructions for all subagents (focus on task, report results, ask for clarification only when necessary).
-- **`<agent>.md`** — Lives in `~/.picobot/agents/`. Each file defines one subagent via YAML frontmatter (`name`, `description`, `allowed_tools`) and markdown body (detailed instructions).
+- **`<agent>.md`** — Lives in `app/agents/`. Each file defines one subagent via YAML frontmatter (`name`, `description`, `allowed_tools`) and markdown body (detailed instructions).
 - **`TOOLS.md`** — Same template as the main agent, but populated with only the tools that specific subagent is allowed to use.
 
 ### Skills
@@ -93,7 +93,7 @@ Skills are reusable, pre-defined workflows that guide the main agent through com
 Skills follow the same structure as Anthropic skills — one folder per skill, with a `SKILL.md` file inside:
 
 ```
-~/.picobot/skills/
+app/skills/
   research-report/
     SKILL.md   →  Frontmatter (name, description) + step-by-step workflow
   my-custom-skill/
@@ -145,7 +145,12 @@ npm run nuke       # 💥 Reset everything
 
 ## ⚙️ Configuration
 
-Everything lives in `~/.picobot/config.json`:
+Picobot keeps only these user-level files under `~/.picobot/`:
+
+- `config.json`
+- `workspace/`
+
+The main configuration file lives in `~/.picobot/config.json`:
 
 ```json
 {
@@ -175,6 +180,16 @@ Everything lives in `~/.picobot/config.json`:
 ```
 
 > 🔐 **Security:** `allowedUsers` is required and must include at least one Telegram user ID or `@username`.
+
+### Runtime Storage
+
+Runtime-managed data now lives in the Pico project itself:
+
+- `app/sessions/` — persisted chat sessions managed by Squadforge
+- `app/crons/` — scheduled task definitions managed by Squadforge
+- `logs/` — application logs
+
+Agent definitions, prompts, skills, and app tools are also project-local under `app/`.
 
 ### 🔒 Secret Overrides (Recommended)
 

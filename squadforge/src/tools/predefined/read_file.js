@@ -26,7 +26,7 @@ export const readFileTool = {
 
     // Main execution function
     execute: async ({ path, line_start, line_end }, { runtime }) => {
-        const workspaceRoot = runtime.rootDir || process.cwd();
+        const workspaceRoot = runtime.workspaceDir || runtime.rootDir || process.cwd();
         const normalizedWorkspaceRoot = normalize(resolve(workspaceRoot));
         const fullPath = normalize(isAbsolute(path) ? path : resolve(normalizedWorkspaceRoot, path));
         const relativePath = relative(normalizedWorkspaceRoot, fullPath);

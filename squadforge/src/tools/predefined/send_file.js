@@ -22,7 +22,7 @@ export const sendFileTool = {
 
     // Main execution function
     execute: async ({ filePath, caption }, { runtime, sessionId, emitOutboundMessage }) => {
-        const workspaceRoot = runtime.rootDir || process.cwd();
+        const workspaceRoot = runtime.workspaceDir || runtime.rootDir || process.cwd();
         const normalizedWorkspaceRoot = normalize(resolve(workspaceRoot));
         const fullPath = normalize(isAbsolute(filePath) ? filePath : resolve(normalizedWorkspaceRoot, filePath));
         const relativePath = relative(normalizedWorkspaceRoot, fullPath);

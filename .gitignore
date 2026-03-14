@@ -31,3 +31,7 @@ pids/
 
 # Coverage
 coverage/
+
+# Pico files
+app/sessions
+app/logs

@@ -3,16 +3,16 @@ import { spawn } from 'child_process';
 import { mkdirSync, existsSync, createReadStream } from 'fs';
 import { join, normalize } from 'path';
 import { networkInterfaces } from 'os';
-import { WORKSPACE_DIR } from '../../config.js';
 import { getConfigValue } from '../../config/config.js';
 import { rtspUrl } from 'reolink-nvr-api/stream';
 import { logger } from '../common/logger.js';
 
-const LIVE_STREAM_BASE_DIR = join(WORKSPACE_DIR, 'camera', 'live');
 const DEFAULT_STREAM_PORT = 48761;
 const activeStreams = new Map();
 let server = null;
 let serverPort = null;
+
+const getLiveStreamBaseDir = () => join(getConfigValue('workspace'), 'camera', 'live');
 
 // Normalize host value from config by stripping protocol and path parts
 const normalizeNvrHost = host => {
@@ -48,15 +48,16 @@ const ensureLiveServer = async (port = DEFAULT_STREAM_PORT) => {
         return { port: serverPort };
     }
 
-    mkdirSync(LIVE_STREAM_BASE_DIR, { recursive: true });
+    const liveStreamBaseDir = getLiveStreamBaseDir();
+    mkdirSync(liveStreamBaseDir, { recursive: true });
 
     server = createServer((req, res) => {
         const pathname = (req.url || '/').split('?')[0];
-        const requested = normalize(join(LIVE_STREAM_BASE_DIR, pathname));
-        const root = normalize(LIVE_STREAM_BASE_DIR + '\\');
+        const requested = normalize(join(liveStreamBaseDir, pathname));
+        const root = normalize(liveStreamBaseDir + '\\');
 
         // Prevent path traversal outside live directory
-        if (!requested.startsWith(root) && requested !== normalize(LIVE_STREAM_BASE_DIR)) {
+        if (!requested.startsWith(root) && requested !== normalize(liveStreamBaseDir)) {
             res.statusCode = 403;
             res.end('Forbidden');
             return;
@@ -98,9 +99,10 @@ export const startCameraLiveRelay = async ({ channel = 0, streamType = 'sub', po
     }
 
     await ensureLiveServer(port);
-    mkdirSync(LIVE_STREAM_BASE_DIR, { recursive: true });
+    const liveStreamBaseDir = getLiveStreamBaseDir();
+    mkdirSync(liveStreamBaseDir, { recursive: true });
 
-    const streamDir = join(LIVE_STREAM_BASE_DIR, `ch${channel}`);
+    const streamDir = join(liveStreamBaseDir, `ch${channel}`);
     mkdirSync(streamDir, { recursive: true });
 
     const playlistPath = join(streamDir, 'index.m3u8');
