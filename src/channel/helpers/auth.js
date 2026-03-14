@@ -13,9 +13,10 @@ export const authMiddleware = async (context, next, allowedUsers) => {
     const userId = context.from?.id?.toString();
     const username = context.from?.username;
 
-    // If no user ID, deny access
-    if (!userId) {
+    // If no user data, deny access
+    if (!userId && !username) {
         logger.warn(`Unauthorized access from unknown user`);
+        await context.reply('⛔ You are not authorized to use this bot.');
         return;
     }
 
@@ -29,7 +30,7 @@ export const authMiddleware = async (context, next, allowedUsers) => {
     if (allowed) {
         await next();
     } else {
-        logger.warn(`Unauthorized access from user ${userId}`);
+        logger.warn(`Unauthorized access from user ${userId || username}`);
         await context.reply('⛔ You are not authorized to use this bot.');
     }
 };
