@@ -5,9 +5,10 @@ import { OPENROUTER_MODELS } from '../../config.js';
 export const registerModelCommand = bot => {
     bot.command('model', async context => {
         const agent = getAgent();
+        const runtime = agent?.runtime || null;
 
         // Ensure the main agent is available
-        if (!agent) {
+        if (!agent || !runtime) {
             await context.reply('❌ Agent is not running yet. Start Picobot first, then try again.', { parse_mode: 'HTML' });
             return;
         }
@@ -41,7 +42,7 @@ export const registerModelCommand = bot => {
             }
 
             // Update agent model
-            agent.model = modelName;
+            runtime.model = modelName;
 
             // Send success message
             await context.reply(`✅ Model switched to: <code>${modelName}</code>`, { parse_mode: 'HTML' }); // Send success message

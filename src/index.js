@@ -1,18 +1,13 @@
 import 'dotenv/config';
-import { Llm } from './llm/llm.js';
-import { Agent } from './agent/agent.js';
-import { initTelegram, startTelegram, stopTelegram } from './channel/telegram.js';
+import { OpenRouterLlm } from '../squadforge/src/index.js';
+import { initTelegram, startTelegram, stopTelegram } from './channel/telegram-squadforge.js';
 import { initLogger, logger } from './utils/common/logger.js';
-import { initSessionManager } from './session/manager.js';
-import { initializeCronManager, setCronAgent } from './crons/manager.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google/google-client.js';
-import { loadAgents } from './agent/agents.js';
-import { loadSkills } from './agent/skills.js';
+import { createPicoSquadforgeLeader } from './squadforge/pico-runtime.js';
 
 let agent = null; // Active agent instance (accessible for commands like /model)
 let stopping = false; // Flag to prevent multiple stop attempts
-let agentPromise = null; // Tracks background agent loop for graceful shutdown
 
 // Get the active agent instance
 export const getAgent = () => {
@@ -30,39 +25,23 @@ export const startBot = async () => {
     // Initialize Google API clients
     await initializeGoogleClients();
 
-    // Initialize session manager (load sessions from disk)
-    initSessionManager();
-
-    // Initialize cron manager (load and schedule crons from disk)
-    initializeCronManager();
-
-    // Load agent definitions from agents directory
-    loadAgents();
-
-    // Load skill definitions from skills directory
-    loadSkills();
-
     // Get config
     const config = getConfig();
 
     // Create LLM provider
-    const llm = new Llm({
+    const llm = new OpenRouterLlm({
         apiKey: config.openRouter?.apiKey
     });
 
-    // Create agent
-    agent = new Agent({
+    // Create Squadforge-backed leader agent
+    agent = await createPicoSquadforgeLeader({
         llm,
         model: config.agent?.model,
-        workspacePath: config.workspace,
-        config: config.agent
+        workspacePath: config.workspace
     });
 
-    // Set agent reference for cron manager (enables agent_prompt crons)
-    setCronAgent(agent);
-
     // Initialize Telegram channel
-    initTelegram();
+    initTelegram(agent);
 
     // Handle graceful shutdown
     process.on('SIGINT', stopBot);
@@ -70,14 +49,11 @@ export const startBot = async () => {
 
     // Start components
     try {
-        // Start agent loop in background
-        agentPromise = agent.start();
+        // Start the runtime before opening Telegram updates
+        await agent.start();
 
-        // Start Telegram (this blocks)
+        // Start Telegram polling
         await startTelegram();
-
-        // Wait for agent
-        await agentPromise;
     } catch (error) {
         logger.error(`Fatal error: ${error}`);
         await stopBot();
@@ -91,12 +67,12 @@ export const stopBot = async () => {
     logger.info('Shutting down...');
 
     try {
-        agent?.stop();
         await stopTelegram();
-        await agentPromise;
+        await agent?.stop();
     } catch (error) {
         logger.error(`Shutdown error: ${error}`);
     } finally {
+        agent = null;
         stopping = false;
     }
 };
