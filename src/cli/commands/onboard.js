@@ -41,87 +41,108 @@ export const registerOnboardCommand = ({ program }) => {
 
 				/************** Prompt for OpenRouter API key **************/
 
-				const openrouterApiKey = await question('Enter your OpenRouter API key: ');
-				if (openrouterApiKey.trim()) {
-					config.openRouter.apiKey = openrouterApiKey.trim();
-					success('OpenRouter API key saved');
+				// Check if the config already has an OpenRouter API key
+				if (config.openRouter?.apiKey) {
+					info('OpenRouter API key already configured');
 				} else {
-					warning('No OpenRouter API key entered');
+					const openrouterApiKey = await question('Enter your OpenRouter API key: ');
+					if (openrouterApiKey.trim()) {
+						config.openRouter.apiKey = openrouterApiKey.trim();
+						success('OpenRouter API key saved');
+					} else {
+						warning('No OpenRouter API key entered');
+					}
 				}
 
 				/************** Prompt for model selection **************/
 
-				// Print available models
-				basicLog('\nAvailable models:');
-				OPENROUTER_MODELS.forEach((model, index) => {
-					const recommended = index === 0 ? ' (recommended)' : '';
-					listItem(`${index + 1}. ${model}${recommended}`);
-				});
+				// Check if the config already has a model
+				if (config.agent?.model) {
+					info(`Model already configured: ${config.agent.model}`);
+				} else {
+					// Print available models
+					basicLog('\nAvailable models:');
+					OPENROUTER_MODELS.forEach((model, index) => {
+						const recommended = index === 0 ? ' (recommended)' : '';
+						listItem(`${index + 1}. ${model}${recommended}`);
+					});
 
-				// Prompt for model selection
-				const modelInput = await question('Enter the number of the model (or press Enter for 1): ');
-				let selectedModel = OPENROUTER_MODELS[0]; // Default
-				if (modelInput.trim()) {
-					const modelIndex = parseInt(modelInput.trim()) - 1;
-					if (modelIndex >= 0 && modelIndex < OPENROUTER_MODELS.length) {
-						selectedModel = OPENROUTER_MODELS[modelIndex];
+					// Prompt for model selection
+					const modelInput = await question('Enter the number of the model (or press Enter for 1): ');
+					let selectedModel = OPENROUTER_MODELS[0]; // Default
+					if (modelInput.trim()) {
+						const modelIndex = parseInt(modelInput.trim()) - 1;
+						if (modelIndex >= 0 && modelIndex < OPENROUTER_MODELS.length) {
+							selectedModel = OPENROUTER_MODELS[modelIndex];
+						}
 					}
-				}
 
-				// Set the selected model in config
-				config.agent.model = selectedModel;
-				success(`Model set to: ${selectedModel}`);
+					// Set the selected model in config
+					config.agent.model = selectedModel;
+					success(`Model set to: ${selectedModel}`);
+				}
 
 				/************** Prompt for Telegram bot token **************/
 
-				const telegramToken = await question('\nEnter your Telegram bot token: ');
-				if (telegramToken.trim()) {
-					config.telegram.token = telegramToken.trim();
-					success('Telegram bot token saved');
+				// Check if the config already has a Telegram bot token
+				if (config.telegram?.token) {
+					info('Telegram bot token already configured');
 				} else {
-					warning('No Telegram bot token entered');
+					const telegramToken = await question('\nEnter your Telegram bot token: ');
+					if (telegramToken.trim()) {
+						config.telegram.token = telegramToken.trim();
+						success('Telegram bot token saved');
+					} else {
+						warning('No Telegram bot token entered');
+					}
 				}
 
 				/************** Prompt for allowed users **************/
 
-				// Show current allowed users from config (if any) and prompt for updates
-				let allowedUsers = Array.isArray(config.telegram?.allowedUsers) ? config.telegram.allowedUsers.map(user => String(user).trim()).filter(Boolean) : [];
-				if (allowedUsers.length > 0) {
-					info(`Current allowed users: [${allowedUsers.join(', ')}]`);
-				}
+				// Check if the config already has allowed users
+				if (Array.isArray(config.telegram?.allowedUsers) && config.telegram.allowedUsers.length > 0) {
+					const allowedUsers = Array.isArray(config.telegram?.allowedUsers) ? config.telegram.allowedUsers.map(user => String(user).trim()).filter(Boolean) : [];
+					info(`Allowed users already configured: [${allowedUsers.join(', ')}]`);
+				} else {
+					// Prompt for allowed users until at least one is provided
+					let allowedUsers = [];
+					while (allowedUsers.length === 0) {
+						// Prompt for allowed users (comma-separated)
+						const allowedUsersInput = await question('\nEnter allowed Telegram user IDs or @usernames (comma-separated): ');
+						const parsedUsers = allowedUsersInput
+							.split(',')
+							.map(user => user.trim())
+							.filter(Boolean);
 
-				// Prompt for allowed users until at least one is provided
-				while (allowedUsers.length === 0) {
-					// Prompt for allowed users (comma-separated)
-					const allowedUsersInput = await question('\nEnter allowed Telegram user IDs or @usernames (comma-separated, press Enter to keep current): ');
-					const parsedUsers = allowedUsersInput
-						.split(',')
-						.map(user => user.trim())
-						.filter(Boolean);
+						// If input is provided, replace current list with parsed values
+						if (parsedUsers.length > 0) {
+							allowedUsers = parsedUsers;
+						}
 
-					// If input is provided, replace current list with parsed values
-					if (parsedUsers.length > 0) {
-						allowedUsers = parsedUsers;
+						// If no valid users entered, show warning and prompt again
+						if (allowedUsers.length === 0) {
+							warning('At least one allowed user is required. Please enter at least one Telegram user ID or @username.');
+						}
 					}
 
-					// If no valid users entered, show warning and prompt again
-					if (allowedUsers.length === 0) {
-						warning('At least one allowed user is required. Please enter at least one Telegram user ID or @username.');
-					}
+					// Set allowed users in config
+					config.telegram.allowedUsers = allowedUsers;
+					success(`Allowed users set: [${allowedUsers.join(', ')}]`);
 				}
-
-				// Set allowed users in config
-				config.telegram.allowedUsers = allowedUsers;
-				success(`Allowed users set: [${allowedUsers.join(', ')}]`);
 
 				/************** Prompt for Brave Search API key (optional) **************/
 
-				const braveApiKey = await question('\nEnter your Brave Search API key (optional, press Enter to skip): ');
-				if (braveApiKey.trim()) {
-					config.brave = { apiKey: braveApiKey.trim() };
-					success('Brave Search API key saved');
+				// Check if the config already has a Brave Search API key
+				if (config.brave?.apiKey) {
+					info('Brave Search API key already configured');
 				} else {
-					info('Brave Search API key skipped (web search tools will be unavailable)');
+					const braveApiKey = await question('\nEnter your Brave Search API key (optional, press Enter to skip): ');
+					if (braveApiKey.trim()) {
+						config.brave = { apiKey: braveApiKey.trim() };
+						success('Brave Search API key saved');
+					} else {
+						info('Brave Search API key skipped (web search tools will be unavailable)');
+					}
 				}
 
 				/******************************** Prompt section - End ********************************/

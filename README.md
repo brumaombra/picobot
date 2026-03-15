@@ -202,6 +202,7 @@ Use `.env.example` as the template for supported secret names.
 $env:TELEGRAM_BOT_TOKEN="..."
 $env:TELEGRAM_ALLOWED_USERS="@username,123456789"
 $env:OPENROUTER_API_KEY="..."
+$env:OPENROUTER_MODEL="x-ai/grok-4.1-fast"
 $env:BRAVE_API_KEY="..."
 $env:GOOGLE_AI_API_KEY="..."
 $env:NVR_HOST="..."

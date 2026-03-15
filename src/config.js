@@ -73,6 +73,7 @@ export const SECRET_ENV_OVERRIDES = {
     'telegram.token': 'TELEGRAM_BOT_TOKEN',
     'telegram.allowedUsers': 'TELEGRAM_ALLOWED_USERS',
     'openRouter.apiKey': 'OPENROUTER_API_KEY',
+    'agent.model': 'OPENROUTER_MODEL',
     'brave.apiKey': 'BRAVE_API_KEY',
     'googleAi.apiKey': 'GOOGLE_AI_API_KEY',
     'nvr.host': 'NVR_HOST',
