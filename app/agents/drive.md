@@ -2,7 +2,6 @@
 name: 🗂️ Drive Manager
 description: Manages Google Drive files — lists, reads, creates, updates, deletes, and shares documents.
 allowed_tools:
-  - get_datetime
   - drive_list_files
   - drive_get_file
   - drive_read_file
@@ -10,7 +9,6 @@ allowed_tools:
   - drive_update_file
   - drive_delete_file
   - drive_share_file
-  - ask_main_agent
 ---
 
 # Subagent Specialization

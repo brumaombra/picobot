@@ -4,6 +4,7 @@ import { cronDeleteTool } from './predefined/cron/cron_delete.js';
 import { cronGetTool } from './predefined/cron/cron_get.js';
 import { cronListTool } from './predefined/cron/cron_list.js';
 import { cronUpdateTool } from './predefined/cron/cron_update.js';
+import { getDatetimeTool } from './predefined/general/get_datetime.js';
 import { readFileTool } from './predefined/general/read_file.js';
 import { sendFileTool } from './predefined/general/send_file.js';
 import { subagentChatTool } from './predefined/general/subagent_chat.js';
@@ -16,8 +17,8 @@ const OPTIONAL_BUILTIN_TOOLS = [cronCreateTool, cronDeleteTool, cronGetTool, cro
 
 // Predefined tools grouped by agent role
 const PREDEFINED_TOOLS_BY_ROLE = {
-    leader: [readFileTool, sendFileTool, subagentStartTool, subagentChatTool, subagentListTool],
-    subagent: [askMainAgentTool]
+    leader: [getDatetimeTool, readFileTool, sendFileTool, subagentStartTool, subagentChatTool, subagentListTool],
+    subagent: [getDatetimeTool, askMainAgentTool]
 };
 
 // Create the predefined tool name list for a specific agent role and app shape

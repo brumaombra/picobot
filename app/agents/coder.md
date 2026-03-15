@@ -2,7 +2,6 @@
 name: 💻 Code Implementer
 description: Writes, refactors, and tests code. Has access to execution and file tools.
 allowed_tools:
-  - get_datetime
   - list_directory
   - grep_search
   - path_exists
@@ -10,7 +9,6 @@ allowed_tools:
   - write_file
   - str_replace_edit
   - run_terminal_cmd
-  - ask_main_agent
 ---
 
 # Subagent Specialization

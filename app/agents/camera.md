@@ -2,7 +2,6 @@
 name: 📷 Security Camera Manager
 description: Manages the NVR system. Can list cameras, take snapshots, search and download recordings, and analyze video/image content.
 allowed_tools:
-  - get_datetime
   - camera_get_info
   - camera_snapshot
   - camera_search_recordings
@@ -10,7 +9,6 @@ allowed_tools:
   - camera_analyze_video
   - camera_analyze_image
   - camera_cast_stream
-  - ask_main_agent
 ---
 
 # Subagent Specialization

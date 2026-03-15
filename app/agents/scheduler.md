@@ -2,13 +2,11 @@
 name: ⏰ Scheduler
 description: Creates, updates, lists, and deletes scheduled cron tasks for reminders and background agent runs.
 allowed_tools:
-  - get_datetime
   - cron_list
   - cron_get
   - cron_create
   - cron_update
   - cron_delete
-  - ask_main_agent
 ---
 
 # Subagent Specialization

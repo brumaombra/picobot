@@ -2,14 +2,12 @@
 name: 🌐 Network Administrator
 description: Performs network diagnostics like ping checks and local device discovery.
 allowed_tools:
-  - get_datetime
   - network_ping
   - network_list_devices
   - network_dns_lookup
   - network_port_check
   - network_traceroute
   - network_local_ip
-  - ask_main_agent
 ---
 
 # Subagent Specialization

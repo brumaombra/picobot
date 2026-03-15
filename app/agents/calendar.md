@@ -2,13 +2,11 @@
 name: 📅 Calendar Manager
 description: Manages Google Calendar events — creates, updates, lists, and deletes appointments and schedules.
 allowed_tools:
-  - get_datetime
   - calendar_list_events
   - calendar_get_event
   - calendar_create_event
   - calendar_update_event
   - calendar_delete_event
-  - ask_main_agent
 ---
 
 # Subagent Specialization

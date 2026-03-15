@@ -2,13 +2,11 @@
 name: 🖼️ Slides Creator
 description: Creates and edits Google Slides presentations — builds slide decks, adds and updates slides, and manages presentation content.
 allowed_tools:
-  - get_datetime
   - slides_create
   - slides_get
   - slides_add_slide
   - slides_replace_text
   - slides_delete_slide
-  - ask_main_agent
 ---
 
 # Subagent Specialization

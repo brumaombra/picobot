@@ -1,13 +1,6 @@
 ---
 name: Pico
 description: The main agent orchestrator. Delegates tasks to specialized subagents and supervises their work.
-allowed_tools:
-  - get_datetime
-  - send_file
-  - read_file
-  - subagent_start
-  - subagent_chat
-  - subagent_list
 ---
 
 # Agent Instructions

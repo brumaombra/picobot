@@ -7,7 +7,7 @@ import { loadCronsFromDirectory } from '../loaders/load-crons.js';
 import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadSessionsFromDirectory } from '../loaders/load-sessions.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
-import { getLogFiles, initializeLogger } from '../logging/logger.js';
+import { getLogFiles, initializeLogger, logger } from '../logging/logger.js';
 import { CronManager } from '../crons/cron-manager.js';
 import { SubagentRegistry } from './subagent-registry.js';
 import { SessionManager } from '../sessions/session-manager.js';
@@ -113,6 +113,7 @@ const afterLoadChecks = ({ agentsSpecs }) => {
 
 // Load all filesystem-backed runtime resources during boot.
 const loadRuntimeResources = async ({ promptsDir, skillsDir, toolsDir, agentsDir, sessionsDir, cronsDir } = {}) => {
+    // read the various runtime resources
     const promptTemplates = loadPromptTemplatesFromDirectory({ promptsDir });
     const skills = loadSkillsFromDirectory({ skillsDir });
     const tools = await loadTools({ toolsDir });
@@ -120,6 +121,7 @@ const loadRuntimeResources = async ({ promptsDir, skillsDir, toolsDir, agentsDir
     const sessions = loadSessionsFromDirectory({ sessionsDir });
     const crons = loadCronsFromDirectory({ cronsDir });
 
+    // Return the loaded resources
     return {
         promptTemplates,
         skills,
@@ -171,7 +173,7 @@ const createRuntime = async (options = {}) => {
     const resolvedLogsDir = logsDir || join(resolvedRootDir, DEFAULT_LOGS_DIR_NAME);
 
     // Initialize the logger
-    const runtimeLogger = initializeLogger({
+    initializeLogger({
         rootDir: resolvedRootDir,
         logsDir: resolvedLogsDir,
         appName,
@@ -216,7 +218,6 @@ const createRuntime = async (options = {}) => {
         cronsDir: resolvedCronsDir,
         logsDir: resolvedLogsDir,
         logFiles: getLogFiles(),
-        logger: runtimeLogger,
         llm,
         model,
         maxRuntimeMs,
@@ -252,12 +253,11 @@ const createRuntime = async (options = {}) => {
     runtime.cronManager = new CronManager({
         runtime,
         cronsDir: resolvedCronsDir,
-        logger: runtime.logger,
         crons
     });
 
     // Log and return the runtime object
-    runtime.logger.info(`Runtime created for root directory: ${resolvedRootDir}`);
+    logger.info(`Runtime created for root directory: ${resolvedRootDir}`);
     return runtime;
 };
 

@@ -1,13 +1,14 @@
 import cron from 'node-cron';
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { logger } from '../logging/logger.js';
 import { queueRuntimeMessage } from '../runtime/channel.js';
 import { generateId } from '../utils/utils.js';
 
 // Cron manager with optional disk persistence
 export class CronManager {
     // Constructor
-    constructor({ runtime, cronsDir, logger = runtime?.logger || console, crons = null } = {}) {
+    constructor({ runtime, cronsDir, crons = null } = {}) {
         // Validate the runtime object
         if (!runtime) {
             throw new Error('CronManager requires a runtime object.');
@@ -22,7 +23,6 @@ export class CronManager {
         this.runtime = runtime;
         this.cronsDir = cronsDir;
         this.crons = crons instanceof Map ? new Map(crons) : new Map();
-        this.logger = logger;
     }
 
     // Remove runtime-only task state before returning cron data
@@ -65,9 +65,9 @@ export class CronManager {
         try {
             this.ensureCronsDir();
             writeFileSync(this.getCronFilePath(cronId), JSON.stringify(cronEntry, null, 2));
-            this.logger.debug(`Cron saved: ${cronId}`);
+            logger.debug(`Cron saved: ${cronId}`);
         } catch (error) {
-            this.logger.error(`Failed to save cron ${cronId}: ${toErrorMessage(error)}`);
+            logger.error(`Failed to save cron ${cronId}: ${toErrorMessage(error)}`);
         }
     }
 
@@ -76,20 +76,20 @@ export class CronManager {
         // Get the cron entry by ID and return early if not found
         const entry = this.crons.get(id);
         if (!entry) {
-            this.logger.error(`Cron not found: ${id}`);
+            logger.error(`Cron not found: ${id}`);
             return null;
         }
 
         // Log the cron execution
-        this.logger.info(`Executing cron: ${entry.name}`);
+        logger.info(`Executing cron: ${entry.name}`);
 
         try {
             this.notifySession(entry.sessionId, entry.message);
-            this.logger.info(`Cron queued: ${entry.name}`);
+            logger.info(`Cron queued: ${entry.name}`);
             return stripTask(entry);
         } catch (error) {
             const errorMessage = toErrorMessage(error);
-            this.logger.error(`Cron execution failed (${entry.name}): ${errorMessage}`);
+            logger.error(`Cron execution failed (${entry.name}): ${errorMessage}`);
             return null;
         }
     }
@@ -139,7 +139,7 @@ export class CronManager {
             try {
                 stopTask(entry.task);
             } catch (error) {
-                this.logger.warn(`Failed to stop cron ${entry.id}: ${toErrorMessage(error)}`);
+                logger.warn(`Failed to stop cron ${entry.id}: ${toErrorMessage(error)}`);
             }
         }
 
@@ -161,16 +161,16 @@ export class CronManager {
                         id: rawEntry?.id || cronId
                     }, { persist: false });
 
-                    this.logger.info(`Cron loaded: ${entry.name} (${entry.schedule})`);
+                    logger.info(`Cron loaded: ${entry.name} (${entry.schedule})`);
                 } catch (error) {
-                    this.logger.error(`Failed to load cron ${cronId}: ${toErrorMessage(error)}`);
+                    logger.error(`Failed to load cron ${cronId}: ${toErrorMessage(error)}`);
                 }
             }
 
             // Log the final initialization result
-            this.logger.info(`Cron manager initialized with ${this.crons.size} crons`);
+            logger.info(`Cron manager initialized with ${this.crons.size} crons`);
         } catch (error) {
-            this.logger.error(`Failed to initialize cron manager: ${toErrorMessage(error)}`);
+            logger.error(`Failed to initialize cron manager: ${toErrorMessage(error)}`);
         }
 
         // Return the active cron map after initialization
@@ -180,7 +180,7 @@ export class CronManager {
     // Stop all running cron tasks
     stop() {
         this.clearCrons();
-        this.logger.info('Cron manager stopped');
+        logger.info('Cron manager stopped');
     }
 
     // Get a cron by its ID
@@ -197,7 +197,7 @@ export class CronManager {
     createCron(input) {
         // Register the cron and return the serialized result
         const entry = this.registerCron(input);
-        this.logger.info(`Created cron: ${entry.name} (${entry.schedule})`);
+        logger.info(`Created cron: ${entry.name} (${entry.schedule})`);
         return entry;
     }
 
@@ -214,7 +214,7 @@ export class CronManager {
             id
         });
 
-        this.logger.info(`Updated cron: ${entry.name}`);
+        logger.info(`Updated cron: ${entry.name}`);
         return entry;
     }
 
@@ -235,13 +235,13 @@ export class CronManager {
             const filePath = this.getCronFilePath(id);
             if (existsSync(filePath)) {
                 unlinkSync(filePath);
-                this.logger.debug(`Cron file deleted: ${id}`);
+                logger.debug(`Cron file deleted: ${id}`);
             }
         } catch (error) {
-            this.logger.error(`Failed to delete cron file ${id}: ${toErrorMessage(error)}`);
+            logger.error(`Failed to delete cron file ${id}: ${toErrorMessage(error)}`);
         }
 
-        this.logger.info(`Deleted cron: ${entry.name}`);
+        logger.info(`Deleted cron: ${entry.name}`);
         return stripTask(entry);
     }
 }

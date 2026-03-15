@@ -2,13 +2,11 @@
 name: 🛠️ System Administrator
 description: Monitors system health, manages processes, and performs system maintenance tasks.
 allowed_tools:
-  - get_datetime
   - system_info_basic
   - system_info_cpu
   - system_info_memory
   - system_info_network
   - system_info_all
-  - ask_main_agent
 ---
 
 # Subagent Specialization

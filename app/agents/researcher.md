@@ -2,10 +2,8 @@
 name: 🔎 Web Researcher
 description: Searches the web, fetches pages, and synthesizes information to answer questions.
 allowed_tools:
-  - get_datetime
   - web_search
   - web_fetch
-  - ask_main_agent
 ---
 
 # Subagent Specialization

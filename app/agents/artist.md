@@ -2,12 +2,10 @@
 name: 🎨 Artist
 description: Generates AI images from text prompts and iterates on style, composition, and details.
 allowed_tools:
-  - get_datetime
   - image_generate
   - image_edit
   - camera_analyze_image
   - camera_analyze_video
-  - ask_main_agent
 ---
 
 # Subagent Specialization

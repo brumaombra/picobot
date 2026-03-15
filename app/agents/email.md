@@ -2,12 +2,10 @@
 name: 📧 Email Manager
 description: Searches, reads, and sends emails via Gmail (including attachments). Manages labels and organizes the inbox.
 allowed_tools:
-  - get_datetime
   - gmail_search
   - gmail_read
   - gmail_send
   - gmail_list_labels
-  - ask_main_agent
 ---
 
 # Subagent Specialization

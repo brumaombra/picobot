@@ -2,13 +2,11 @@
 name: 🖨️ Printer Manager
 description: Manages local/network printers, queues, status checks, and print actions.
 allowed_tools:
-  - get_datetime
   - printer_list
   - printer_status
   - printer_queue
   - printer_print_test
   - printer_print_file
-  - ask_main_agent
 ---
 
 # Subagent Specialization
