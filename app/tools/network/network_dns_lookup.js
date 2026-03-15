@@ -1,7 +1,7 @@
 import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Network DNS lookup tool
-const networkDnsLookupTool = {
+export default {
     // Tool definition
     name: 'network_dns_lookup',
     description: 'Resolve DNS records for a hostname.',
@@ -53,6 +53,3 @@ const networkDnsLookupTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default networkDnsLookupTool;

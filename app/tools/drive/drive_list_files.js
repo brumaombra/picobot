@@ -3,7 +3,7 @@ import { getDriveClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Drive list files tool
-const driveListFilesTool = {
+export default {
     // Tool definition
     name: 'drive_list_files',
     description: 'List Google Drive files with essential metadata. Use drive_get_file to get full details.',
@@ -74,6 +74,3 @@ const driveListFilesTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default driveListFilesTool;

@@ -3,7 +3,7 @@ import { getGmailClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Gmail labels tool
-const gmailLabelsTool = {
+export default {
     // Tool definition
     name: 'gmail_list_labels',
     description: 'List Gmail labels.',
@@ -40,6 +40,3 @@ const gmailLabelsTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default gmailLabelsTool;

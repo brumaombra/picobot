@@ -3,7 +3,7 @@ import { getCalendarClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Calendar get event tool
-const calendarGetEventTool = {
+export default {
     // Tool definition
     name: 'calendar_get_event',
     description: 'Get detailed information about a specific Google Calendar event by ID.',
@@ -61,6 +61,3 @@ const calendarGetEventTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default calendarGetEventTool;

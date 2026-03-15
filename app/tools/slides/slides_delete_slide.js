@@ -3,7 +3,7 @@ import { getSlidesClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Slides delete slide tool
-const slidesDeleteSlideTool = {
+export default {
     // Tool definition
     name: 'slides_delete_slide',
     description: 'Delete a slide from a Google Slides presentation by its slide ID.',
@@ -50,6 +50,3 @@ const slidesDeleteSlideTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default slidesDeleteSlideTool;

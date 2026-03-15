@@ -2,7 +2,7 @@ import { handleToolError, handleToolResponse } from '../../../src/utils/common/u
 import { analyzeImageWithGoogleAi } from '../../../src/utils/google/google-ai.js';
 
 // Camera image analysis tool
-const cameraAnalyzeImageTool = {
+export default {
     // Tool definition
     name: 'camera_analyze_image',
     description: 'Analyze a local image file using AI image understanding capabilities by running a natural-language analysis prompt against it.',
@@ -36,6 +36,3 @@ const cameraAnalyzeImageTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default cameraAnalyzeImageTool;

@@ -1,7 +1,7 @@
 import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Printer test-page tool
-const printerPrintTestTool = {
+export default {
     // Tool definition
     name: 'printer_print_test',
     description: 'Send a printer test page command to one printer.',
@@ -62,6 +62,3 @@ const printerPrintTestTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default printerPrintTestTool;

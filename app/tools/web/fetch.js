@@ -3,7 +3,7 @@ import { extractTextFromHtml, handleToolError, handleToolResponse } from '../../
 import { WEB_MAX_CONTENT_LENGTH, WEB_FETCH_TIMEOUT_MS, WEB_USER_AGENT, WEB_ACCEPT_HEADER, WEB_ACCEPT_LANGUAGE } from '../../../src/config.js';
 
 // Web fetch tool
-const webFetchTool = {
+export default {
     // Tool definition
     name: 'web_fetch',
     description: 'Fetch content from URL.',
@@ -86,6 +86,3 @@ const webFetchTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default webFetchTool;

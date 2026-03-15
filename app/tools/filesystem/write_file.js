@@ -4,7 +4,7 @@ import { isSensitivePath, handleToolError, handleToolResponse } from '../../../s
 import { logger } from '../../../squadforge/src/index.js';
 
 // Write file tool
-const writeFileTool = {
+export default {
     // Tool definition
     name: 'write_file',
     description: 'Create a new file or completely overwrite an existing file with new content. Best for new files or full rewrites.',
@@ -50,6 +50,3 @@ const writeFileTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default writeFileTool;

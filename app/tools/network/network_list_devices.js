@@ -1,7 +1,7 @@
 import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Network discovery tool
-const networkListDevicesTool = {
+export default {
     // Tool definition
     name: 'network_list_devices',
     description: 'List all network devices discovered in the local network.',
@@ -35,6 +35,3 @@ const networkListDevicesTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default networkListDevicesTool;

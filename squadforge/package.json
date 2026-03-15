@@ -8,8 +8,8 @@
         ".": "./src/index.js"
     },
     "scripts": {
-        "example": "node ./examples/basic/run.mjs",
-        "example:real": "node ./examples/basic/run.mjs"
+        "example": "node ./examples/basic/run.js",
+        "example:real": "node ./examples/basic/run.js"
     },
     "files": [
         "src",

@@ -6,7 +6,7 @@ import { generateImageWithGoogleAi } from '../../../src/utils/google/google-ai.j
 import { getFileExtensionFromMimeType, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Generate image tool
-const imageGenerateTool = {
+export default {
     // Tool definition
     name: 'image_generate',
     description: 'Generate an image from a text prompt and save it to the workspace. Returns the file path and metadata of the generated image.',
@@ -52,6 +52,3 @@ const imageGenerateTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default imageGenerateTool;

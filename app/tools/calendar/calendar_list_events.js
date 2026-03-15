@@ -3,7 +3,7 @@ import { getCalendarClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Calendar list events tool
-const calendarListEventsTool = {
+export default {
     // Tool definition
     name: 'calendar_list_events',
     description: 'List Google Calendar events in date range with essential metadata. Use calendar_get_event to get full details.',
@@ -72,6 +72,3 @@ const calendarListEventsTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default calendarListEventsTool;

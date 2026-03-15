@@ -4,7 +4,7 @@ import { isSensitivePath, handleToolError, handleToolResponse } from '../../../s
 import { logger } from '../../../squadforge/src/index.js';
 
 // Regex/literal content search across files
-const grepSearchTool = {
+export default {
     // Tool definition
     name: 'grep_search',
     description: 'Search for a pattern across files (like ripgrep). Extremely useful for finding where code is used.',
@@ -118,6 +118,3 @@ const grepSearchTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default grepSearchTool;

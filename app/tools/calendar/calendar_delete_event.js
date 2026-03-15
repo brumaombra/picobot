@@ -3,7 +3,7 @@ import { getCalendarClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Calendar delete event tool
-const calendarDeleteEventTool = {
+export default {
     // Tool definition
     name: 'calendar_delete_event',
     description: 'Delete Google Calendar event.',
@@ -47,6 +47,3 @@ const calendarDeleteEventTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default calendarDeleteEventTool;

@@ -1,7 +1,7 @@
 import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Printer status/details tool
-const printerStatusTool = {
+export default {
     // Tool definition
     name: 'printer_status',
     description: 'Get detailed status for one printer.',
@@ -62,6 +62,3 @@ const printerStatusTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default printerStatusTool;

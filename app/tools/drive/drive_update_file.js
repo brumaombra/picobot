@@ -3,7 +3,7 @@ import { getDriveClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Drive update file tool
-const driveUpdateFileTool = {
+export default {
     // Tool definition
     name: 'drive_update_file',
     description: 'Update Google Drive file.',
@@ -79,6 +79,3 @@ const driveUpdateFileTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default driveUpdateFileTool;

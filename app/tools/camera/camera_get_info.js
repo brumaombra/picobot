@@ -3,7 +3,7 @@ import { logger } from '../../../squadforge/src/index.js';
 import { getNvrDeviceInfo } from '../../../src/utils/camera/camera-client.js';
 
 // Camera information retrieval tool
-const cameraGetInfoTool = {
+export default {
     // Tool definition
     name: 'camera_get_info',
     description: 'Get NVR device information and the list of connected camera channels.',
@@ -31,6 +31,3 @@ const cameraGetInfoTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default cameraGetInfoTool;

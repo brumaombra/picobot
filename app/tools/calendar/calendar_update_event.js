@@ -3,7 +3,7 @@ import { getCalendarClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Calendar update event tool
-const calendarUpdateEventTool = {
+export default {
     // Tool definition
     name: 'calendar_update_event',
     description: 'Update Google Calendar event details.',
@@ -92,6 +92,3 @@ const calendarUpdateEventTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default calendarUpdateEventTool;

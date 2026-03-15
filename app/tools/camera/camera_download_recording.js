@@ -6,7 +6,7 @@ import { WORKSPACE_DIR } from '../../../src/config.js';
 import { downloadNvrRecordingToPath } from '../../../src/utils/camera/camera-client.js';
 
 // Camera recording download tool
-const cameraDownloadRecordingTool = {
+export default {
     // Tool definition
     name: 'camera_download_recording',
     description: 'Download a specific NVR recording to a local file. Returns the saved file path.',
@@ -74,6 +74,3 @@ const cameraDownloadRecordingTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default cameraDownloadRecordingTool;

@@ -3,7 +3,7 @@ import { getSlidesClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Slides replace text tool
-const slidesReplaceTextTool = {
+export default {
     // Tool definition
     name: 'slides_replace_text',
     description: 'Find and replace text across an entire Google Slides presentation.',
@@ -62,6 +62,3 @@ const slidesReplaceTextTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default slidesReplaceTextTool;

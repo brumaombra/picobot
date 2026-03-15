@@ -6,7 +6,7 @@ import { editImageWithGoogleAi } from '../../../src/utils/google/google-ai.js';
 import { getFileExtensionFromMimeType, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Edit image tool
-const imageEditTool = {
+export default {
     // Tool definition
     name: 'image_edit',
     description: 'Edit a local image using a text prompt and save it to the workspace.',
@@ -56,6 +56,3 @@ const imageEditTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default imageEditTool;

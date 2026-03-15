@@ -1,7 +1,7 @@
 import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Network TCP port check tool
-const networkPortCheckTool = {
+export default {
     // Tool definition
     name: 'network_port_check',
     description: 'Check whether a TCP port is open on a host.',
@@ -74,6 +74,3 @@ const networkPortCheckTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default networkPortCheckTool;

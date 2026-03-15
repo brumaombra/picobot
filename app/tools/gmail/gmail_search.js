@@ -3,7 +3,7 @@ import { getGmailClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Gmail search tool
-const gmailSearchTool = {
+export default {
     // Tool definition
     name: 'gmail_search',
     description: 'Search Gmail messages.',
@@ -86,6 +86,3 @@ const gmailSearchTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default gmailSearchTool;

@@ -1,7 +1,7 @@
 import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Printer queue/jobs tool
-const printerQueueTool = {
+export default {
     // Tool definition
     name: 'printer_queue',
     description: 'Get queued print jobs for one printer.',
@@ -62,6 +62,3 @@ const printerQueueTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default printerQueueTool;

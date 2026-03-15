@@ -3,7 +3,7 @@ import { getDriveClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Drive read file tool
-const driveReadFileTool = {
+export default {
     // Tool definition
     name: 'drive_read_file',
     description: 'Read Google Drive file content.',
@@ -67,6 +67,3 @@ const driveReadFileTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default driveReadFileTool;

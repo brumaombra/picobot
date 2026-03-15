@@ -4,7 +4,7 @@ import { isSensitivePath, handleToolError, handleToolResponse } from '../../../s
 import { logger } from '../../../squadforge/src/index.js';
 
 // Path exists tool
-const pathExistsTool = {
+export default {
     // Tool definition
     name: 'path_exists',
     description: 'Check if a file or directory exists.',
@@ -56,6 +56,3 @@ const pathExistsTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default pathExistsTool;

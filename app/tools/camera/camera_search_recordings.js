@@ -3,7 +3,7 @@ import { logger } from '../../../squadforge/src/index.js';
 import { searchNvrRecordings } from '../../../src/utils/camera/camera-client.js';
 
 // Camera recording search tool
-const cameraSearchRecordingsTool = {
+export default {
     // Tool definition
     name: 'camera_search_recordings',
     description: 'Search for recorded footage on the NVR within a date/time range for a specific channel.',
@@ -61,6 +61,3 @@ const cameraSearchRecordingsTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default cameraSearchRecordingsTool;

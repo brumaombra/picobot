@@ -3,7 +3,7 @@ import { getDriveClient } from '../../../src/utils/google/google-client.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Drive create file tool
-const driveCreateFileTool = {
+export default {
     // Tool definition
     name: 'drive_create_file',
     description: 'Create Google Drive file.',
@@ -75,6 +75,3 @@ const driveCreateFileTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default driveCreateFileTool;

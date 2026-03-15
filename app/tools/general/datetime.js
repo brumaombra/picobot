@@ -1,7 +1,7 @@
 import { handleToolError, handleToolResponse, formatLocalDateTimeString } from '../../../src/utils/common/utils.js';
 
 // Date and time tool
-const getDateTimeTool = {
+export default {
     // Tool definition
     name: 'get_datetime',
     description: 'Get the current local date and time with timezone.',
@@ -27,6 +27,3 @@ const getDateTimeTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default getDateTimeTool;

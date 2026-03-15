@@ -4,7 +4,7 @@ import { isSensitivePath, handleToolError, handleToolResponse } from '../../../s
 import { logger } from '../../../squadforge/src/index.js';
 
 // List directory tool
-const listDirectoryTool = {
+export default {
     // Tool definition
     name: 'list_directory',
     description: 'List all files and subdirectories in a path. Always use this first to explore the codebase.',
@@ -112,6 +112,3 @@ const listDirectoryTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default listDirectoryTool;

@@ -1,7 +1,7 @@
 import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Printer discovery/list tool
-const printerListTool = {
+export default {
     // Tool definition
     name: 'printer_list',
     description: 'List available printers on the current machine.',
@@ -51,6 +51,3 @@ const printerListTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default printerListTool;

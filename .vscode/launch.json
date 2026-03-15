@@ -22,6 +22,16 @@
             "console": "integratedTerminal"
         },
         {
+            "name": "Logs",
+            "type": "node",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/cli/cli.js",
+            "args": [
+                "logs"
+            ],
+            "console": "integratedTerminal"
+        },
+        {
             "name": "Start",
             "type": "node",
             "request": "launch",
@@ -45,7 +55,7 @@
             "name": "Squadforge Example",
             "type": "node",
             "request": "launch",
-            "program": "${workspaceFolder}/squadforge/examples/basic/run.mjs",
+            "program": "${workspaceFolder}/squadforge/examples/basic/run.js",
             "cwd": "${workspaceFolder}/squadforge/examples/basic",
             "envFile": "${workspaceFolder}/squadforge/examples/basic/.env",
             "env": {

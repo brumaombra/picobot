@@ -1,7 +1,7 @@
 import { executeCommand, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // Network local IP tool
-const networkLocalIpTool = {
+export default {
     // Tool definition
     name: 'network_local_ip',
     description: 'Show the local machine IP configuration.',
@@ -39,6 +39,3 @@ const networkLocalIpTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default networkLocalIpTool;

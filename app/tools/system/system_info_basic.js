@@ -2,7 +2,7 @@ import * as os from 'os';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
 // System information tool
-const systemInfoBasicTool = {
+export default {
     // Tool definition
     name: 'system_info_basic',
     description: 'Get basic system information.',
@@ -32,6 +32,3 @@ const systemInfoBasicTool = {
         }
     }
 };
-
-// Export the tool as the default export of this module
-export default systemInfoBasicTool;
