@@ -40,28 +40,11 @@ export const header = title => {
     console.log(chalk.cyan.bold(`\n${title}\n`));
 };
 
-// Print a subheader with magenta color and pin emoji
-export const subheader = title => {
-    console.log(chalk.magenta.bold(`${title}`));
-};
-
 // Print a list item with bullet point and optional indentation
 export const listItem = (item, color = 'gray', indent = 0) => {
     const prefix = ' '.repeat(indent) + '•';
     const colorFn = chalk[color] || chalk.gray;
     console.log(colorFn(`${prefix} ${item}`));
-};
-
-// Print a check status with OK/Failed indicator
-export const checkStatus = (label, isOk) => {
-    const icon = isOk ? chalk.green('✓') : chalk.red('✗');
-    const status = isOk ? chalk.green('OK') : chalk.red('Failed');
-    console.log(`${icon} ${chalk.gray(label)}: ${status}`);
-};
-
-// Print a command with cyan color and dollar sign prefix
-export const command = cmd => {
-    console.log(chalk.cyan.bold(`$ ${cmd}`));
 };
 
 // Print the ASCII art Picobot logo

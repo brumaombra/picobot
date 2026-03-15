@@ -2,7 +2,7 @@ import { startBot } from '../../index.js';
 import { resolveLogFiles } from '../../../squadforge/src/index.js';
 import { APP_ROOT_DIR } from '../../config.js';
 import { loadConfig, validateConfig, setConfig } from '../../config/config.js';
-import { error, header, suggestion } from '../../utils/common/print.js';
+import { error, header, logo, suggestion } from '../../utils/common/print.js';
 import { checkIfConfigFilesExist } from '../../files/files.js';
 
 // Register the start command
@@ -12,7 +12,8 @@ export const registerStartCommand = ({ program }) => {
         .description('Start the Picobot agent')
         .option('-c, --config <path>', 'Path to config file')
         .action(async options => {
-            // Print starting header
+            // Print logo and starting header
+            logo();
             header('🤖  Picobot starting...');
 
             // Check if the config files and directories exist

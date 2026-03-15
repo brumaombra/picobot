@@ -7,13 +7,13 @@ import { success, warning, error, newline } from '../utils/common/print.js';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Bootstrap-level files and directories required before config can be loaded.
+// Bootstrap-level files and directories required before config can be loaded
 const REQUIRED_CONFIG_ITEMS = [
     { path: CONFIG_DIR, type: 'directory', name: 'Config directory' },
     { path: CONFIG_PATH, type: 'file', name: 'Config file', source: join(__dirname, 'examples/config.json') }
 ];
 
-// Default runtime directories created during onboarding for convenience.
+// Default runtime directories created during onboarding for convenience
 const DEFAULT_RUNTIME_ITEMS = [
     { path: WORKSPACE_DIR, type: 'directory', name: 'Default workspace directory' }
 ];
@@ -54,5 +54,4 @@ export const createConfigFiles = () => {
         // Log results
         success(exists ? `${item.name} already exists (${item.path})` : `Created ${item.name} (${item.path})`);
     });
-
 };

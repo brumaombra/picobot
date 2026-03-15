@@ -65,8 +65,8 @@ export const stopBot = async () => {
     logger.info('Shutting down...');
 
     try {
-        await stopTelegram();
-        await agent?.stop();
+        await stopTelegram(); // Stop Telegram updates
+        await agent?.stop(); // Stop the agent if it exists
     } catch (error) {
         logger.error(`Shutdown error: ${error}`);
     } finally {
