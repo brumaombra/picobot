@@ -8,18 +8,18 @@ export const registerNewCommand = bot => {
         const chatId = context.chat.id.toString();
         const sessionKey = `telegram_${chatId}`;
         const agent = getAgent();
-        const sessionStore = agent?.sessionStore || null;
+        const sessionManager = agent?.sessionManager || null;
 
-        // Ensure the main agent and session store are available
-        if (!agent || !sessionStore) {
+        // Ensure the main agent and session manager are available
+        if (!agent || !sessionManager) {
             await context.reply('❌ Agent is not running yet. Start Picobot first, then try again.', { parse_mode: 'HTML' });
             return;
         }
 
         // Clear the session
-        const existingSession = sessionStore.getSession(sessionKey);
+        const existingSession = sessionManager.getSession(sessionKey);
         if (existingSession) {
-            sessionStore.clearSession(sessionKey);
+            sessionManager.clearSession(sessionKey);
         }
 
         // Send confirmation message
