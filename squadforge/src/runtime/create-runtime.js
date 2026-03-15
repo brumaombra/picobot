@@ -6,8 +6,8 @@ import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
 import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
 import { getLogFiles, initializeLogger } from '../logging/logger.js';
-import { createJsonFileSchedulerStore } from '../scheduling/file-store.js';
-import { createSchedulerManager } from '../scheduling/manager.js';
+import { createJsonFileCronStore } from '../cron/file-store.js';
+import { createCronManager } from '../cron/manager.js';
 import { SubagentRegistry } from './subagent-registry.js';
 import { SessionStore } from '../sessions/session-store.js';
 import { loadTools } from '../tools/tools-catalog.js';
@@ -111,31 +111,31 @@ const afterLoadChecks = ({ agentsSpecs }) => {
     return leaderSpec;
 };
 
-const createRuntimeSchedulerManager = ({ cronsDir, runtimeAgent }) => {
-    const schedulerStore = createJsonFileSchedulerStore({
+const createRuntimeCronManager = ({ cronsDir, runtimeAgent }) => {
+    const cronStore = createJsonFileCronStore({
         directoryPath: cronsDir,
         logger: runtimeAgent?.runtime?.logger
     });
 
-    const schedulerManager = createSchedulerManager({
+    const cronManager = createCronManager({
         logger: runtimeAgent?.runtime?.logger,
-        createEntryId: () => generateId('cron'),
+        createCronId: () => generateId('cron'),
         createIsolatedSessionId: () => generateId('cron'),
-        loadEntries: schedulerStore.loadEntries,
-        saveEntry: schedulerStore.saveEntry,
-        deleteEntry: schedulerStore.deleteEntry,
+        loadCrons: cronStore.loadCrons,
+        saveCron: cronStore.saveCron,
+        deleteCron: cronStore.deleteCron,
         buildMessageNotification: entry => ({
-            type: 'scheduled_notification',
+            type: 'cron_notification',
             action: 'message',
-            scheduleId: entry.id,
+            cronId: entry.id,
             name: entry.name,
             schedule: entry.schedule,
             content: entry.message
         }),
         buildAgentPromptNotification: (entry, result) => ({
-            type: 'scheduled_notification',
+            type: 'cron_notification',
             action: 'agent_prompt',
-            scheduleId: entry.id,
+            cronId: entry.id,
             name: entry.name,
             schedule: entry.schedule,
             status: result.status,
@@ -146,10 +146,10 @@ const createRuntimeSchedulerManager = ({ cronsDir, runtimeAgent }) => {
     });
 
     if (runtimeAgent) {
-        schedulerManager.setRuntimeAgent(runtimeAgent);
+        cronManager.setRuntimeAgent(runtimeAgent);
     }
 
-    return schedulerManager;
+    return cronManager;
 };
 
 // Create the main runtime object
@@ -244,7 +244,7 @@ const createRuntime = async (options = {}) => {
         eventHandlers: new Map(),
         subagentRegistry: new SubagentRegistry(),
         sessionAgents: new Map(),
-        schedulerManager: null
+        cronManager: null
     };
 
     // Create the leader agent
@@ -258,8 +258,8 @@ const createRuntime = async (options = {}) => {
     // Add the leader agent to the runtime session
     runtime.sessionAgents.set(DEFAULT_LEADER_SESSION_ID, leaderAgent);
 
-    // Create the runtime-owned scheduler manager after the leader agent exists
-    runtime.schedulerManager = createRuntimeSchedulerManager({
+    // Create the runtime-owned cron manager after the leader agent exists
+    runtime.cronManager = createRuntimeCronManager({
         cronsDir: resolvedCronsDir,
         runtimeAgent: leaderAgent
     });

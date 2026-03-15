@@ -11,14 +11,14 @@ export const cronListTool = {
 
     // Main execution function
     execute: async (_args, { runtime }) => {
-        // Validate scheduler manager
-        const schedulerManager = runtime?.schedulerManager;
-        if (!schedulerManager) {
-            throw new Error('Runtime scheduler manager is not available.');
+        // Validate cron manager
+        const cronManager = runtime?.cronManager;
+        if (!cronManager) {
+            throw new Error('Runtime cron manager is not available.');
         }
 
         // List all crons
-        const entries = schedulerManager.listEntries();
+        const entries = cronManager.listCrons();
         if (entries.length === 0) {
             return {
                 success: true,

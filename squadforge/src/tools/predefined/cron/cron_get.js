@@ -16,14 +16,14 @@ export const cronGetTool = {
 
     // Main execution function
     execute: async ({ cronId }, { runtime }) => {
-        // Validate scheduler manager
-        const schedulerManager = runtime?.schedulerManager;
-        if (!schedulerManager) {
-            throw new Error('Runtime scheduler manager is not available.');
+        // Validate cron manager
+        const cronManager = runtime?.cronManager;
+        if (!cronManager) {
+            throw new Error('Runtime cron manager is not available.');
         }
 
         // Get the cron details
-        const entry = schedulerManager.getEntry(cronId);
+        const entry = cronManager.getCron(cronId);
         if (!entry) {
             return {
                 success: false,
@@ -34,7 +34,7 @@ export const cronGetTool = {
         // Return the cron details
         return {
             success: true,
-            output: schedulerManager.serializeEntry(entry)
+            output: cronManager.serializeCron(entry)
         };
     }
 };

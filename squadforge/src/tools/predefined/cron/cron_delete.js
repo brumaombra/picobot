@@ -16,14 +16,14 @@ export const cronDeleteTool = {
 
     // Main execution function
     execute: async ({ cronId }, { runtime }) => {
-        // Validate scheduler manager
-        const schedulerManager = runtime?.schedulerManager;
-        if (!schedulerManager) {
-            throw new Error('Runtime scheduler manager is not available.');
+        // Validate cron manager
+        const cronManager = runtime?.cronManager;
+        if (!cronManager) {
+            throw new Error('Runtime cron manager is not available.');
         }
 
         // Delete the cron
-        const deletedEntry = schedulerManager.deleteEntry(cronId);
+        const deletedEntry = cronManager.deleteCron(cronId);
 
         // Return success response
         return {

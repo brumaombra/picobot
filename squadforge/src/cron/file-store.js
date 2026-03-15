@@ -19,21 +19,21 @@ const createLogger = logger => {
     };
 };
 
-// Create a filesystem-backed JSON store for scheduled entries.
-export const createJsonFileSchedulerStore = (options = {}) => {
+// Create a filesystem-backed JSON store for persisted cron definitions.
+export const createJsonFileCronStore = (options = {}) => {
     const {
         directoryPath,
         logger = console
     } = options;
 
     if (!directoryPath || typeof directoryPath !== 'string') {
-        throw new Error('createJsonFileSchedulerStore requires a directoryPath string.');
+        throw new Error('createJsonFileCronStore requires a directoryPath string.');
     }
 
     const log = createLogger(logger);
 
-    const getEntryFilePath = entryId => {
-        return join(directoryPath, `${entryId}.json`);
+    const getCronFilePath = cronId => {
+        return join(directoryPath, `${cronId}.json`);
     };
 
     const ensureDirectory = () => {
@@ -43,43 +43,43 @@ export const createJsonFileSchedulerStore = (options = {}) => {
     };
 
     return {
-        getEntryFilePath,
+        getCronFilePath,
 
-        saveEntry: (entryId, entry) => {
+        saveCron: (cronId, cronEntry) => {
             try {
                 ensureDirectory();
-                writeFileSync(getEntryFilePath(entryId), JSON.stringify(entry, null, 2));
-                log('debug', `Scheduled entry saved: ${entryId}`);
+                writeFileSync(getCronFilePath(cronId), JSON.stringify(cronEntry, null, 2));
+                log('debug', `Cron saved: ${cronId}`);
             } catch (error) {
-                log('error', `Failed to save scheduled entry ${entryId}: ${toErrorMessage(error)}`);
+                log('error', `Failed to save cron ${cronId}: ${toErrorMessage(error)}`);
             }
         },
 
-        deleteEntry: entryId => {
+        deleteCron: cronId => {
             try {
-                const filePath = getEntryFilePath(entryId);
+                const filePath = getCronFilePath(cronId);
                 if (existsSync(filePath)) {
                     unlinkSync(filePath);
-                    log('debug', `Scheduled entry file deleted: ${entryId}`);
+                    log('debug', `Cron file deleted: ${cronId}`);
                 }
             } catch (error) {
-                log('error', `Failed to delete scheduled entry file ${entryId}: ${toErrorMessage(error)}`);
+                log('error', `Failed to delete cron file ${cronId}: ${toErrorMessage(error)}`);
             }
         },
 
-        loadEntries: () => {
+        loadCrons: () => {
             try {
                 if (!existsSync(directoryPath)) {
-                    log('debug', 'No existing scheduled entries directory found');
+                    log('debug', 'No existing crons directory found');
                     return new Map();
                 }
 
                 const entries = loadCronsFromDirectory({ cronsDir: directoryPath });
 
-                log('info', `Loaded ${entries.size} scheduled entries from disk`);
+                log('info', `Loaded ${entries.size} crons from disk`);
                 return entries;
             } catch (error) {
-                log('error', `Failed to load scheduled entries: ${toErrorMessage(error)}`);
+                log('error', `Failed to load crons: ${toErrorMessage(error)}`);
                 return new Map();
             }
         }

@@ -33,10 +33,10 @@ export const cronUpdateTool = {
 
     // Main execution function
     execute: async ({ cronId, name, schedule, action_type, message }, { runtime, sessionId }) => {
-        // Validate scheduler manager
-        const schedulerManager = runtime?.schedulerManager;
-        if (!schedulerManager) {
-            throw new Error('Runtime scheduler manager is not available.');
+        // Validate cron manager
+        const cronManager = runtime?.cronManager;
+        if (!cronManager) {
+            throw new Error('Runtime cron manager is not available.');
         }
 
         // Build the updates object with only provided fields
@@ -50,7 +50,7 @@ export const cronUpdateTool = {
         }
 
         // Update the cron
-        const updatedEntry = schedulerManager.updateEntry(cronId, updates);
+        const updatedEntry = cronManager.updateCron(cronId, updates);
 
         // Return success response
         return {

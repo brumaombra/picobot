@@ -29,14 +29,14 @@ export const cronCreateTool = {
 
     // Main execution function
     execute: async ({ name, schedule, action_type, message }, { runtime, sessionId }) => {
-        // Validate scheduler manager
-        const schedulerManager = runtime?.schedulerManager;
-        if (!schedulerManager) {
-            throw new Error('Runtime scheduler manager is not available.');
+        // Validate cron manager
+        const cronManager = runtime?.cronManager;
+        if (!cronManager) {
+            throw new Error('Runtime cron manager is not available.');
         }
 
         // Create the cron
-        const createdEntry = schedulerManager.createEntry({
+        const createdEntry = cronManager.createCron({
             name,
             schedule,
             action: action_type,

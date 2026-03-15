@@ -191,9 +191,10 @@ export const startRuntime = async runtime => {
         return runtime;
     }
 
-    // Initialize runtime-owned schedulers before processing inbound traffic
-    if (runtime.schedulerManager) {
-        runtime.schedulerManager.initialize();
+    // Initialize runtime-owned crons before processing inbound traffic
+    const cronManager = runtime.cronManager;
+    if (cronManager) {
+        cronManager.initialize();
     }
 
     // Register the runtime receiver and keep the optional detach hook for shutdown
@@ -221,9 +222,10 @@ export const stopRuntime = async runtime => {
     await runtime.loopPromise;
     runtime.loopPromise = null;
 
-    // Stop any runtime-owned schedulers
-    if (runtime.schedulerManager) {
-        runtime.schedulerManager.stop();
+    // Stop any runtime-owned crons
+    const cronManager = runtime.cronManager;
+    if (cronManager) {
+        cronManager.stop();
     }
 
     // Detach the inbound channel when a detach function is provided
