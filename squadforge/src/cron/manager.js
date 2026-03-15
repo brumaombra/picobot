@@ -1,9 +1,9 @@
 import cron from 'node-cron';
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
+import { join } from 'path';
+import { loadCronsFromDirectory } from '../loaders/load-crons.js';
 import { queueRuntimeMessage } from '../runtime/channel.js';
-import { sendToSession } from '../runtime/lookup.js';
-import { generateId, stringifyJson } from '../utils/utils.js';
-
-const ALLOWED_CRON_ACTIONS = new Set(['message', 'agent_prompt']);
+import { generateId } from '../utils/utils.js';
 
 const toErrorMessage = error => {
     return error instanceof Error ? error.message : String(error);
@@ -15,35 +15,12 @@ const stopTask = task => {
 };
 
 const stripTask = entry => {
-    const { task, ...data } = entry || {};
+    const { task, action, ...data } = entry || {};
     return data;
 };
 
-// Create a runtime-owned cron manager with injected persistence and notification hooks.
-export const createCronManager = (options = {}) => {
-    const {
-        logger = console,
-        createCronId = () => generateId('cron'),
-        createIsolatedSessionId = () => generateId('cron'),
-        loadCrons = () => new Map(),
-        saveCron = () => { },
-        deleteCron = () => { },
-        hydrateCron = entry => entry,
-        serializeCron = stripTask,
-        buildMessageNotification = entry => entry.message,
-        buildAgentPromptNotification = (entry, result) => ({
-            type: 'cron_notification',
-            action: entry.action,
-            cronId: entry.id,
-            status: result.status,
-            content: result.content
-        })
-    } = options;
-
-    const crons = new Map();
-    let runtimeAgent = null;
-
-    const log = (level, message) => {
+const createLogger = logger => {
+    return (level, message) => {
         const loggerFn = logger?.[level];
         if (typeof loggerFn === 'function') {
             loggerFn.call(logger, message);
@@ -53,30 +30,112 @@ export const createCronManager = (options = {}) => {
         const fallback = console[level] || console.log;
         fallback(message);
     };
+};
 
-    const validateCron = entry => {
-        if (!entry?.id || typeof entry.id !== 'string') {
-            throw new Error('Cron requires a string id.');
+const validateCron = entry => {
+    if (!entry?.id || typeof entry.id !== 'string') {
+        throw new Error('Cron requires a string id.');
+    }
+
+    if (!entry?.name || typeof entry.name !== 'string') {
+        throw new Error('Cron requires a name.');
+    }
+
+    if (!entry?.sessionId || typeof entry.sessionId !== 'string') {
+        throw new Error('Cron requires a sessionId.');
+    }
+
+    if (!entry?.message || typeof entry.message !== 'string') {
+        throw new Error('Cron requires a message.');
+    }
+
+    if (!entry?.schedule || typeof entry.schedule !== 'string' || !cron.validate(entry.schedule)) {
+        throw new Error(`Invalid cron schedule: ${entry?.schedule}`);
+    }
+};
+
+// Create a runtime-owned cron manager backed by one store and one runtime.
+export const createCronManager = (options = {}) => {
+    const {
+        runtime,
+        cronsDir,
+        logger = runtime?.logger || console
+    } = options;
+
+    if (!runtime) {
+        throw new Error('createCronManager requires a runtime object.');
+    }
+
+    if (!cronsDir || typeof cronsDir !== 'string') {
+        throw new Error('createCronManager requires a cronsDir string.');
+    }
+
+    const crons = new Map();
+    const log = createLogger(logger);
+
+    const serializeCron = entry => stripTask(entry);
+
+    const withDefaults = input => {
+        return {
+            ...stripTask(input),
+            id: input?.id || generateId('cron'),
+            task: null
+        };
+    };
+
+    const notifySession = (sessionId, content) => {
+        queueRuntimeMessage(runtime, {
+            sessionId,
+            role: 'system',
+            content
+        });
+    };
+
+    const getCronFilePath = cronId => {
+        return join(cronsDir, `${cronId}.json`);
+    };
+
+    const ensureCronsDirectory = () => {
+        if (!existsSync(cronsDir)) {
+            mkdirSync(cronsDir, { recursive: true });
         }
+    };
 
-        if (!entry?.name || typeof entry.name !== 'string') {
-            throw new Error('Cron requires a name.');
+    const loadPersistedCrons = () => {
+        try {
+            if (!existsSync(cronsDir)) {
+                log('debug', 'No existing crons directory found');
+                return new Map();
+            }
+
+            const entries = loadCronsFromDirectory({ cronsDir });
+            log('info', `Loaded ${entries.size} crons from disk`);
+            return entries;
+        } catch (error) {
+            log('error', `Failed to load crons: ${toErrorMessage(error)}`);
+            return new Map();
         }
+    };
 
-        if (!entry?.sessionId || typeof entry.sessionId !== 'string') {
-            throw new Error('Cron requires a sessionId.');
+    const savePersistedCron = (cronId, cronEntry) => {
+        try {
+            ensureCronsDirectory();
+            writeFileSync(getCronFilePath(cronId), JSON.stringify(cronEntry, null, 2));
+            log('debug', `Cron saved: ${cronId}`);
+        } catch (error) {
+            log('error', `Failed to save cron ${cronId}: ${toErrorMessage(error)}`);
         }
+    };
 
-        if (!entry?.message || typeof entry.message !== 'string') {
-            throw new Error('Cron requires a message.');
-        }
-
-        if (!entry?.action || !ALLOWED_CRON_ACTIONS.has(entry.action)) {
-            throw new Error(`Cron action must be one of: ${[...ALLOWED_CRON_ACTIONS].join(', ')}`);
-        }
-
-        if (!entry?.schedule || typeof entry.schedule !== 'string' || !cron.validate(entry.schedule)) {
-            throw new Error(`Invalid cron schedule: ${entry?.schedule}`);
+    const deletePersistedCron = cronId => {
+        try {
+            const filePath = getCronFilePath(cronId);
+            if (existsSync(filePath)) {
+                unlinkSync(filePath);
+                log('debug', `Cron file deleted: ${cronId}`);
+            }
+        } catch (error) {
+            log('error', `Failed to delete cron file ${cronId}: ${toErrorMessage(error)}`);
         }
     };
 
@@ -100,29 +159,8 @@ export const createCronManager = (options = {}) => {
         crons.clear();
     };
 
-    const queueNotification = (entry, payload) => {
-        if (!runtimeAgent?.runtime) {
-            log('error', `Cannot queue cron notification for "${entry.name}": runtime agent not set`);
-            return false;
-        }
-
-        queueRuntimeMessage(runtimeAgent.runtime, {
-            sessionId: entry.sessionId,
-            role: 'system',
-            content: typeof payload === 'string' ? payload : stringifyJson(payload)
-        });
-
-        return true;
-    };
-
     const manager = {
         crons,
-
-        setRuntimeAgent: agent => {
-            runtimeAgent = agent;
-            log('debug', 'Runtime agent reference set for cron manager');
-            return manager;
-        },
 
         serializeCron: entry => serializeCron(entry),
 
@@ -130,13 +168,12 @@ export const createCronManager = (options = {}) => {
             clearCrons();
 
             try {
-                const loadedCrons = loadCrons() || new Map();
+                const loadedCrons = loadPersistedCrons() || new Map();
                 for (const [cronId, rawEntry] of loadedCrons) {
                     try {
-                        const entry = hydrateCron({
+                        const entry = withDefaults({
                             ...rawEntry,
-                            id: rawEntry?.id || cronId,
-                            task: null
+                            id: rawEntry?.id || cronId
                         });
 
                         validateCron(entry);
@@ -170,16 +207,12 @@ export const createCronManager = (options = {}) => {
         },
 
         createCron: input => {
-            const entry = hydrateCron({
-                ...input,
-                id: input?.id || createCronId(),
-                task: null
-            });
+            const entry = withDefaults(input);
 
             validateCron(entry);
             scheduleCronTask(entry);
             crons.set(entry.id, entry);
-            saveCron(entry.id, serializeCron(entry));
+            savePersistedCron(entry.id, serializeCron(entry));
             log('info', `Created cron: ${entry.name} (${entry.schedule})`);
 
             return serializeCron(entry);
@@ -191,18 +224,17 @@ export const createCronManager = (options = {}) => {
                 throw new Error(`Cron not found: ${id}`);
             }
 
-            const nextEntry = hydrateCron({
+            const nextEntry = withDefaults({
                 ...stripTask(currentEntry),
                 ...updates,
-                id,
-                task: null
+                id
             });
 
             validateCron(nextEntry);
             stopTask(currentEntry.task);
             scheduleCronTask(nextEntry);
             crons.set(id, nextEntry);
-            saveCron(id, serializeCron(nextEntry));
+            savePersistedCron(id, serializeCron(nextEntry));
             log('info', `Updated cron: ${nextEntry.name}`);
 
             return serializeCron(nextEntry);
@@ -216,7 +248,7 @@ export const createCronManager = (options = {}) => {
 
             stopTask(entry.task);
             crons.delete(id);
-            deleteCron(id);
+            deletePersistedCron(id);
             log('info', `Deleted cron: ${entry.name}`);
 
             return serializeCron(entry);
@@ -232,50 +264,12 @@ export const createCronManager = (options = {}) => {
             log('info', `Executing cron: ${entry.name}`);
 
             try {
-                if (entry.action === 'message') {
-                    queueNotification(entry, buildMessageNotification(entry));
-                    log('info', `Cron completed: ${entry.name}`);
-                    return serializeCron(entry);
-                }
-
-                if (!runtimeAgent?.runtime) {
-                    log('error', `Cannot execute cron agent prompt "${entry.name}": runtime agent not set`);
-                    return null;
-                }
-
-                const result = await sendToSession(runtimeAgent.runtime, entry.message, {
-                    sessionId: createIsolatedSessionId(),
-                    role: 'system'
-                });
-
-                if (result?.response) {
-                    queueNotification(entry, buildAgentPromptNotification(entry, {
-                        status: 'completed',
-                        content: result.response,
-                        timedOut: false
-                    }));
-                } else if (result?.timedOut) {
-                    queueNotification(entry, buildAgentPromptNotification(entry, {
-                        status: 'timed_out',
-                        content: 'Timed out before completing.',
-                        timedOut: true
-                    }));
-                }
-
-                log('info', `Cron completed: ${entry.name}`);
+                notifySession(entry.sessionId, entry.message);
+                log('info', `Cron queued: ${entry.name}`);
                 return serializeCron(entry);
             } catch (error) {
                 const errorMessage = toErrorMessage(error);
                 log('error', `Cron execution failed (${entry.name}): ${errorMessage}`);
-
-                if (entry.action === 'agent_prompt') {
-                    queueNotification(entry, buildAgentPromptNotification(entry, {
-                        status: 'error',
-                        content: `Error: ${errorMessage}`,
-                        error: errorMessage,
-                        timedOut: false
-                    }));
-                }
 
                 return null;
             }

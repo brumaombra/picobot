@@ -6,12 +6,10 @@ import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
 import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
 import { getLogFiles, initializeLogger } from '../logging/logger.js';
-import { createJsonFileCronStore } from '../cron/file-store.js';
 import { createCronManager } from '../cron/manager.js';
 import { SubagentRegistry } from './subagent-registry.js';
 import { SessionStore } from '../sessions/session-store.js';
 import { loadTools } from '../tools/tools-catalog.js';
-import { generateId } from '../utils/utils.js';
 
 // Run validation checks before loading runtime resources from disk
 const beforeLoadChecks = options => {
@@ -111,47 +109,6 @@ const afterLoadChecks = ({ agentsSpecs }) => {
     return leaderSpec;
 };
 
-const createRuntimeCronManager = ({ cronsDir, runtimeAgent }) => {
-    const cronStore = createJsonFileCronStore({
-        directoryPath: cronsDir,
-        logger: runtimeAgent?.runtime?.logger
-    });
-
-    const cronManager = createCronManager({
-        logger: runtimeAgent?.runtime?.logger,
-        createCronId: () => generateId('cron'),
-        createIsolatedSessionId: () => generateId('cron'),
-        loadCrons: cronStore.loadCrons,
-        saveCron: cronStore.saveCron,
-        deleteCron: cronStore.deleteCron,
-        buildMessageNotification: entry => ({
-            type: 'cron_notification',
-            action: 'message',
-            cronId: entry.id,
-            name: entry.name,
-            schedule: entry.schedule,
-            content: entry.message
-        }),
-        buildAgentPromptNotification: (entry, result) => ({
-            type: 'cron_notification',
-            action: 'agent_prompt',
-            cronId: entry.id,
-            name: entry.name,
-            schedule: entry.schedule,
-            status: result.status,
-            content: result.content,
-            timedOut: Boolean(result.timedOut),
-            error: result.error || null
-        })
-    });
-
-    if (runtimeAgent) {
-        cronManager.setRuntimeAgent(runtimeAgent);
-    }
-
-    return cronManager;
-};
-
 // Create the main runtime object
 const createRuntime = async (options = {}) => {
     // Validate the runtime options before touching the filesystem
@@ -192,6 +149,7 @@ const createRuntime = async (options = {}) => {
     const resolvedCronsDir = cronsDir || join(resolvedRootDir, DEFAULT_CRONS_DIR_NAME);
     const resolvedLogsDir = logsDir || join(resolvedRootDir, DEFAULT_LOGS_DIR_NAME);
 
+    // Initialize the logger
     const runtimeLogger = initializeLogger({
         rootDir: resolvedRootDir,
         logsDir: resolvedLogsDir,
@@ -258,15 +216,15 @@ const createRuntime = async (options = {}) => {
     // Add the leader agent to the runtime session
     runtime.sessionAgents.set(DEFAULT_LEADER_SESSION_ID, leaderAgent);
 
-    // Create the runtime-owned cron manager after the leader agent exists
-    runtime.cronManager = createRuntimeCronManager({
+    // Create the runtime-owned cron manager
+    runtime.cronManager = createCronManager({
+        runtime,
         cronsDir: resolvedCronsDir,
-        runtimeAgent: leaderAgent
+        logger: runtime.logger
     });
 
+    // Log and return the runtime object
     runtime.logger.info(`Runtime created for root directory: ${resolvedRootDir}`);
-
-    // Return the runtime object
     return runtime;
 };
 

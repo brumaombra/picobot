@@ -2,7 +2,7 @@
 export const cronCreateTool = {
     // Tool definition
     name: 'cron_create',
-    description: 'Schedule a new cron that runs automatically.',
+    description: 'Schedule a new cron that sends a system message to the agent when due.',
     parameters: {
         type: 'object',
         properties: {
@@ -14,21 +14,16 @@ export const cronCreateTool = {
                 type: 'string',
                 description: 'Cron schedule. Format: "minute hour day month weekday". Examples: "0 9 * * *" (daily 9 AM), "*/15 * * * *" (every 15 min).'
             },
-            action_type: {
-                type: 'string',
-                enum: ['message', 'agent_prompt'],
-                description: 'Action type: "message" to send text, "agent_prompt" to trigger agent.'
-            },
             message: {
                 type: 'string',
-                description: 'Content for the action (text message or agent prompt).'
+                description: 'Message content to queue to the agent as a system message when the cron runs.'
             }
         },
-        required: ['name', 'schedule', 'action_type', 'message']
+        required: ['name', 'schedule', 'message']
     },
 
     // Main execution function
-    execute: async ({ name, schedule, action_type, message }, { runtime, sessionId }) => {
+    execute: async ({ name, schedule, message }, { runtime, sessionId }) => {
         // Validate cron manager
         const cronManager = runtime?.cronManager;
         if (!cronManager) {
@@ -39,7 +34,6 @@ export const cronCreateTool = {
         const createdEntry = cronManager.createCron({
             name,
             schedule,
-            action: action_type,
             message,
             sessionId
         });

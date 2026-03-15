@@ -18,21 +18,16 @@ export const cronUpdateTool = {
                 type: 'string',
                 description: 'New cron schedule (optional). Format: "minute hour day month weekday".'
             },
-            action_type: {
-                type: 'string',
-                enum: ['message', 'agent_prompt'],
-                description: 'New action type (optional).'
-            },
             message: {
                 type: 'string',
-                description: 'New content (optional).'
+                description: 'New message content to queue to the agent when the cron runs (optional).'
             }
         },
         required: ['cronId']
     },
 
     // Main execution function
-    execute: async ({ cronId, name, schedule, action_type, message }, { runtime, sessionId }) => {
+    execute: async ({ cronId, name, schedule, message }, { runtime, sessionId }) => {
         // Validate cron manager
         const cronManager = runtime?.cronManager;
         if (!cronManager) {
@@ -43,7 +38,6 @@ export const cronUpdateTool = {
         const updates = {};
         if (name !== undefined) updates.name = name;
         if (schedule !== undefined) updates.schedule = schedule;
-        if (action_type !== undefined) updates.action = action_type;
         if (message !== undefined) {
             updates.message = message;
             updates.sessionId = sessionId;

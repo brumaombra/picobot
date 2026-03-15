@@ -32,8 +32,7 @@ export const cronListTool = {
             output: entries.map(entry => ({
                 id: entry.id,
                 name: entry.name,
-                schedule: entry.schedule,
-                action: entry.action
+                schedule: entry.schedule
             }))
         };
     }
