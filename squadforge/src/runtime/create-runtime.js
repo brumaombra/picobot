@@ -6,7 +6,7 @@ import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
 import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
 import { getLogFiles, initializeLogger } from '../logging/logger.js';
-import { createCronManager } from '../cron/manager.js';
+import { CronManager } from '../cron/manager.js';
 import { SubagentRegistry } from './subagent-registry.js';
 import { SessionStore } from '../sessions/session-store.js';
 import { loadTools } from '../tools/tools-catalog.js';
@@ -217,7 +217,7 @@ const createRuntime = async (options = {}) => {
     runtime.sessionAgents.set(DEFAULT_LEADER_SESSION_ID, leaderAgent);
 
     // Create the runtime-owned cron manager
-    runtime.cronManager = createCronManager({
+    runtime.cronManager = new CronManager({
         runtime,
         cronsDir: resolvedCronsDir,
         logger: runtime.logger
