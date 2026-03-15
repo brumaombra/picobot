@@ -1,23 +1,17 @@
 import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
 import { DEFAULT_LEADER_SESSION_ID, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_SESSION_TTL_MS } from '../config.js';
-import { loadSessionsFromDirectory } from '../loaders/load-sessions.js';
 import { normalizeSessionId } from '../utils/utils.js';
 
-// Session store with optional disk persistence
-export class SessionStore {
+// Session manager with optional disk persistence
+export class SessionManager {
     // Constructor
-    constructor({ sessionsDir = null, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS } = {}) {
+    constructor({ sessionsDir = null, maxMessagesPerSession = DEFAULT_MAX_MESSAGES_PER_SESSION, sessionTtlMs = DEFAULT_SESSION_TTL_MS, sessions = null } = {}) {
         // Save the properties
-        this.sessions = new Map();
+        this.sessions = sessions instanceof Map ? new Map(sessions) : new Map();
         this.sessionsDir = sessionsDir;
         this.maxMessagesPerSession = maxMessagesPerSession;
         this.sessionTtlMs = sessionTtlMs;
-
-        // Load persisted sessions if a sessions directory is configured
-        if (this.sessionsDir) {
-            this.loadSessions();
-        }
 
         // Drop expired stale sessions after loading persisted state
         this.cleanupExpiredSessions();
@@ -39,17 +33,6 @@ export class SessionStore {
         if (!existsSync(this.sessionsDir)) {
             mkdirSync(this.sessionsDir, { recursive: true });
         }
-    }
-
-    // Load all sessions from disk
-    loadSessions() {
-        // If no sessions directory is configured, skip loading
-        if (!this.sessionsDir) {
-            return;
-        }
-
-        // Load the persisted sessions through the dedicated filesystem loader
-        this.sessions = loadSessionsFromDirectory({ sessionsDir: this.sessionsDir });
     }
 
     // Trim a session to the configured maximum number of messages

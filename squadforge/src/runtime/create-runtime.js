@@ -3,12 +3,14 @@ import { AgentSpec } from '../core/agent-spec.js';
 import { Agent } from '../core/agent.js';
 import { DEFAULT_AGENTS_DIR_NAME, DEFAULT_CRONS_DIR_NAME, DEFAULT_PROMPTS_DIR_NAME, DEFAULT_RUNTIME_POLL_TIMEOUT_MS, DEFAULT_RUNTIME_TIMEOUT_MESSAGE, DEFAULT_SKILLS_DIR_NAME, DEFAULT_TOOLS_DIR_NAME, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_LEADER_SESSION_ID, LEADER_SPEC_ID, DEFAULT_LLM_CHAT_MAX_RETRIES, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_MAX_RUNTIME_MS, DEFAULT_SESSION_TTL_MS, DEFAULT_WRAP_UP_THRESHOLD_MS, DEFAULT_LOGS_DIR_NAME, DEFAULT_LOG_LEVEL } from '../config.js';
 import { loadAgentsFromDirectory } from '../loaders/load-agents.js';
+import { loadCronsFromDirectory } from '../loaders/load-crons.js';
 import { loadPromptTemplatesFromDirectory } from '../loaders/load-prompts.js';
+import { loadSessionsFromDirectory } from '../loaders/load-sessions.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
 import { getLogFiles, initializeLogger } from '../logging/logger.js';
-import { CronManager } from '../cron/manager.js';
+import { CronManager } from '../crons/cron-manager.js';
 import { SubagentRegistry } from './subagent-registry.js';
-import { SessionStore } from '../sessions/session-store.js';
+import { SessionManager } from '../sessions/session-manager.js';
 import { loadTools } from '../tools/tools-catalog.js';
 
 // Run validation checks before loading runtime resources from disk
@@ -109,6 +111,25 @@ const afterLoadChecks = ({ agentsSpecs }) => {
     return leaderSpec;
 };
 
+// Load all filesystem-backed runtime resources during boot.
+const loadRuntimeResources = async ({ promptsDir, skillsDir, toolsDir, agentsDir, sessionsDir, cronsDir } = {}) => {
+    const promptTemplates = loadPromptTemplatesFromDirectory({ promptsDir });
+    const skills = loadSkillsFromDirectory({ skillsDir });
+    const tools = await loadTools({ toolsDir });
+    const agentsSpecs = loadAgentsFromDirectory({ agentsDir, availableTools: tools });
+    const sessions = loadSessionsFromDirectory({ sessionsDir });
+    const crons = loadCronsFromDirectory({ cronsDir });
+
+    return {
+        promptTemplates,
+        skills,
+        tools,
+        agentsSpecs,
+        sessions,
+        crons
+    };
+};
+
 // Create the main runtime object
 const createRuntime = async (options = {}) => {
     // Validate the runtime options before touching the filesystem
@@ -157,12 +178,23 @@ const createRuntime = async (options = {}) => {
         level: logLevel
     });
 
-    // Load the components of the runtime from the filesystem
-    const promptTemplates = loadPromptTemplatesFromDirectory({ promptsDir: resolvedPromptsDir });
-    const skills = loadSkillsFromDirectory({ skillsDir: resolvedSkillsDir });
-    const tools = await loadTools({ toolsDir: resolvedToolsDir });
-    const agentsSpecs = loadAgentsFromDirectory({ agentsDir: resolvedAgentsDir, availableTools: tools });
-    const sessionStore = new SessionStore({ sessionsDir: resolvedSessionsDir, maxMessagesPerSession, sessionTtlMs });
+    // Load all filesystem-backed runtime resources during boot
+    const { promptTemplates, skills, tools, agentsSpecs, sessions, crons } = await loadRuntimeResources({
+        promptsDir: resolvedPromptsDir,
+        skillsDir: resolvedSkillsDir,
+        toolsDir: resolvedToolsDir,
+        agentsDir: resolvedAgentsDir,
+        sessionsDir: resolvedSessionsDir,
+        cronsDir: resolvedCronsDir
+    });
+
+    // Create the session manager
+    const sessionManager = new SessionManager({
+        sessionsDir: resolvedSessionsDir,
+        maxMessagesPerSession,
+        sessionTtlMs,
+        sessions
+    });
 
     // Perform validation checks after loading the runtime resources
     const leaderSpec = afterLoadChecks({ agentsSpecs });
@@ -173,7 +205,7 @@ const createRuntime = async (options = {}) => {
         tools,
         skills,
         promptTemplates,
-        sessionStore,
+        sessionManager,
         rootDir: resolvedRootDir,
         workspaceDir: resolvedWorkspaceDir,
         agentsDir: resolvedAgentsDir,
@@ -220,7 +252,8 @@ const createRuntime = async (options = {}) => {
     runtime.cronManager = new CronManager({
         runtime,
         cronsDir: resolvedCronsDir,
-        logger: runtime.logger
+        logger: runtime.logger,
+        crons
     });
 
     // Log and return the runtime object
