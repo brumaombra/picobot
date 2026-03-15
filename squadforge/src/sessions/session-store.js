@@ -1,6 +1,7 @@
-import { existsSync, mkdirSync, readFileSync, readdirSync, unlinkSync, writeFileSync } from 'fs';
-import { basename, join } from 'path';
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
+import { join } from 'path';
 import { DEFAULT_LEADER_SESSION_ID, DEFAULT_MAX_MESSAGES_PER_SESSION, DEFAULT_SESSIONS_DIR_NAME, DEFAULT_SESSION_TTL_MS } from '../config.js';
+import { loadSessionsFromDirectory } from '../loaders/load-sessions.js';
 import { normalizeSessionId } from '../utils/utils.js';
 
 // Session store with optional disk persistence
@@ -42,33 +43,13 @@ export class SessionStore {
 
     // Load all sessions from disk
     loadSessions() {
-        // If no sessions directory is configured or it doesn't exist, skip loading
-        if (!this.sessionsDir || !existsSync(this.sessionsDir)) {
+        // If no sessions directory is configured, skip loading
+        if (!this.sessionsDir) {
             return;
         }
 
-        // Read all JSON files in the sessions directory
-        const files = readdirSync(this.sessionsDir)
-            .filter(fileName => fileName.endsWith('.json'))
-            .sort((left, right) => left.localeCompare(right));
-
-        // Iterate through each session file and load its data
-        for (const fileName of files) {
-            // Get the file path and read the session data
-            const filePath = join(this.sessionsDir, fileName);
-            const content = readFileSync(filePath, 'utf-8');
-            const sessionData = JSON.parse(content);
-            const sessionId = sessionData.id || basename(fileName, '.json');
-
-            // Save the session data in memory
-            this.sessions.set(sessionId, {
-                ...sessionData,
-                id: sessionId,
-                createdAt: sessionData.createdAt ? new Date(sessionData.createdAt) : new Date(),
-                updatedAt: sessionData.updatedAt ? new Date(sessionData.updatedAt) : new Date(),
-                messages: Array.isArray(sessionData.messages) ? sessionData.messages : []
-            });
-        }
+        // Load the persisted sessions through the dedicated filesystem loader
+        this.sessions = loadSessionsFromDirectory({ sessionsDir: this.sessionsDir });
     }
 
     // Trim a session to the configured maximum number of messages

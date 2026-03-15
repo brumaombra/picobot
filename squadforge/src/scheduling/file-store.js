@@ -1,5 +1,6 @@
-import { existsSync, mkdirSync, readdirSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync, mkdirSync, unlinkSync, writeFileSync } from 'fs';
 import { join } from 'path';
+import { loadCronsFromDirectory } from '../loaders/load-crons.js';
 
 const toErrorMessage = error => {
     return error instanceof Error ? error.message : String(error);
@@ -22,8 +23,7 @@ const createLogger = logger => {
 export const createJsonFileSchedulerStore = (options = {}) => {
     const {
         directoryPath,
-        logger = console,
-        fileExtension = '.json'
+        logger = console
     } = options;
 
     if (!directoryPath || typeof directoryPath !== 'string') {
@@ -33,7 +33,7 @@ export const createJsonFileSchedulerStore = (options = {}) => {
     const log = createLogger(logger);
 
     const getEntryFilePath = entryId => {
-        return join(directoryPath, `${entryId}${fileExtension}`);
+        return join(directoryPath, `${entryId}.json`);
     };
 
     const ensureDirectory = () => {
@@ -68,31 +68,20 @@ export const createJsonFileSchedulerStore = (options = {}) => {
         },
 
         loadEntries: () => {
-            const entries = new Map();
-
             try {
                 if (!existsSync(directoryPath)) {
                     log('debug', 'No existing scheduled entries directory found');
-                    return entries;
+                    return new Map();
                 }
 
-                const files = readdirSync(directoryPath).filter(fileName => fileName.endsWith(fileExtension));
-                for (const fileName of files) {
-                    try {
-                        const filePath = join(directoryPath, fileName);
-                        const parsedEntry = JSON.parse(readFileSync(filePath, 'utf-8'));
-                        entries.set(parsedEntry.id, parsedEntry);
-                    } catch (error) {
-                        log('error', `Failed to load scheduled entry file ${fileName}: ${toErrorMessage(error)}`);
-                    }
-                }
+                const entries = loadCronsFromDirectory({ cronsDir: directoryPath });
 
                 log('info', `Loaded ${entries.size} scheduled entries from disk`);
+                return entries;
             } catch (error) {
                 log('error', `Failed to load scheduled entries: ${toErrorMessage(error)}`);
+                return new Map();
             }
-
-            return entries;
         }
     };
 };
