@@ -56,6 +56,7 @@ export const registerStatusCommand = ({ program }) => {
             header('⚙️  Current configuration');
             basicLog(`${stringConfig}\n`);
 
+            // Display log file status
             const { logsDir, logFilePath, errorLogFilePath } = resolveLogFiles({ rootDir: APP_ROOT_DIR });
             header('📚  Runtime logs');
             info(`Logs directory: ${logsDir}`);

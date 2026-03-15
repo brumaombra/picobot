@@ -2,10 +2,9 @@ import { homedir } from 'os';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
+// Get the current path
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
-const PROJECT_ROOT_DIR = join(__dirname, '..');
-export const APP_ROOT_DIR = join(PROJECT_ROOT_DIR, 'app');
 
 /**************** Application *****************/
 export const APP_NAME = 'picobot';
@@ -13,6 +12,8 @@ export const APP_VERSION = '1.0.0';
 export const APP_DESCRIPTION = 'Ultra-lightweight AI agent with Telegram and OpenRouter integration';
 
 /**************** Paths *****************/
+export const PROJECT_ROOT_DIR = join(__dirname, '..');
+export const APP_ROOT_DIR = join(PROJECT_ROOT_DIR, 'app');
 export const CONFIG_DIR = join(homedir(), '.picobot');
 export const CONFIG_PATH = join(CONFIG_DIR, 'config.json');
 export const WORKSPACE_DIR = join(CONFIG_DIR, 'workspace');

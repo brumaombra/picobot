@@ -13,6 +13,7 @@ export const registerNukeCommand = ({ program }) => {
             header('🔥  Picobot nuke - deleting all config files');
 
             try {
+                // Resolve log directory path
                 const { logsDir } = resolveLogFiles({ rootDir: APP_ROOT_DIR });
 
                 // Delete config directory in the user home (config.json + workspace)
