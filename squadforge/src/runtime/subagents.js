@@ -235,7 +235,6 @@ export const chatSubagent = async (agent, subagentId, message) => {
             name: subagent.name,
             status: RUNNING_STATUS,
             response: text,
-            queued: false,
             timed_out: false
         };
     }
@@ -261,7 +260,6 @@ export const chatSubagent = async (agent, subagentId, message) => {
             name: subagent.name,
             status: RUNNING_STATUS,
             response: null,
-            queued: true,
             timed_out: false
         };
     }
@@ -278,7 +276,6 @@ export const chatSubagent = async (agent, subagentId, message) => {
         name: subagent.name,
         status: trackedResult.status,
         response: trackedResult.response,
-        queued: false,
         timed_out: Boolean(result?.timedOut)
     };
 };

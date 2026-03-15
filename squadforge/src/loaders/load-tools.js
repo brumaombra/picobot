@@ -2,7 +2,7 @@ import { existsSync, readdirSync } from 'fs';
 import { extname, join } from 'path';
 import { pathToFileURL } from 'url';
 import { SUPPORTED_TOOL_EXTENSIONS } from '../config.js';
-import { askMainAgentTool } from '../tools/predefined/general/ask_main_agent.js';
+import { askMainAgentTool } from '../tools/predefined/agent/ask_main_agent.js';
 import { cronCreateTool } from '../tools/predefined/cron/cron_create.js';
 import { cronDeleteTool } from '../tools/predefined/cron/cron_delete.js';
 import { cronGetTool } from '../tools/predefined/cron/cron_get.js';
@@ -11,9 +11,9 @@ import { cronUpdateTool } from '../tools/predefined/cron/cron_update.js';
 import { getDatetimeTool } from '../tools/predefined/general/get_datetime.js';
 import { readFileTool } from '../tools/predefined/general/read_file.js';
 import { sendFileTool } from '../tools/predefined/general/send_file.js';
-import { subagentChatTool } from '../tools/predefined/general/subagent_chat.js';
-import { subagentListTool } from '../tools/predefined/general/subagent_list.js';
-import { subagentStartTool } from '../tools/predefined/general/subagent_start.js';
+import { subagentChatTool } from '../tools/predefined/agent/subagent_chat.js';
+import { subagentListTool } from '../tools/predefined/agent/subagent_list.js';
+import { subagentStartTool } from '../tools/predefined/agent/subagent_start.js';
 import { getAgentRole } from '../utils/utils.js';
 
 // Built-in tools grouped by purpose
