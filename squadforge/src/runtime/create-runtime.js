@@ -9,9 +9,9 @@ import { loadSessionsFromDirectory } from '../loaders/load-sessions.js';
 import { loadSkillsFromDirectory } from '../loaders/load-skills.js';
 import { getLogFiles, initializeLogger, logger } from '../logging/logger.js';
 import { CronManager } from '../crons/cron-manager.js';
+import { loadTools } from '../loaders/load-tools.js';
 import { SubagentRegistry } from './subagent-registry.js';
 import { SessionManager } from '../sessions/session-manager.js';
-import { loadTools } from '../tools/tools-catalog.js';
 
 // Run validation checks before loading runtime resources from disk
 const beforeLoadChecks = options => {

@@ -2,11 +2,11 @@ import { existsSync, readdirSync, readFileSync } from 'fs';
 import { basename, join } from 'path';
 import { AgentSpec } from '../core/agent-spec.js';
 import { LEADER_FILE_NAME, LEADER_SPEC_ID, MARKDOWN_EXTENSION } from '../config.js';
+import { createPredefinedToolList } from './load-tools.js';
 import { isMarkdownFile, parseFrontmatter } from '../utils/utils.js';
-import { createPredefinedToolList } from '../tools/tools-catalog.js';
 
 // Read and parse an agent spec from a markdown file
-const readAgentSpec = ({ filePath, availableTools, hasSubagents }) => {
+const readAgentSpec = ({ filePath, availableTools }) => {
     // Read the file content and parse the frontmatter
     const fileName = basename(filePath);
     const content = readFileSync(filePath, 'utf-8');
@@ -25,7 +25,7 @@ const readAgentSpec = ({ filePath, availableTools, hasSubagents }) => {
     }
 
     // Combine the predefined tools with the external tools
-    const predefinedToolNames = createPredefinedToolList({ agentId: id, hasSubagents });
+    const predefinedToolNames = createPredefinedToolList({ agentId: id });
     const allowedTools = [...new Set([...predefinedToolNames, ...externalToolNames])];
 
     // If not tools are available, the agent should not reference any tools
@@ -68,13 +68,18 @@ export const loadAgentsFromDirectory = ({ agentsDir, availableTools = null } = {
     const files = readdirSync(agentsDir)
         .filter(isMarkdownFile)
         .sort((left, right) => left.localeCompare(right));
+
+    // Require at least one non-leader agent file
     const hasSubagents = files.some(fileName => basename(fileName, MARKDOWN_EXTENSION) !== LEADER_SPEC_ID);
+    if (!hasSubagents) {
+        throw new Error(`Agents directory must contain at least one subagent file in addition to ${LEADER_FILE_NAME}.`);
+    }
 
     // Load each agent spec and store it in a map by id
     const agentsSpecs = new Map();
     for (const fileName of files) {
         const filePath = join(agentsDir, fileName);
-        const agentSpec = readAgentSpec({ filePath, availableTools, hasSubagents });
+        const agentSpec = readAgentSpec({ filePath, availableTools });
         agentsSpecs.set(agentSpec.id, agentSpec);
     }
 
