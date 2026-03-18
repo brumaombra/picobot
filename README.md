@@ -2,20 +2,40 @@
 
 # 🦜 Picobot AI Agent
 
-**Your pocket-sized AI sidekick that lives in Telegram**
+### Your pocket-sized AI sidekick that lives in Telegram
 
 *Small name. Big brain. Unlimited sass (configurable).*
 
-[![Node.js](https://img.shields.io/badge/node-%3E%3D18-brightgreen)](https://nodejs.org)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+Picobot is a Telegram-first AI assistant built on top of the **Squadforge** framework, with a main orchestrator agent, specialized subagents, tools, prompts, skills, sessions, and cron workflows.
+
+<p>
+  <a href="https://github.com/brumaombra/picobot"><img alt="GitHub Repo" src="https://img.shields.io/badge/github-brumaombra%2Fpicobot-111111?logo=github"></a>
+  <img alt="Node 18+" src="https://img.shields.io/badge/node-%3E%3D18-3C873A?logo=node.js&logoColor=white">
+  <img alt="License MIT" src="https://img.shields.io/badge/license-MIT-2563EB">
+  <img alt="Telegram First" src="https://img.shields.io/badge/interface-Telegram-26A5E4?logo=telegram&logoColor=white">
+  <img alt="Powered by Squadforge" src="https://img.shields.io/badge/powered%20by-Squadforge-F59E0B">
+</p>
+
+<p>
+  💬 Telegram-native assistant • 🤖 Main agent + subagents • 🧩 Prompt-driven behavior • 🛠️ Real tools • ⏰ Cron workflows
+</p>
+
+<p>
+  <a href="#whats-this"><strong>What's This?</strong></a> •
+  <a href="#-features"><strong>Features</strong></a> •
+  <a href="#-how-it-works"><strong>How It Works</strong></a> •
+  <a href="#-quick-start"><strong>Quick Start</strong></a> •
+  <a href="#-commands"><strong>Commands</strong></a> •
+  <a href="#-configuration"><strong>Configuration</strong></a>
+</p>
 
 </div>
-
----
 
 ## What's This?
 
 Picobot is an ultra-lightweight AI assistant that lives in your Telegram and actually *does stuff*. Not just chat — it orchestrates a team of specialized AI subagents to handle emails, calendars, files, web browsing, coding, and more. All from your favorite messaging app.
+
+Under the hood, Pico runs on top of the **Squadforge** framework, which powers its agent runtime, subagent orchestration, sessions, tools, prompts, and cron workflows.
 
 Think of it as a tiny manager with a staff of specialists, running on whichever AI model fits your mood (or budget) — Claude, GPT, Gemini, Grok, you name it.
 
@@ -31,6 +51,8 @@ Think of it as a tiny manager with a staff of specialists, running on whichever 
 - ✨ **And much more!** — Picobot includes many additional capabilities across email, Drive, calendar, coding, web automation, and custom skill workflows!
 
 ## 🤖 How It Works
+
+Picobot is an app built on the **Squadforge** framework. Squadforge provides the runtime and orchestration layer; Pico is the Telegram-first assistant configuration that sits on top of it.
 
 Picobot uses an **orchestrator + subagents** architecture. You talk to one main agent (Pico), which delegates work to a roster of specialists:
 
@@ -50,7 +72,16 @@ Picobot uses an **orchestrator + subagents** architecture. You talk to one main 
 | ⏰ **Task Scheduler** | Set up crons and automated recurring tasks |
 | 🖥️ **System Admin** | Monitor system health and manage processes |
 
-The main agent only has one real tool: **`subagent`**. It reads your message, picks the right specialist(s), writes a detailed task brief, and kicks off the work. Subagents execute autonomously with their own dedicated toolset and report back. The main agent reviews the results and iterates if needed — it's the supervisor, not a pass-through.
+Pico still behaves like a supervisor rather than a pass-through: it decides which specialist to involve, writes the task brief, reviews the results, and iterates when needed.
+
+In the current Squadforge-based runtime, Pico gets a small built-in leader toolset automatically:
+
+- `subagent_start` — launch a specialized subagent in the background
+- `subagent_chat` — send follow-ups or answer a subagent while it is running
+- `subagent_list` — inspect active subagents for the current session
+- `read_file`, `send_file`, and `get_datetime` — shared leader utilities injected by the framework
+
+Subagents automatically receive `ask_main_agent` plus their own allowed app tools.
 
 ## 🧬 Prompt Architecture
 
@@ -58,33 +89,35 @@ Picobot's behavior is fully driven by markdown files committed in the project it
 
 ### Main Agent Prompt
 
-The main agent's system prompt is assembled from four files:
+The main agent's system prompt is assembled by Squadforge from these files:
 
 ```
-AGENTS.md   →  Orchestration instructions + available subagents list
-SOUL.md     →  Personality, tone, and communication style
-TOOLS.md    →  Tool usage guidelines + tools list
-SKILLS.md   →  Available skills list with file paths for on-demand loading
+app/agents/leader.md      →  Pico's core identity, orchestration rules, and personality
+app/prompts/SUBAGENTS.md  →  Shared subagent list and delegation guidance
+app/prompts/TOOLS.md      →  Tool usage rules + injected tools list
+app/prompts/SKILLS.md     →  Skills index + injected skill metadata
 ```
 
-- **`AGENTS.md`** — Defines the main agent's role as orchestrator, delegation strategy, quality control rules, and lists all available subagents (auto-populated from agent definitions).
-- **`SOUL.md`** — The personality layer. Defines character traits, values, and communication style. Want a pirate? A formal assistant? A chaotic gremlin? Edit this file.
-- **`TOOLS.md`** — Generic tool usage guidelines (parallel execution rules, error handling). The `{toolsList}` placeholder is auto-replaced with the main agent's available tools.
-- **`SKILLS.md`** — Lists all available skills with their names, descriptions, and file paths. The `{skillsList}` placeholder is auto-replaced at startup. The main agent reads a skill file on demand using `read_file` and follows its workflow.
+- **`app/agents/leader.md`** — Defines Pico itself. This is where the main assistant's orchestration behavior, tone, personality, cron-handling instructions, and user-facing communication style now live.
+- **`app/prompts/SUBAGENTS.md`** — Shared leader-side guidance about delegation plus the auto-populated list of available subagents.
+- **`app/prompts/TOOLS.md`** — Shared tool usage rules. Squadforge injects Pico's actual built-in and app-level tools into the `{toolsList}` placeholder at runtime.
+- **`app/prompts/SKILLS.md`** — Shared skills index. Squadforge injects all loaded skills into the `{skillsList}` placeholder with names, descriptions, and file paths.
+
+There is no separate `AGENTS.md` or `SOUL.md` file anymore. That logic now lives directly in `app/agents/leader.md` plus the shared prompt fragments in `app/prompts/`.
 
 ### Subagent Prompt
 
 Each subagent gets its own system prompt assembled from:
 
 ```
-SUBAGENT.md       →  Generic subagent behavior rules
-<agent>.md        →  Agent-specific instructions (e.g. email.md, coder.md)
-TOOLS.md          →  Tool usage guidelines + agent-specific tools list
+app/prompts/SUBAGENT.md   →  Generic subagent behavior rules
+app/agents/<agent>.md     →  Agent-specific instructions and frontmatter
+app/prompts/TOOLS.md      →  Tool usage guidelines + injected tools list
 ```
 
-- **`SUBAGENT.md`** — Shared instructions for all subagents (focus on task, report results, ask for clarification only when necessary).
-- **`<agent>.md`** — Lives in `app/agents/`. Each file defines one subagent via YAML frontmatter (`name`, `description`, `allowed_tools`) and markdown body (detailed instructions).
-- **`TOOLS.md`** — Same template as the main agent, but populated with only the tools that specific subagent is allowed to use.
+- **`app/prompts/SUBAGENT.md`** — Shared rules for all subagents.
+- **`app/agents/<agent>.md`** — One file per subagent under `app/agents/`, with YAML frontmatter such as `name`, `description`, and `allowed_tools`, plus the markdown body containing domain-specific instructions.
+- **`app/prompts/TOOLS.md`** — The same shared tool guidance template, but populated with only the tools available to that specific subagent. Squadforge also injects subagent built-ins like `ask_main_agent` and `get_datetime` automatically.
 
 ### Skills
 
@@ -100,7 +133,7 @@ app/skills/
     SKILL.md
 ```
 
-At startup, all skills are loaded and their metadata (name, description, file path) is injected into the main agent's `SKILLS.md` prompt. When the user's request matches a skill, the main agent uses `read_file` to load that skill's `SKILL.md` on demand, then follows its workflow — delegating steps to the appropriate subagents.
+At startup, Squadforge loads every skill under `app/skills/` and injects its metadata into `app/prompts/SKILLS.md`. When a user request matches a skill, Pico uses `read_file` to load that skill's `SKILL.md` on demand and follows the workflow from there.
 
 ## 🚀 Quick Start
 
@@ -142,7 +175,7 @@ npm run logs       # 📚 Show recent runtime logs
 npm run nuke       # 💥 Reset everything
 ```
 
-**Telegram:** `/start` (new conversation) · `/model` (switch model) · `/models` (list models)
+**Telegram:** `/start` (show welcome message) · `/new` (clear the current conversation) · `/models` (list models) · `/model` (switch model)
 
 ## ⚙️ Configuration
 
@@ -150,6 +183,8 @@ Picobot keeps only these user-level files under `~/.picobot/`:
 
 - `config.json`
 - `workspace/`
+
+Everything else that defines Pico itself now lives inside the project and is loaded by Squadforge from `app/`.
 
 The main configuration file lives in `~/.picobot/config.json`:
 
@@ -184,13 +219,17 @@ The main configuration file lives in `~/.picobot/config.json`:
 
 ### Runtime Storage
 
-Runtime-managed data now lives in the Pico project itself:
+Picobot's Squadforge app root is `app/`. It contains both committed assistant definitions and runtime-managed data:
 
+- `app/agents/` — Pico and subagent definitions
+- `app/prompts/` — shared prompt fragments used by Squadforge prompt composition
+- `app/skills/` — reusable workflow skills
+- `app/tools/` — app-specific tool implementations loaded into the runtime
 - `app/sessions/` — persisted chat sessions managed by Squadforge
-- `app/crons/` — scheduled task definitions managed by Squadforge
 - `app/logs/` — framework-managed runtime logs
+- `app/crons/` — scheduled task definitions managed by Squadforge, created when the first cron is saved
 
-Agent definitions, prompts, skills, and app tools are also project-local under `app/`.
+This means Pico's behavior is mostly project-local and version-controlled, while user secrets and the working directory stay under `~/.picobot/`.
 
 ### 🔒 Secret Overrides (Recommended)
 
