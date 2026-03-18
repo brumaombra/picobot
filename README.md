@@ -103,8 +103,6 @@ app/prompts/SKILLS.md     →  Skills index + injected skill metadata
 - **`app/prompts/TOOLS.md`** — Shared tool usage rules. Squadforge injects Pico's actual built-in and app-level tools into the `{toolsList}` placeholder at runtime.
 - **`app/prompts/SKILLS.md`** — Shared skills index. Squadforge injects all loaded skills into the `{skillsList}` placeholder with names, descriptions, and file paths.
 
-There is no separate `AGENTS.md` or `SOUL.md` file anymore. That logic now lives directly in `app/agents/leader.md` plus the shared prompt fragments in `app/prompts/`.
-
 ### Subagent Prompt
 
 Each subagent gets its own system prompt assembled from:
