@@ -1,5 +1,5 @@
 import { rmSync } from 'fs';
-import { resolveLogFiles } from '../../../squadforge/src/index.js';
+import { resolveLogFiles } from 'squadforge';
 import { APP_ROOT_DIR, CONFIG_DIR, CRONS_DIR, SESSIONS_DIR } from '../../config.js';
 import { header, success, error, newline } from '../../utils/common/print.js';
 

@@ -1,4 +1,4 @@
-import { logger } from '../../../squadforge/src/index.js';
+import { logger } from 'squadforge';
 
 // Authorization middleware
 export const authMiddleware = async (context, next, allowedUsers) => {

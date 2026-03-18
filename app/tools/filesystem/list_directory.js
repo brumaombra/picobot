@@ -1,7 +1,7 @@
 import { readdir, stat, access } from 'fs/promises';
 import { join, resolve, isAbsolute, normalize } from 'path';
 import { isSensitivePath, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
-import { logger } from '../../../squadforge/src/index.js';
+import { logger } from 'squadforge';
 
 // List directory tool
 export default {

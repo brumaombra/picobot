@@ -1,6 +1,6 @@
 import { Telegraf } from 'telegraf';
 import { message } from 'telegraf/filters';
-import { logger } from '../../../squadforge/src/index.js';
+import { logger } from 'squadforge';
 import { getConfigValue } from '../../config/config.js';
 import { registerStartCommand } from '../commands/start.js';
 import { registerModelsCommand } from '../commands/models.js';

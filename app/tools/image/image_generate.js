@@ -1,7 +1,7 @@
 import { writeFile, mkdir } from 'fs/promises';
 import { dirname, normalize, resolve } from 'path';
 import { WORKSPACE_DIR } from '../../../src/config.js';
-import { logger } from '../../../squadforge/src/index.js';
+import { logger } from 'squadforge';
 import { generateImageWithGoogleAi } from '../../../src/utils/google/google-ai.js';
 import { getFileExtensionFromMimeType, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 

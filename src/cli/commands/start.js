@@ -1,5 +1,5 @@
 import { startBot } from '../../index.js';
-import { resolveLogFiles } from '../../../squadforge/src/index.js';
+import { resolveLogFiles } from 'squadforge';
 import { APP_ROOT_DIR } from '../../config.js';
 import { loadConfig, validateConfig, setConfig } from '../../config/config.js';
 import { error, header, logo, suggestion } from '../../utils/common/print.js';

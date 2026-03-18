@@ -1,5 +1,5 @@
 import { existsSync } from 'fs';
-import { readLogTail, resolveLogFiles } from '../../../squadforge/src/index.js';
+import { readLogTail, resolveLogFiles } from 'squadforge';
 import { APP_ROOT_DIR } from '../../config.js';
 import { basicLog, header, info, warning } from '../../utils/common/print.js';
 

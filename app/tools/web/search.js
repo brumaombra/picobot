@@ -1,4 +1,4 @@
-import { logger } from '../../../squadforge/src/index.js';
+import { logger } from 'squadforge';
 import { getConfigValue } from '../../../src/config/config.js';
 import { BRAVE_SEARCH_TIMEOUT_MS } from '../../../src/config.js';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';

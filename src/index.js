@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { OpenRouterLlm, forge, logger } from '../squadforge/src/index.js';
+import { OpenRouterLlm, forge, logger } from 'squadforge';
 import { initTelegram, startTelegram, stopTelegram } from './channel/telegram/telegram.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google/google-client.js';

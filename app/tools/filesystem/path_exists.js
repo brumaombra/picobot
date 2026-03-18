@@ -1,7 +1,7 @@
 import { stat, access } from 'fs/promises';
 import { resolve, isAbsolute, normalize } from 'path';
 import { isSensitivePath, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
-import { logger } from '../../../squadforge/src/index.js';
+import { logger } from 'squadforge';
 
 // Path exists tool
 export default {

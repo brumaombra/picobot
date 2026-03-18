@@ -1,7 +1,7 @@
 import { mkdirSync } from 'fs';
 import { join } from 'path';
 import { handleToolError, handleToolResponse, validateCameraInputDates } from '../../../src/utils/common/utils.js';
-import { logger } from '../../../squadforge/src/index.js';
+import { logger } from 'squadforge';
 import { WORKSPACE_DIR } from '../../../src/config.js';
 import { downloadNvrRecordingToPath } from '../../../src/utils/camera/camera-client.js';
 

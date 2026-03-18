@@ -1,6 +1,6 @@
 import { execFile } from 'child_process';
 import { promisify } from 'util';
-import { logger } from '../../../squadforge/src/index.js';
+import { logger } from 'squadforge';
 import { SHELL_MAX_OUTPUT_LENGTH, SHELL_MAX_BUFFER, SHELL_DEFAULT_TIMEOUT_MS } from '../../../src/config.js';
 import { handleToolError, handleToolResponse, tokenizeArgs } from '../../../src/utils/common/utils.js';
 

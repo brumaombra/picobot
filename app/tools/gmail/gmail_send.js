@@ -1,6 +1,6 @@
 import { readFile } from 'fs/promises';
 import { basename, isAbsolute } from 'path';
-import { logger } from '../../../squadforge/src/index.js';
+import { logger } from 'squadforge';
 import { getGmailClient } from '../../../src/utils/google/google-client.js';
 import { chunkBase64, decodeHtmlEntities, getMimeTypeFromFileName, handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 
