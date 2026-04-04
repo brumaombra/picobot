@@ -1,6 +1,6 @@
 import { existsSync } from 'fs';
 import { resolveLogFiles } from 'squadforge';
-import { APP_ROOT_DIR } from '../../config.js';
+import { APP_ROOT_DIR, CRONS_DIR, LOGS_DIR, SESSIONS_DIR, USER_AGENTS_DIR, USER_PROMPTS_DIR, USER_SKILLS_DIR } from '../../config.js';
 import { loadConfig, validateConfig } from '../../config/config.js';
 import { basicLog, header, info, success } from '../../utils/common/print.js';
 import { checkIfConfigFilesExist } from '../../files/files.js';
@@ -56,8 +56,16 @@ export const registerStatusCommand = ({ program }) => {
             header('⚙️  Current configuration');
             basicLog(`${stringConfig}\n`);
 
+            // Display user-owned Squadforge configuration directories
+            header('🧬  Squadforge configuration directories');
+            info(`Agents directory: ${USER_AGENTS_DIR}`);
+            info(`Prompts directory: ${USER_PROMPTS_DIR}`);
+            info(`Skills directory: ${USER_SKILLS_DIR}`);
+            info(`Sessions directory: ${SESSIONS_DIR}`);
+            info(`Crons directory: ${CRONS_DIR}`);
+
             // Display log file status
-            const { logsDir, logFilePath, errorLogFilePath } = resolveLogFiles({ rootDir: APP_ROOT_DIR });
+            const { logsDir, logFilePath, errorLogFilePath } = resolveLogFiles({ rootDir: APP_ROOT_DIR, logsDir: LOGS_DIR });
             header('📚  Runtime logs');
             info(`Logs directory: ${logsDir}`);
             info(`Main log file: ${logFilePath} ${existsSync(logFilePath) ? '(present)' : '(not created yet)'}`);

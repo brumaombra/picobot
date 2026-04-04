@@ -3,7 +3,7 @@ import { OpenRouterLlm, forge, logger } from 'squadforge';
 import { initTelegram, startTelegram, stopTelegram } from './channel/telegram/telegram.js';
 import { getConfig } from './config/config.js';
 import { initializeGoogleClients } from './utils/google/google-client.js';
-import { APP_ROOT_DIR } from './config.js';
+import { APP_ROOT_DIR, CRONS_DIR, LOGS_DIR, SESSIONS_DIR, USER_AGENTS_DIR, USER_PROMPTS_DIR, USER_SKILLS_DIR } from './config.js';
 
 let agent = null; // Active agent instance (accessible for commands like /model)
 let stopping = false; // Flag to prevent multiple stop attempts
@@ -27,6 +27,12 @@ export const startBot = async () => {
     agent = await forge({
         rootDir: APP_ROOT_DIR,
         workspaceDir: config.workspace,
+        agentsDir: USER_AGENTS_DIR,
+        promptsDir: USER_PROMPTS_DIR,
+        skillsDir: USER_SKILLS_DIR,
+        sessionsDir: SESSIONS_DIR,
+        cronsDir: CRONS_DIR,
+        logsDir: LOGS_DIR,
         llm,
         model: config.agent?.model
     });

@@ -1,6 +1,6 @@
 import { existsSync } from 'fs';
 import { readLogTail, resolveLogFiles } from 'squadforge';
-import { APP_ROOT_DIR } from '../../config.js';
+import { APP_ROOT_DIR, LOGS_DIR } from '../../config.js';
 import { basicLog, header, info, warning } from '../../utils/common/print.js';
 
 // Register the logs command
@@ -12,7 +12,7 @@ export const registerLogsCommand = ({ program }) => {
         .option('-n, --lines <count>', 'Number of lines to show', '80')
         .action(options => {
             // Resolve log file paths
-            const { logFilePath, errorLogFilePath } = resolveLogFiles({ rootDir: APP_ROOT_DIR });
+            const { logFilePath, errorLogFilePath } = resolveLogFiles({ rootDir: APP_ROOT_DIR, logsDir: LOGS_DIR });
             const lines = Math.max(1, parseInt(options.lines, 10) || 80);
             const targetFilePath = options.errors ? errorLogFilePath : logFilePath;
 

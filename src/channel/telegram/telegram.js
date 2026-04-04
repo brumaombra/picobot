@@ -136,17 +136,19 @@ export const startTelegram = async () => {
     logger.info('Starting Telegram bot...');
     running = true;
 
-    // Launch polling
-    await bot.launch({
-        dropPendingUpdates: true
+    // Telegraf long polling does not return from launch during normal operation, so the startup success path must run from the onLaunch callback instead
+    await bot.launch({ dropPendingUpdates: true }, () => {
+        // Log successful startup
+        const username = bot.botInfo?.username || 'unknown';
+        logger.info(`Telegram bot @${username} connected`);
+
+        // Register commands after successful connection
+        void registerCommands().then(() => {
+            logger.info(`Telegram bot @${username} started successfully`);
+        }).catch(error => {
+            logger.error(`Failed to finish Telegram startup: ${error}`);
+        });
     });
-
-    // Read bot info
-    const botInfo = await bot.telegram.getMe();
-    logger.info(`Telegram bot @${botInfo.username} connected`);
-
-    // Publish commands
-    await registerCommands();
 };
 
 // Stop polling

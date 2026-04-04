@@ -1,7 +1,7 @@
 import { createInterface } from 'node:readline';
 import { loadConfig, writeConfig } from '../../config/config.js';
-import { basicLog, header, info, listItem, success, warning, newline } from '../../utils/common/print.js';
-import { createConfigFiles } from '../../files/files.js';
+import { basicLog, header, info, listItem, logo, success, warning, newline } from '../../utils/common/print.js';
+import { bootstrapConfigFiles } from '../../files/files.js';
 import { CONFIG_PATH, OPENROUTER_MODELS } from '../../config.js';
 
 // Register the onboard command
@@ -10,11 +10,12 @@ export const registerOnboardCommand = ({ program }) => {
 		.command('onboard')
 		.description('Interactive onboarding wizard for Picobot setup')
 		.action(async () => {
-			// Print onboarding header
+			// Print logo and onboarding header
+			logo();
 			header('🚀  Picobot onboarding wizard');
 
 			// Create configuration files and directories
-			createConfigFiles();
+			bootstrapConfigFiles();
 
 			// Load the current config
 			const config = loadConfig();

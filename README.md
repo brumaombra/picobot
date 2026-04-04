@@ -84,37 +84,37 @@ Subagents automatically receive `ask_main_agent` plus their own allowed app tool
 
 ## 🧬 Prompt Architecture
 
-Picobot's behavior is fully driven by markdown files committed in the project itself. Here's how they compose:
+Picobot's behavior is driven by markdown files bootstrapped directly into your home directory under `~/.picobot/`. During onboarding, Pico copies the default agents, prompts, and skills from the project into those folders and then runs Squadforge from the copied versions, so you can customize them without editing the project checkout.
 
 ### Main Agent Prompt
 
 The main agent's system prompt is assembled by Squadforge from these files:
 
 ```
-app/agents/leader.md      →  Pico's core identity, orchestration rules, and personality
-app/prompts/SUBAGENTS.md  →  Shared subagent list and delegation guidance
-app/prompts/TOOLS.md      →  Tool usage rules + injected tools list
-app/prompts/SKILLS.md     →  Skills index + injected skill metadata
+~/.picobot/agents/leader.md      →  Pico's core identity, orchestration rules, and personality
+~/.picobot/prompts/SUBAGENTS.md  →  Shared subagent list and delegation guidance
+~/.picobot/prompts/TOOLS.md      →  Tool usage rules + injected tools list
+~/.picobot/prompts/SKILLS.md     →  Skills index + injected skill metadata
 ```
 
-- **`app/agents/leader.md`** — Defines Pico itself. This is where the main assistant's orchestration behavior, tone, personality, cron-handling instructions, and user-facing communication style now live.
-- **`app/prompts/SUBAGENTS.md`** — Shared leader-side guidance about delegation plus the auto-populated list of available subagents.
-- **`app/prompts/TOOLS.md`** — Shared tool usage rules. Squadforge injects Pico's actual built-in and app-level tools into the `{toolsList}` placeholder at runtime.
-- **`app/prompts/SKILLS.md`** — Shared skills index. Squadforge injects all loaded skills into the `{skillsList}` placeholder with names, descriptions, and file paths.
+- **`~/.picobot/agents/leader.md`** — Defines Pico itself. This is where the main assistant's orchestration behavior, tone, personality, cron-handling instructions, and user-facing communication style now live.
+- **`~/.picobot/prompts/SUBAGENTS.md`** — Shared leader-side guidance about delegation plus the auto-populated list of available subagents.
+- **`~/.picobot/prompts/TOOLS.md`** — Shared tool usage rules. Squadforge injects Pico's actual built-in and app-level tools into the `{toolsList}` placeholder at runtime.
+- **`~/.picobot/prompts/SKILLS.md`** — Shared skills index. Squadforge injects all loaded skills into the `{skillsList}` placeholder with names, descriptions, and file paths.
 
 ### Subagent Prompt
 
 Each subagent gets its own system prompt assembled from:
 
 ```
-app/prompts/SUBAGENT.md   →  Generic subagent behavior rules
-app/agents/<agent>.md     →  Agent-specific instructions and frontmatter
-app/prompts/TOOLS.md      →  Tool usage guidelines + injected tools list
+~/.picobot/prompts/SUBAGENT.md   →  Generic subagent behavior rules
+~/.picobot/agents/<agent>.md     →  Agent-specific instructions and frontmatter
+~/.picobot/prompts/TOOLS.md      →  Tool usage guidelines + injected tools list
 ```
 
-- **`app/prompts/SUBAGENT.md`** — Shared rules for all subagents.
-- **`app/agents/<agent>.md`** — One file per subagent under `app/agents/`, with YAML frontmatter such as `name`, `description`, and `allowed_tools`, plus the markdown body containing domain-specific instructions.
-- **`app/prompts/TOOLS.md`** — The same shared tool guidance template, but populated with only the tools available to that specific subagent. Squadforge also injects subagent built-ins like `ask_main_agent` and `get_datetime` automatically.
+- **`~/.picobot/prompts/SUBAGENT.md`** — Shared rules for all subagents.
+- **`~/.picobot/agents/<agent>.md`** — One file per subagent under `~/.picobot/agents/`, with YAML frontmatter such as `name`, `description`, and `allowed_tools`, plus the markdown body containing domain-specific instructions.
+- **`~/.picobot/prompts/TOOLS.md`** — The same shared tool guidance template, but populated with only the tools available to that specific subagent. Squadforge also injects subagent built-ins like `ask_main_agent` and `get_datetime` automatically.
 
 ### Skills
 
@@ -123,14 +123,14 @@ Skills are reusable, pre-defined workflows that guide the main agent through com
 Skills follow the same structure as Anthropic skills — one folder per skill, with a `SKILL.md` file inside:
 
 ```
-app/skills/
+~/.picobot/skills/
   research-report/
     SKILL.md   →  Frontmatter (name, description) + step-by-step workflow
   my-custom-skill/
     SKILL.md
 ```
 
-At startup, Squadforge loads every skill under `app/skills/` and injects its metadata into `app/prompts/SKILLS.md`. When a user request matches a skill, Pico uses `read_file` to load that skill's `SKILL.md` on demand and follows the workflow from there.
+At startup, Squadforge loads every skill under `~/.picobot/skills/` and injects its metadata into `~/.picobot/prompts/SKILLS.md`. When a user request matches a skill, Pico uses `read_file` to load that skill's `SKILL.md` on demand and follows the workflow from there.
 
 ## 🚀 Quick Start
 
@@ -175,12 +175,18 @@ npm run nuke       # 💥 Reset everything
 
 ## ⚙️ Configuration
 
-Picobot keeps only these user-level files under `~/.picobot/`:
+Picobot keeps these user-level files under `~/.picobot/`:
 
 - `config.json`
+- `agents/`
+- `prompts/`
+- `skills/`
+- `sessions/`
+- `logs/`
+- `crons/`
 - `workspace/`
 
-Everything else that defines Pico itself now lives inside the project and is loaded by Squadforge from `app/`.
+During onboarding, Pico copies the default agents, prompts, and skills from the project into `~/.picobot/` without overwriting any files you already customized there.
 
 The main configuration file lives in `~/.picobot/config.json`:
 
@@ -215,17 +221,16 @@ The main configuration file lives in `~/.picobot/config.json`:
 
 ### Runtime Storage
 
-Picobot's Squadforge app root is `app/`. It contains both committed assistant definitions and runtime-managed data:
+Picobot splits Squadforge data into two places:
 
-- `app/agents/` — Pico and subagent definitions
-- `app/prompts/` — shared prompt fragments used by Squadforge prompt composition
-- `app/skills/` — reusable workflow skills
+- `~/.picobot/` for user-owned agents, prompts, skills, sessions, logs, and crons
+- `app/` in the project for app tools only
+
+The project-local `app/` directory contains:
+
 - `app/tools/` — app-specific tool implementations loaded into the runtime
-- `app/sessions/` — persisted chat sessions managed by Squadforge
-- `app/logs/` — framework-managed runtime logs
-- `app/crons/` — scheduled task definitions managed by Squadforge, created when the first cron is saved
 
-This means Pico's behavior is mostly project-local and version-controlled, while user secrets and the working directory stay under `~/.picobot/`.
+This means Pico's editable behavior plus runtime data all live under your home directory, while tool code stays in the project.
 
 ### 🔒 Secret Overrides (Recommended)
 
