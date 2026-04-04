@@ -169,6 +169,65 @@ export const getNvrDeviceInfo = async () => {
     };
 };
 
+// Set the camera white light / spotlight mode when supported by the device
+export const setCameraLightMode = async ({ channel = 0, mode = 'on' }) => {
+    // List of options
+    const WHITE_LIGHT_CONFIG_MAP = {
+        off: {
+            bright: 100,
+            mode: 1,
+            state: 0
+        },
+        on: {
+            bright: 100,
+            mode: 1,
+            state: 1
+        },
+        auto: {
+            bright: 100,
+            mode: 3,
+            state: 1
+        }
+    };
+
+    // Get the client and the light configuration for the requested mode
+    const client = await getCameraClient();
+    const normalizedMode = String(mode || 'on').toLowerCase();
+    const lightConfig = WHITE_LIGHT_CONFIG_MAP[normalizedMode];
+
+    // Validate the requested light mode
+    if (!lightConfig) {
+        throw new Error(`Unsupported light mode: ${mode}`);
+    }
+
+    // Create the payload
+    const payload = {
+        WhiteLed: {
+            channel,
+            bright: lightConfig.bright,
+            mode: lightConfig.mode,
+            state: lightConfig.state
+        }
+    };
+
+    // Send the white-light control request
+    try {
+        // Call the API
+        const result = await client.api('SetWhiteLed', payload);
+
+        // Return the result
+        return {
+            channel,
+            mode: normalizedMode,
+            command: 'SetWhiteLed',
+            payload,
+            result
+        };
+    } catch (error) {
+        throw new Error(`White light control failed: ${error?.message || 'unknown error'}`);
+    }
+};
+
 // Capture a camera snapshot and save it directly to disk
 export const captureSnapshotToPath = async ({ channel = 0, outputPath }) => {
     // Get the snapshot as a buffer from the client
