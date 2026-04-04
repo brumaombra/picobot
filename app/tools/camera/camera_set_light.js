@@ -6,7 +6,7 @@ import { setCameraLightMode } from '../../../src/utils/camera/camera-client.js';
 export default {
     // Tool definition
     name: 'camera_set_light',
-    description: 'Turn a camera white light / spotlight on, off, or auto mode when supported by the device.',
+    description: 'Turn a camera spotlight on or off.',
     parameters: {
         type: 'object',
         properties: {
@@ -16,8 +16,8 @@ export default {
             },
             mode: {
                 type: 'string',
-                description: 'Desired light mode: on, off, or auto. Default is on.',
-                enum: ['on', 'off', 'auto']
+                description: 'Desired light mode: on or off. Default is on.',
+                enum: ['on', 'off']
             }
         },
         required: []

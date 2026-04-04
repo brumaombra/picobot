@@ -171,32 +171,12 @@ export const getNvrDeviceInfo = async () => {
 
 // Set the camera white light / spotlight mode when supported by the device
 export const setCameraLightMode = async ({ channel = 0, mode = 'on' }) => {
-    // List of options
-    const WHITE_LIGHT_CONFIG_MAP = {
-        off: {
-            bright: 100,
-            mode: 1,
-            state: 0
-        },
-        on: {
-            bright: 100,
-            mode: 1,
-            state: 1
-        },
-        auto: {
-            bright: 100,
-            mode: 3,
-            state: 1
-        }
-    };
-
-    // Get the client and the light configuration for the requested mode
+    // Get the client and normalize the requested light mode
     const client = await getCameraClient();
     const normalizedMode = String(mode || 'on').toLowerCase();
-    const lightConfig = WHITE_LIGHT_CONFIG_MAP[normalizedMode];
 
     // Validate the requested light mode
-    if (!lightConfig) {
+    if (!['on', 'off'].includes(normalizedMode)) {
         throw new Error(`Unsupported light mode: ${mode}`);
     }
 
@@ -204,9 +184,9 @@ export const setCameraLightMode = async ({ channel = 0, mode = 'on' }) => {
     const payload = {
         WhiteLed: {
             channel,
-            bright: lightConfig.bright,
-            mode: lightConfig.mode,
-            state: lightConfig.state
+            bright: 100,
+            mode: 1,
+            state: normalizedMode === 'on' ? 1 : 0
         }
     };
 
