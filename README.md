@@ -66,8 +66,8 @@ Picobot uses an **orchestrator + subagents** architecture. You talk to one main 
 | 🌐 **Network Administrator** | Run network diagnostics like ping checks and local device discovery |
 | 🖨️ **Printer Manager** | Manage printers: list devices, inspect status/queues, and print files |
 | 💻 **Code Implementer** | Write, refactor, and test code with execution tools |
-| 🌐 **Web Researcher** | Search the web and synthesize information |
-| 🧭 **Web Navigator** | Control a browser to interact with pages and fill forms |
+| 🌐 **Web Researcher** | Search the web, fetch pages, and call structured APIs when needed |
+| 🧭 **Web Navigator** | Control a browser to interact with pages, fill forms, and fall back to direct API calls when appropriate |
 | ⏰ **Task Scheduler** | Set up crons and automated recurring tasks |
 | 🖥️ **System Admin** | Monitor system health and manage processes |
 
