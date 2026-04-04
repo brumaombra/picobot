@@ -125,17 +125,12 @@ export const isSensitivePath = ({ fullPath, workDir, action = 'write' }) => {
         return false;
     }
 
-    // Read access only performs sensitive-path protection
-    if (action === 'read') {
-        return true;
-    }
-
     // Unknown action types are denied by default
-    if (action !== 'write') {
+    if (!['read', 'write'].includes(action)) {
         return false;
     }
 
-    // Write access requires a workspace path to enforce scope checks
+    // Read and write access both require a workspace path to enforce scope checks
     if (!workDir) {
         return false;
     }
@@ -148,7 +143,7 @@ export const isSensitivePath = ({ fullPath, workDir, action = 'write' }) => {
         return false;
     }
 
-    // Allow all writable paths within workspace
+    // Allow paths within the workspace boundary
     return true;
 };
 
