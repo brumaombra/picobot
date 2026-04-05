@@ -184,31 +184,35 @@ const runLightShowFrame = async () => {
         return;
     }
 
-    // Set the runningFrame flag
-    activeLightShow.runningFrame = true;
+    // Snapshot the current show state so stop/start calls cannot null it mid-frame
+    const currentLightShow = activeLightShow;
+    const channels = [...currentLightShow.channels];
+    currentLightShow.runningFrame = true;
 
     try {
         // Build the light state for each channel for the current frame of the animation
         const frameStates = buildFrameStates({
-            channelCount: activeLightShow.channels.length,
-            step: activeLightShow.step
+            channelCount: channels.length,
+            step: currentLightShow.step
         });
 
         // Apply the light state to each channel sequentially
-        for (let index = 0; index < activeLightShow.channels.length; index += 1) {
-            const channel = activeLightShow.channels[index];
+        for (let index = 0; index < channels.length; index += 1) {
+            const channel = channels[index];
             const state = frameStates[index] ? 'on' : 'off';
             await setCameraLightState({ channel, state });
         }
 
         // Increment the step for the next frame
-        activeLightShow.step += 1;
+        if (activeLightShow === currentLightShow) {
+            activeLightShow.step += 1;
+        }
     } catch (error) {
         logger.error(`Camera light show failed: ${error?.message || 'unknown error'}`);
         await stopActiveLightShow({ turnLightsOff: true });
         return;
     } finally {
-        if (activeLightShow) {
+        if (activeLightShow === currentLightShow) {
             activeLightShow.runningFrame = false;
         }
     }
