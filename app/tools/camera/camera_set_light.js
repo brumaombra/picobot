@@ -1,6 +1,6 @@
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 import { logger } from 'squadforge';
-import { setCameraLightMode } from '../../../src/utils/camera/camera-client.js';
+import { setCameraLightState } from '../../../src/utils/camera/camera-client.js';
 
 // Camera light control tool
 export default {
@@ -12,33 +12,33 @@ export default {
         properties: {
             channel: {
                 type: 'number',
-                description: 'Camera channel number (0-based). Default is 0.'
+                description: 'Camera channel number (0-based).'
             },
-            mode: {
+            state: {
                 type: 'string',
-                description: 'Desired light mode: on or off. Default is on.',
+                description: 'Desired light state: on or off. Default is on.',
                 enum: ['on', 'off']
             }
         },
-        required: []
+        required: ['channel']
     },
 
     // Main execution function
     execute: async args => {
-        const channel = args.channel ?? 0;
-        const mode = args.mode ?? 'on';
+        const channel = args.channel;
+        const state = args.state ?? 'on';
 
         // Log the action
-        logger.debug(`Camera: setting light on channel ${channel} to ${mode}`);
+        logger.debug(`Camera: setting light on channel ${channel} to ${state}`);
 
         try {
             // Send the light control request via the shared camera helper
-            const result = await setCameraLightMode({ channel, mode });
+            const result = await setCameraLightState({ channel, state });
 
             // Return the outcome and raw device response for diagnostics
             return handleToolResponse(result);
         } catch (error) {
-            return handleToolError({ error, message: 'Failed to set camera light mode' });
+            return handleToolError({ error, message: 'Failed to set camera light state' });
         }
     }
 };

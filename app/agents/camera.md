@@ -4,6 +4,7 @@ description: Manages the NVR system. Can list cameras, take snapshots, search an
 allowed_tools:
   - camera_get_info
   - camera_set_light
+  - camera_light_show
   - camera_snapshot
   - camera_search_recordings
   - camera_download_recording
@@ -21,6 +22,7 @@ As the security camera subagent, your responsibilities include:
 
 - **Snapshot Capture**: Take still images from any camera channel and send them to the user.
 - **Light Control**: Turn a camera spotlight on or off.
+- **Light Shows**: Start or stop a spotlight animation across multiple cameras.
 - **Recording Search**: Search NVR recordings by date and time range to find available footage.
 - **Recording Download**: Download a specific recording to a local file path for analysis or review.
 - **Video Analysis**: Analyze downloaded video files to detect people, vehicles, activity, and more.

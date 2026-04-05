@@ -169,15 +169,28 @@ export const getNvrDeviceInfo = async () => {
     };
 };
 
-// Set the camera white light / spotlight mode when supported by the device
-export const setCameraLightMode = async ({ channel = 0, mode = 'on' }) => {
-    // Get the client and normalize the requested light mode
-    const client = await getCameraClient();
-    const normalizedMode = String(mode || 'on').toLowerCase();
+// Return the active channel entries reported by the NVR status API
+export const getActiveNvrChannels = async () => {
+    const { channels } = await getNvrDeviceInfo();
+    const activeChannels = channels?.status?.filter(channel => channel?.online === 1) || [];
+    return activeChannels;
+};
 
-    // Validate the requested light mode
-    if (!['on', 'off'].includes(normalizedMode)) {
-        throw new Error(`Unsupported light mode: ${mode}`);
+// Return only the numeric channel ids for active NVR channels
+export const getActiveNvrChannelNumbers = async () => {
+    const activeChannels = await getActiveNvrChannels();
+    return activeChannels.map(channel => channel?.channel);
+};
+
+// Set the camera spotlight state
+export const setCameraLightState = async ({ channel = 0, state = 'on' }) => {
+    // Get the client and normalize the requested light state
+    const client = await getCameraClient();
+    const normalizedState = String(state || 'on').toLowerCase();
+
+    // Validate the requested light state
+    if (!['on', 'off'].includes(normalizedState)) {
+        throw new Error(`Unsupported light state: ${state}`);
     }
 
     // Create the payload
@@ -186,7 +199,7 @@ export const setCameraLightMode = async ({ channel = 0, mode = 'on' }) => {
             channel,
             bright: 100,
             mode: 1,
-            state: normalizedMode === 'on' ? 1 : 0
+            state: normalizedState === 'on' ? 1 : 0
         }
     };
 
@@ -198,7 +211,7 @@ export const setCameraLightMode = async ({ channel = 0, mode = 'on' }) => {
         // Return the result
         return {
             channel,
-            mode: normalizedMode,
+            state: normalizedState,
             command: 'SetWhiteLed',
             payload,
             result
