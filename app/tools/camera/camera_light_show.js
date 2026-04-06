@@ -2,7 +2,7 @@ import { logger } from 'squadforge';
 import { handleToolError, handleToolResponse } from '../../../src/utils/common/utils.js';
 import { getActiveNvrChannelNumbers, setCameraLightState } from '../../../src/utils/camera/camera-client.js';
 
-const DEFAULT_INTERVAL_MS = 1000;
+const DEFAULT_INTERVAL_MS = 500;
 let activeLightShow = null;
 
 // Camera light show tool
